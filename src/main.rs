@@ -93,6 +93,9 @@ struct KCOverlay {
     searched_player_stats_type: StatsType,
     stats_type: StatsType,
     window_scale: f64,
+    is_visible: bool,
+    rgb_buttons: bool,
+    rgb_offset: f32,
 }
 
 // Mensagens enviadas para o programa saber quando atualizar variáveis, executar funções, e etc.
@@ -122,6 +125,8 @@ enum Message {
     StatsSelect(StatsType),
     WindowScaleChanged(f64),
     UpdateWaitTime,
+    ChangeRGBButtons(bool),
+    UpdateRGB,
 }
 
 // Lógica principal do programa.
@@ -154,6 +159,7 @@ impl KCOverlay {
         let stats_type_str = config["stats_type"].as_str().unwrap_or("Bedwars Geral");
         let stats_type = StatsType::from_string(stats_type_str);
         let window_scale = config["window_scale"].as_f64().unwrap_or(1.0);
+        let rgb_buttons = config["rgb_buttons"].as_bool().unwrap_or(false);
 
         let screen = if is_first_use {
             Screen::Welcome
@@ -179,6 +185,9 @@ impl KCOverlay {
                 searched_player_stats_type: StatsType::BedwarsAll,
                 stats_type,
                 window_scale,
+                is_visible: true,
+                rgb_buttons,
+                rgb_offset: 0.0,
             },
             Task::batch(vec![
                 Task::perform(update::check_updates(), Message::CheckedUpdates),
@@ -267,7 +276,12 @@ impl KCOverlay {
                             window::get_latest().and_then(|x| {
                                 window::set_level(x, iced::window::Level::AlwaysOnTop)
                             }),
-                            window::get_latest().and_then(|x| window::minimize(x, false)),
+                            if !self.is_visible {
+                                self.is_visible = true;
+                                window::get_latest().and_then(|x| window::minimize(x, false))
+                            } else {
+                                Task::none()
+                            },
                         ])
                     } else {
                         Task::none()
@@ -284,6 +298,7 @@ impl KCOverlay {
                 if self.loading || self.never_minimize {
                     Task::none()
                 } else {
+                    self.is_visible = false;
                     Task::batch(vec![
                         window::get_latest().and_then(|x| window::minimize(x, true))
                     ])
@@ -342,7 +357,10 @@ impl KCOverlay {
                     None => Task::none(),
                 }
             }
-            Message::Minimize => window::get_latest().and_then(|x| window::minimize(x, true)),
+            Message::Minimize => {
+                self.is_visible = false;
+                window::get_latest().and_then(|x| window::minimize(x, true))
+            }
             // Ordena o código responsável por ler os logs para ler os logs de outro client.
             Message::ClientUpdate => match &self.logs_sender {
                 Some(sender) => {
@@ -359,10 +377,14 @@ impl KCOverlay {
                 PlayerSender::Done => {
                     self.loading = false;
                     self.player_getter_sender = None;
-                    Task::perform(
-                        util::wait(Duration::from_secs(self.seconds_to_minimize)),
-                        |_| Message::ChangeLevel,
-                    )
+                    if !self.never_minimize {
+                        Task::perform(
+                            util::wait(Duration::from_secs(self.seconds_to_minimize)),
+                            |_| Message::ChangeLevel,
+                        )
+                    } else {
+                        Task::none()
+                    }
                 }
                 PlayerSender::Sender(new_sender) => {
                     match self.player_getter_sender.clone() {
@@ -455,18 +477,18 @@ impl KCOverlay {
             }
             Message::ChangeNeverMinimize(bool) => {
                 self.never_minimize = bool;
-                config::save_settings(Some(bool), None, None, None, None);
+                config::save_settings(Some(bool), None, None, None, None, None);
                 Task::none()
             }
             Message::ChangeSecondsToMinimize(f_seconds) => {
                 let u_seconds = f_seconds as u64;
                 self.seconds_to_minimize = u_seconds;
-                config::save_settings(None, Some(u_seconds), None, None, None);
+                config::save_settings(None, Some(u_seconds), None, None, None, None);
                 Task::none()
             }
             Message::ChangeRemoveEliminatedPlayers(bool) => {
                 self.auto_manage_players = bool;
-                config::save_settings(None, None, Some(bool), None, None);
+                config::save_settings(None, None, Some(bool), None, None, None);
                 Task::none()
             }
             Message::ViewPlayerInputChanged(text) => {
@@ -497,19 +519,28 @@ impl KCOverlay {
             Message::StatsSelect(stats_type) => {
                 self.stats_type = stats_type.clone();
                 self.players.clear();
-                config::save_settings(None, None, None, Some(stats_type.to_string()), None);
+                config::save_settings(None, None, None, Some(stats_type.to_string()), None, None);
                 Task::none()
             }
             Message::WindowScaleChanged(scale) => {
                 let scale = scale / 100.;
                 self.window_scale = scale;
-                config::save_settings(None, None, None, None, Some(scale));
+                config::save_settings(None, None, None, None, Some(scale), None);
                 window::get_latest().and_then(move |x| {
                     window::resize(x, Size::new(745. * scale as f32, 460. * scale as f32))
                 })
             }
             Message::UpdateWaitTime => {
                 self.waiting -= 1;
+                Task::none()
+            }
+            Message::ChangeRGBButtons(enabled) => {
+                self.rgb_buttons = enabled;
+                config::save_settings(None, None, None, None, None, Some(enabled));
+                Task::none()
+            }
+            Message::UpdateRGB => {
+                self.rgb_offset = (self.rgb_offset + 0.02) % 1.0;
                 Task::none()
             }
         }
@@ -535,6 +566,10 @@ impl KCOverlay {
             subscriptions.push(time::every(Duration::from_secs(1)).map(|_| Message::UpdateWaitTime))
         }
 
+        if self.rgb_buttons {
+            subscriptions.push(time::every(Duration::from_millis(50)).map(|_| Message::UpdateRGB));
+        }
+
         Subscription::batch(subscriptions)
     }
 
@@ -554,6 +589,12 @@ impl KCOverlay {
             b_level.partial_cmp(&a_level).unwrap()
         });
         self.players.truncate(16);
+    }
+
+    fn get_rgb_color(&self, offset: f32) -> Color {
+        let hue = (self.rgb_offset + offset) % 1.0;
+        let (r, g, b) = util::hsv_to_rgb(hue, 0.7, 1.0);
+        Color::from_rgb(r, g, b)
     }
 }
 

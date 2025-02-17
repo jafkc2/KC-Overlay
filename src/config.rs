@@ -72,6 +72,12 @@ pub fn check_config_file() -> bool {
                 serde_json::to_value(1.0).unwrap(),
             );
         }
+        if !map.contains_key("rgb_buttons") {
+            map.insert(
+                "rgb_buttons".to_owned(),
+                serde_json::to_value(false).unwrap(),
+            );
+        }
     }
 
     let serializedjson = serde_json::to_string_pretty(&conf_json).unwrap();
@@ -87,6 +93,7 @@ pub fn save_settings(
     auto_manage_players: Option<bool>,
     stats_type: Option<String>,
     window_scale: Option<f64>,
+    rgb_buttons: Option<bool>, // Novo parâmetro
 ) {
     let mut config = get_config();
 
@@ -104,6 +111,9 @@ pub fn save_settings(
     }
     if let Some(scale) = window_scale {
         config["window_scale"] = serde_json::json!(scale)
+    }
+    if let Some(rgb) = rgb_buttons {
+        config["rgb_buttons"] = serde_json::json!(rgb)
     }
 
     let mut config_file = OpenOptions::new()

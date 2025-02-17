@@ -61,6 +61,23 @@ pub fn lunar_get_newer_logs_path() -> String {
     format!("{}/offline/multiver/logs/latest.log", lunar_dir)
 }
 
+pub fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
+    let c = v * s;
+    let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
+    let m = v - c;
+    
+    let (r, g, b) = match (h * 6.0).floor() as i32 {
+        0 => (c, x, 0.0),
+        1 => (x, c, 0.0),
+        2 => (0.0, c, x),
+        3 => (0.0, x, c),
+        4 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+
+    (r + m, g + m, b + m)
+}
+
 #[derive(Debug, Clone)]
 pub struct Rgb {
     red: u8,
