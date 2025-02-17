@@ -1,3 +1,5 @@
+//! Módulos contendo funções para retornar widgets do Iced com tema.
+
 use std::{borrow::Borrow, ops::RangeInclusive};
 
 use iced::{

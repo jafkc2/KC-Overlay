@@ -1,12 +1,16 @@
+//!  Módulo com estruturas de stats.
+
 use std::fmt::Display;
 
 use crate::util::Rgb;
 
+// Todos os stats
 #[derive(Debug, Clone)]
 pub enum Stats {
     Bedwars(Bedwars),
 }
 
+// Stats de Bedwars
 #[derive(Debug, Clone)]
 pub struct Bedwars {
     pub level: i32,

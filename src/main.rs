@@ -74,7 +74,7 @@ fn main() {
         .unwrap();
 }
 
-// Estrutura do programa, aqui estão salvas todas as variáveis necessárias.
+/// Estrutura do programa, aqui estão salvas todas as variáveis necessárias.
 #[derive(Default)]
 struct KCOverlay {
     screen: Screen,
@@ -98,7 +98,7 @@ struct KCOverlay {
     rgb_offset: f32,
 }
 
-// Mensagens enviadas para o programa saber quando atualizar variáveis, executar funções, e etc.
+/// Mensagens enviadas para o programa saber quando atualizar variáveis, executar funções, e etc.
 #[derive(Debug, Clone)]
 enum Message {
     ChangeScreen(Screen),
@@ -135,7 +135,7 @@ impl KCOverlay {
     const FONT: &'static [u8] = include_bytes!("../fonts/Manrope-Regular.ttf");
     const SYMBOL_FONT: &'static [u8] = include_bytes!("../fonts/NotoSansSymbols2-Regular.ttf");
 
-    // Função executada após o início da lógica. Ela coleta os dados do arquivo de configuração.
+    /// Função executada após o início da lógica. Ela coleta os dados do arquivo de configuração.
     fn new() -> (Self, Task<Message>) {
         let is_first_use = config::check_config_file();
 
@@ -205,7 +205,7 @@ impl KCOverlay {
         format!("KC Overlay {}", env!("CARGO_PKG_VERSION"))
     }
 
-    // Qualquer mensagem passará por esta função, executando sua respectiva ação.
+    /// Função para lidar com as mensagens.
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::ChangeScreen(screen) => {
@@ -441,7 +441,7 @@ impl KCOverlay {
                             .to_string_lossy()
                             .to_string();
 
-                        // renames current executable to KC-Overlay.old and renames updated executable to KC-Overlay
+                        // Coloca a extensão .old no executável antigo e renomeia o executável atualizado para o nome do executável antigo.
                         fs::rename(&exec_path, exec_path.with_extension("old")).unwrap();
                         fs::rename(exec_path.with_extension("new"), exec_path).unwrap();
 
@@ -546,12 +546,12 @@ impl KCOverlay {
         }
     }
 
-    // Interface
+    /// Renderiza a interface.
     fn view(&self) -> Element<Message> {
         screens::get_screen(self.screen, self).into()
     }
 
-    // Gerencia subscriptions. Basicamente código que é executado fora da lógica principal e que tem a capacidade de enviar mensagens.
+    /// Gerencia subscriptions, que são basicamente código que é executado fora da lógica principal e que tem a capacidade de enviar mensagens.
     fn subscription(&self) -> Subscription<Message> {
         let event = event::listen().map(Message::GotEvent);
         let logs_reader = Subscription::run(logs_reader).map(Message::Log);
@@ -604,7 +604,7 @@ enum LogReader {
     Log(String),
     Sender(mpsc::Sender<MineClient>),
 }
-// Leitor de logs. Envia toda linha dos logs para a lógica principal, com o objetivo de obter a lista de jogadores.
+/// Função para ler os logs. Envia toda linha dos logs para a lógica principal, com o objetivo de obter a lista de jogadores.
 fn logs_reader() -> impl Stream<Item = LogReader> {
     stream::channel(100, |mut output| async move {
         // comunicação entre a lógica principal e esta stream.
@@ -750,7 +750,7 @@ impl Display for MineClient {
     }
 }
 
-// Estrutura de um update.
+/// Estrutura de um update.
 #[derive(Default)]
 struct Update {
     available: bool,

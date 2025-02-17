@@ -1,4 +1,4 @@
-// Código para funções essenciais
+//! Módulo para funções de utilidade geral.
 
 use std::{fs::File, io::Read, path::Path, time::Duration};
 

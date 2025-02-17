@@ -1,3 +1,5 @@
+//! Módulo com funções para update do KC Overlay.
+
 use std::{
     env,
     fs::File,
@@ -77,11 +79,11 @@ pub async fn install_update(url: String) -> Result<(), String> {
     #[cfg(target_os = "linux")]
     {
         use std::os::unix::fs::PermissionsExt;
-        let mut permission = fs::metadata(exec_path.with_extension("new"))
+        let mut permission = std::fs::metadata(exec_path.with_extension("new"))
             .unwrap()
             .permissions();
         permission.set_mode(0o755);
-        fs::set_permissions(exec_path.with_extension("new"), permission).unwrap();
+        std::fs::set_permissions(exec_path.with_extension("new"), permission).unwrap();
     }
 
     println!("{url}");

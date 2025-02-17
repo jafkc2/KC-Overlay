@@ -1,4 +1,4 @@
-// Aqui está todo a interface do KC Overlay, o design e as mensagens produzidas por cada widget.
+//! Neste módulo está todo a interface do KC Overlay, o design e as mensagens produzidas por cada widget.
 
 use iced::{
     theme,
@@ -320,7 +320,7 @@ pub fn get_screen(
             ));
 
             let creditos = text(format!(
-                "KC Overlay {} - Criado por Jafkc2 - Desenvolvedor: oRvdy",
+                "KC Overlay {} - Desenvolvido por Jafkc2 e oRvdy",
                 env!("CARGO_PKG_VERSION")
             ));
             let github = button("Acessar Github").on_press(Message::OpenLink(String::from(

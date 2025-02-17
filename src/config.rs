@@ -1,3 +1,5 @@
+//! Módulo com funções para gerenciar o arquivo de configuração.
+
 use std::{
     fs::{self, File, OpenOptions},
     io::Write,
@@ -17,6 +19,9 @@ pub fn get_config() -> Value {
     super::util::get_json(get_config_file_path())
 }
 
+/// Checa se o arquivo existe.
+/// Caso não exista, esta função cria o arquivo e retorna **False**.
+/// Caso exista, adiciona configurações ausentes e retorna **True**.
 pub fn check_config_file() -> bool {
     let file_exists = Path::new(&get_config_file_path()).exists();
     let mut conf_json = match file_exists {
@@ -87,13 +92,14 @@ pub fn check_config_file() -> bool {
     !file_exists
 }
 
+/// Função para salvar as configurações para o arquivo.
 pub fn save_settings(
     never_minimize: Option<bool>,
     seconds_to_minimize: Option<u64>,
     auto_manage_players: Option<bool>,
     stats_type: Option<String>,
     window_scale: Option<f64>,
-    rgb_buttons: Option<bool>, // Novo parâmetro
+    rgb_buttons: Option<bool>,
 ) {
     let mut config = get_config();
 

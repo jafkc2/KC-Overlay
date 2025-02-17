@@ -1,3 +1,5 @@
+//! Módulo de jogadores.
+
 use iced::{
     futures::{channel::mpsc, future, SinkExt, Stream},
     stream,
@@ -55,6 +57,7 @@ impl Player {
         }
     }
 
+    /// Função para Player usando /nick. É impossível ver os stats deles, então esta função tem menos parâmetros.
     pub fn new_nicked(username: String, stats_type: StatsType) -> Self {
         let stats = match stats_type {
             StatsType::BedwarsAll
@@ -94,7 +97,7 @@ impl Player {
     }
 }
 
-// Pega os stats dos players da API do Mush.
+/// Função para pegar os stats dos players da API do Mush.
 pub fn get_players(
     str_player_list: Vec<String>,
     stats_type: StatsType,
@@ -193,7 +196,7 @@ pub fn get_players(
     })
 }
 
-// Coleta os stats de apenas um jogador.
+/// Função para coletar os stats de apenas um jogador.
 pub async fn get_player(username: &str, stats_type: StatsType) -> Result<Player, ()> {
     let client = Client::new();
     let url = "https://mush.com.br/api/player/".to_string() + username;
@@ -230,6 +233,7 @@ pub async fn get_player(username: &str, stats_type: StatsType) -> Result<Player,
     Ok(get_player_data(username.to_owned(), response, stats_type))
 }
 
+/// Função para processar o Json de stats e transformar na estrutura de jogador.
 fn get_player_data(username: String, response: Value, stats_type: StatsType) -> Player {
     let is_possible_cheater = response["last_login"].as_i64().unwrap()
         - response["first_login"].as_i64().unwrap()
