@@ -316,7 +316,7 @@ pub fn get_screen(
         Screen::Info => {
             let thanks_text = text("Muito obrigado por usar o KC Overlay! Considere virar membro do Discord para saber das novidades");
             let discord_button = button("Entrar no Discord").on_press(Message::OpenLink(
-                String::from("https://discord.gg/SqT7YHSGzJ"),
+                String::from("https://discord.gg/SKwZSpPCN5"),
             ));
 
             let creditos = text(format!(

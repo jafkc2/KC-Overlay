@@ -12,7 +12,7 @@ Apenas abra o overlay e depois digite o comando "/jogando"  no chat do jogo.
 
 # Comunidade
 
-Possui alguma dúvida, sugestão, ou simplesmente quer saber das novidades? Entre no nosso servidor do Discord: https://discord.gg/SqT7YHSGzJ
+Possui alguma dúvida, sugestão, ou simplesmente quer saber das novidades? Entre no nosso servidor do Discord: https://discord.gg/SKwZSpPCN5
 
 # Clients e launchers suportados
 
