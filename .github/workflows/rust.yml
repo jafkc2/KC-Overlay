@@ -35,6 +35,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install X11 library
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libx11-dev
     - name: Build
       run: cargo build --release
     - name: Make binary executable
