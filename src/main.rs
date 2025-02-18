@@ -501,17 +501,14 @@ impl KCOverlay {
             }
 
             Message::ViewPlayer => {
-                match block_on(async {
+                if let Ok(player) = block_on(async {
                     player::get_player(
                         &self.player_to_view_username,
                         self.searched_player_stats_type.clone(),
                     )
                     .await
                 }) {
-                    Ok(player) => {
-                        self.searched_player = Some(player);
-                    }
-                    Err(_) => (),
+                    self.searched_player = Some(player);
                 }
 
                 Task::none()

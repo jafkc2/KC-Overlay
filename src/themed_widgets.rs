@@ -86,7 +86,7 @@ pub fn button_with_color<'a>(
         background: Some(Background::Color(color)),
         text_color: Color::from_rgb8(255, 255, 255),
         border: Border {
-            color: color,
+            color,
             width: 0.,
             radius: Radius::new(10),
         },
