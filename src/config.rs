@@ -72,9 +72,18 @@ pub fn check_config_file() -> bool {
             );
         }
         if !map.contains_key("window_scale") {
+            let default_window_scale = match screen_size::get_primary_screen_size(){
+                Ok(screen_size) => {
+                    (screen_size.0 as f32 * screen_size.1 as f32 / (1920.*1080.)).clamp(0.7, 1.25)
+                },
+                Err(_) => 1.0,
+            };
+            
+            println!("Escala de janela configurada para {}", default_window_scale);
+
             map.insert(
                 "window_scale".to_owned(),
-                serde_json::to_value(1.0).unwrap(),
+                serde_json::to_value(default_window_scale).unwrap(),
             );
         }
         if !map.contains_key("rgb_buttons") {

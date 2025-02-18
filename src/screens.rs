@@ -266,7 +266,7 @@ pub fn get_screen(
                 Message::WindowScaleChanged,
             );
             let window_scale_row = row![
-                text(format!("Tamanho da janela ({}x):", app.window_scale)),
+                text(format!("Tamanho da janela ({:.2}x):", app.window_scale)),
                 window_scale_slider
             ]
             .spacing(10);

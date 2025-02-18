@@ -11,6 +11,7 @@ dependencies = [
  "open",
  "reqwest",
  "rfd",
+ "screen_size",
  "serde_json",
  "tokio",
  "winres",
@@ -3378,6 +3379,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
+name = "screen_size"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "229d35040d3b7ec552e3ea47b2967107eb87b356f9adb71ad8e4d2d72f478b31"
+dependencies = [
+ "core-graphics 0.24.0",
+ "thiserror",
+ "winapi",
+ "x11",
+]
+
+[[package]]
 name = "sctk-adwaita"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4988,6 +5001,16 @@ name = "writeable"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
+
+[[package]]
+name = "x11"
+version = "2.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "502da5464ccd04011667b11c435cb992822c2c0dbde1770c988480d312a0db2e"
+dependencies = [
+ "libc",
+ "pkg-config",
+]
 
 [[package]]
 name = "x11-dl"
