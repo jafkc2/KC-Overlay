@@ -9,18 +9,11 @@ use std::{
 };
 
 use iced::{
-    event,
-    futures::{
+    event, exit, futures::{
         channel::mpsc::{self, Sender},
         executor::block_on,
         SinkExt, Stream, StreamExt,
-    },
-    mouse::Button,
-    stream,
-    theme::Style,
-    time,
-    window::{self, Position, Settings},
-    Color, Element, Font, Point, Size, Subscription, Task,
+    }, mouse::Button, stream, theme::Style, time, window::{self, Position, Settings}, Color, Element, Font, Point, Size, Subscription, Task
 };
 use player::Player;
 use screens::Screen;
@@ -45,23 +38,21 @@ fn main() {
         }
     }
 
-    let icon = include_bytes!("../assets/icon.png");
-
     // Executa a lógica do programa.
-    iced::application(KCOverlay::title, KCOverlay::update, KCOverlay::view)
+    iced::daemon(KCOverlay::title, KCOverlay::update, KCOverlay::view)
         .subscription(KCOverlay::subscription)
-        .resizable(false)
-        .decorations(false)
-        .transparent(true)
-        .window(Settings {
-            size: Size::new(745., 460.),
-            position: Position::Specific(Point::new(0., 50.)),
-            resizable: false,
-            decorations: false,
-            transparent: true,
-            icon: Some(window::icon::from_file_data(icon, None).unwrap()),
-            ..Default::default()
-        })
+        //.resizable(false)
+        //.decorations(false)
+        //.transparent(true)
+        // .window(Settings {
+        //     size: Size::new(745., 460.),
+        //     position: Position::Specific(Point::new(0., 50.)),
+        //     resizable: false,
+        //     decorations: false,
+        //     transparent: true,
+        //     icon: Some(window::icon::from_file_data(icon, None).unwrap()),
+        //     ..Default::default()
+        // })
         .style(|_, _| Style {
             background_color: Color::from_rgba8(24, 25, 33, 0.75),
             text_color: Color::WHITE,
@@ -75,7 +66,6 @@ fn main() {
 }
 
 /// Estrutura do programa, aqui estão salvas todas as variáveis necessárias.
-#[derive(Default)]
 struct KCOverlay {
     screen: Screen,
     players: Vec<Player>,
@@ -93,6 +83,7 @@ struct KCOverlay {
     searched_player_stats_type: StatsType,
     stats_type: StatsType,
     window_scale: f64,
+    window_id: window::Id,
     is_visible: bool,
     rgb_buttons: bool,
     rgb_offset: f32,
@@ -167,6 +158,18 @@ impl KCOverlay {
             Screen::Main
         };
 
+        let icon = include_bytes!("../assets/icon.png");
+
+        let (window_id, window_task) = window::open(Settings {
+            size: Size::new(745. * window_scale as f32, 460. * window_scale as f32),
+            position: Position::Specific(Point::new(0., 50.)),
+            resizable: false,
+            decorations: false,
+            transparent: true,
+            icon: Some(window::icon::from_file_data(icon, None).unwrap()),
+            ..Default::default()
+        });
+
         (
             Self {
                 screen,
@@ -185,23 +188,19 @@ impl KCOverlay {
                 searched_player_stats_type: StatsType::BedwarsAll,
                 stats_type,
                 window_scale,
+                window_id,
                 is_visible: true,
                 rgb_buttons,
                 rgb_offset: 0.0,
             },
             Task::batch(vec![
                 Task::perform(update::check_updates(), Message::CheckedUpdates),
-                window::get_latest().and_then(move |x| {
-                    window::resize(
-                        x,
-                        Size::new(745. * window_scale as f32, 460. * window_scale as f32),
-                    )
-                }),
+                window_task.discard(),
             ]),
         )
     }
 
-    fn title(&self) -> String {
+    fn title(&self, _window: window::Id) -> String {
         format!("KC Overlay {}", env!("CARGO_PKG_VERSION"))
     }
 
@@ -273,12 +272,11 @@ impl KCOverlay {
                                 player::get_players(str_players, self.stats_type.clone()),
                                 |player_sender: PlayerSender| Message::PlayerSender(player_sender),
                             ),
-                            window::get_latest().and_then(|x| {
-                                window::set_level(x, iced::window::Level::AlwaysOnTop)
-                            }),
+                            window::set_level(self.window_id, iced::window::Level::AlwaysOnTop)
+                            ,
                             if !self.is_visible {
                                 self.is_visible = true;
-                                window::get_latest().and_then(|x| window::minimize(x, false))
+                                window::minimize(self.window_id, false)
                             } else {
                                 Task::none()
                             },
@@ -300,18 +298,18 @@ impl KCOverlay {
                 } else {
                     self.is_visible = false;
                     Task::batch(vec![
-                        window::get_latest().and_then(|x| window::minimize(x, true))
+                        window::minimize(self.window_id, true)
                     ])
                 }
             }
             // Arrasta a janela quando o botão do mouse está segurado.
             Message::GotEvent(event) => match event {
                 iced::Event::Mouse(iced::mouse::Event::ButtonPressed(Button::Left)) => {
-                    window::get_latest().and_then(window::drag)
+                    window::drag(self.window_id)
                 }
                 _ => Task::none(),
             },
-            Message::Close => window::get_latest().and_then(window::close),
+            Message::Close => exit(),
             // Seleciona o Client e salva no arquivo de configuração.
             Message::ClientSelect(mine_client) => {
                 self.client = mine_client.clone();
@@ -359,7 +357,7 @@ impl KCOverlay {
             }
             Message::Minimize => {
                 self.is_visible = false;
-                window::get_latest().and_then(|x| window::minimize(x, true))
+                window::minimize(self.window_id, true)
             }
             // Ordena o código responsável por ler os logs para ler os logs de outro client.
             Message::ClientUpdate => match &self.logs_sender {
@@ -523,9 +521,7 @@ impl KCOverlay {
                 let scale = scale / 100.;
                 self.window_scale = scale;
                 config::save_settings(None, None, None, None, Some(scale), None);
-                window::get_latest().and_then(move |x| {
-                    window::resize(x, Size::new(745. * scale as f32, 460. * scale as f32))
-                })
+                window::resize(self.window_id, Size::new(745. * scale as f32, 460. * scale as f32))
             }
             Message::UpdateWaitTime => {
                 self.waiting -= 1;
@@ -544,7 +540,7 @@ impl KCOverlay {
     }
 
     /// Renderiza a interface.
-    fn view(&self) -> Element<Message> {
+    fn view(&self, _window: window::Id) -> Element<Message> {
         screens::get_screen(self.screen, self).into()
     }
 
@@ -570,7 +566,7 @@ impl KCOverlay {
         Subscription::batch(subscriptions)
     }
 
-    fn scale_factor(&self) -> f64 {
+    fn scale_factor(&self, _window: window::Id) -> f64 {
         self.window_scale
     }
 
