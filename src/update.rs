@@ -68,7 +68,7 @@ pub async fn check_updates() -> Result<String, String> {
         }
         Ok(url)
     } else {
-        Err("KC-Overlay está atualizado.".to_string())
+        Err("KC Overlay está atualizado.".to_string())
     }
 }
 

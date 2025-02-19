@@ -57,6 +57,9 @@ pub fn get_screen(
             let mut winrate_column = Column::new().align_x(Alignment::Center);
             let mut fkdr_column = Column::new().align_x(Alignment::Center);
             let mut kdr_column = Column::new().align_x(Alignment::Center);
+            let mut wins_column = Column::new().align_x(Alignment::Center);
+            let mut losses_column = Column::new().align_x(Alignment::Center);
+
 
             let players = app.players.clone();
 
@@ -66,6 +69,8 @@ pub fn get_screen(
                 winrate_column = winrate_column.push(text("WLR"));
                 fkdr_column = fkdr_column.push(text("FKDR"));
                 kdr_column = kdr_column.push(text("KDR"));
+                wins_column = wins_column.push("Vitórias");
+                losses_column =  losses_column.push("Derrotas");
             }
             for player in players {
                 let (
@@ -76,6 +81,7 @@ pub fn get_screen(
                     winrate,
                     final_kill_death_ratio,
                     kill_death_ratio,
+                    wins, losses
                 ) = match player.stats {
                     crate::stats::Stats::Bedwars(bedwars) => (
                         bedwars.level,
@@ -85,6 +91,8 @@ pub fn get_screen(
                         bedwars.winrate,
                         bedwars.final_kill_death_ratio,
                         bedwars.kill_death_ratio,
+                        bedwars.wins,
+                        bedwars.losses
                     ),
                 };
                 let clan = if let Some(value) = &player.clan {
@@ -111,14 +119,16 @@ pub fn get_screen(
 
                 let username_widget = text(player.username).color(player.username_color.to_color());
                 let clan_widget = text(clan).color(player.clan_color.to_color());
-                let (winstreak_widget, winrate_widget, fkdr, kdr) = if player.is_nicked {
-                    (text("?"), text("?"), text("?"), text("?"))
+                let (winstreak_widget, winrate_widget, fkdr, kdr, wins_text, losses_text) = if player.is_nicked {
+                    (text("?"), text("?"), text("?"), text("?"), text("?"), text("?"))
                 } else {
                     (
                         text(format!("{}", winstreak)),
                         text(format!("{:.2}", winrate)),
                         text(format!("{:.2}", final_kill_death_ratio)),
                         text(format!("{:.2}", kill_death_ratio)),
+                        text(format!("{}", wins)),
+                        text(format!("{}", losses))
                     )
                 };
 
@@ -128,14 +138,18 @@ pub fn get_screen(
                 winstreak_column = winstreak_column.push(winstreak_widget);
                 winrate_column = winrate_column.push(winrate_widget);
                 fkdr_column = fkdr_column.push(fkdr);
-                kdr_column = kdr_column.push(kdr)
+                kdr_column = kdr_column.push(kdr);
+                wins_column = wins_column.push(wins_text);
+                losses_column = losses_column.push(losses_text);
             }
             let column_row = row![
                 username_column,
                 winstreak_column,
                 winrate_column,
                 fkdr_column,
-                kdr_column
+                kdr_column,
+                wins_column,
+                losses_column
             ]
             .spacing(15);
             let container = container(column_row);
