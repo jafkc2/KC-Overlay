@@ -11,6 +11,7 @@ use crate::{
     themed_widgets::{
         button, button_with_color, pick_list, red_button, secondary_button, slider, text_input, toggler,
     },
+    theme::Colors,
     util, Message, MineClient,
 };
 
@@ -65,12 +66,12 @@ pub fn get_screen(
 
             if !players.is_empty() {
                 username_column = username_column.push(text("Nome"));
-                winstreak_column = winstreak_column.push(text("WS"));
-                winrate_column = winrate_column.push(text("WLR"));
-                fkdr_column = fkdr_column.push(text("FKDR"));
-                kdr_column = kdr_column.push(text("KDR"));
-                wins_column = wins_column.push("Vitórias");
-                losses_column =  losses_column.push("Derrotas");
+                winstreak_column = winstreak_column.push(text("WS").color(Colors::Peach.get()));
+                winrate_column = winrate_column.push(text("WLR").color(Colors::Mauve.get()));
+                fkdr_column = fkdr_column.push(text("FKDR").color(Colors::Blue.get()));
+                kdr_column = kdr_column.push(text("KDR").color(Colors::Blue.get()));
+                wins_column = wins_column.push(text("Vitórias").color(Colors::Green.get()));
+                losses_column =  losses_column.push(text("Derrotas").color(Colors::Red.get()));
             }
             for player in players {
                 let (
@@ -135,12 +136,12 @@ pub fn get_screen(
                 let username_row = row![level_widget, username_widget, clan_widget].spacing(5);
 
                 username_column = username_column.push(username_row);
-                winstreak_column = winstreak_column.push(winstreak_widget);
-                winrate_column = winrate_column.push(winrate_widget);
-                fkdr_column = fkdr_column.push(fkdr);
-                kdr_column = kdr_column.push(kdr);
-                wins_column = wins_column.push(wins_text);
-                losses_column = losses_column.push(losses_text);
+                winstreak_column = winstreak_column.push(winstreak_widget.color(Colors::Peach.get()));
+                winrate_column = winrate_column.push(winrate_widget.color(Colors::Mauve.get()));
+                fkdr_column = fkdr_column.push(fkdr.color(Colors::Blue.get()));
+                kdr_column = kdr_column.push(kdr.color(Colors::Blue.get()));
+                wins_column = wins_column.push(wins_text.color(Colors::Green.get()));
+                losses_column = losses_column.push(losses_text.color(Colors::Red.get()));
             }
             let column_row = row![
                 username_column,

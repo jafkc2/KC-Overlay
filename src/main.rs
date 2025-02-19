@@ -25,6 +25,7 @@ mod player;
 mod screens;
 mod stats;
 mod themed_widgets;
+mod theme;
 mod update;
 mod util;
 
