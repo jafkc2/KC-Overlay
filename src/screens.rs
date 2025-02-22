@@ -8,10 +8,11 @@ use iced::{
 
 use crate::{
     stats::StatsType,
-    themed_widgets::{
-        button, button_with_color, pick_list, red_button, secondary_button, slider, text_input, toggler,
-    },
     theme::Colors,
+    themed_widgets::{
+        button, button_with_color, pick_list, red_button, scrollable, secondary_button, slider,
+        text_input, toggler,
+    },
     util, Message, MineClient,
 };
 
@@ -23,6 +24,7 @@ pub enum Screen {
     Welcome,
     Info,
     ViewPlayer,
+    StatsConfig,
 }
 
 pub fn get_screen(
@@ -30,6 +32,9 @@ pub fn get_screen(
     app: &super::KCOverlay,
 ) -> Column<'static, super::Message, theme::Theme, Renderer> {
     const COLUMN_HEIGHT: f32 = 390.;
+
+    // Botão pra voltar para a tela inicial
+    let go_back = button("Voltar").on_press(Message::ChangeScreen(Screen::Main));
 
     match screen {
         Screen::Main => {
@@ -61,7 +66,6 @@ pub fn get_screen(
             let mut wins_column = Column::new().align_x(Alignment::Center);
             let mut losses_column = Column::new().align_x(Alignment::Center);
 
-
             let players = app.players.clone();
 
             if !players.is_empty() {
@@ -71,7 +75,7 @@ pub fn get_screen(
                 fkdr_column = fkdr_column.push(text("FKDR").color(Colors::Blue.get()));
                 kdr_column = kdr_column.push(text("KDR").color(Colors::Blue.get()));
                 wins_column = wins_column.push(text("Vitórias").color(Colors::Green.get()));
-                losses_column =  losses_column.push(text("Derrotas").color(Colors::Red.get()));
+                losses_column = losses_column.push(text("Derrotas").color(Colors::Red.get()));
             }
             for player in players {
                 let (
@@ -82,7 +86,8 @@ pub fn get_screen(
                     winrate,
                     final_kill_death_ratio,
                     kill_death_ratio,
-                    wins, losses
+                    wins,
+                    losses,
                 ) = match player.stats {
                     crate::stats::Stats::Bedwars(bedwars) => (
                         bedwars.level,
@@ -93,7 +98,7 @@ pub fn get_screen(
                         bedwars.final_kill_death_ratio,
                         bedwars.kill_death_ratio,
                         bedwars.wins,
-                        bedwars.losses
+                        bedwars.losses,
                     ),
                 };
                 let clan = if let Some(value) = &player.clan {
@@ -120,39 +125,59 @@ pub fn get_screen(
 
                 let username_widget = text(player.username).color(player.username_color.to_color());
                 let clan_widget = text(clan).color(player.clan_color.to_color());
-                let (winstreak_widget, winrate_widget, fkdr, kdr, wins_text, losses_text) = if player.is_nicked {
-                    (text("?"), text("?"), text("?"), text("?"), text("?"), text("?"))
-                } else {
-                    (
-                        text(format!("{}", winstreak)),
-                        text(format!("{:.2}", winrate)),
-                        text(format!("{:.2}", final_kill_death_ratio)),
-                        text(format!("{:.2}", kill_death_ratio)),
-                        text(format!("{}", wins)),
-                        text(format!("{}", losses))
-                    )
-                };
+                let (winstreak_widget, winrate_widget, fkdr, kdr, wins_text, losses_text) =
+                    if player.is_nicked {
+                        (
+                            text("?"),
+                            text("?"),
+                            text("?"),
+                            text("?"),
+                            text("?"),
+                            text("?"),
+                        )
+                    } else {
+                        (
+                            text(format!("{}", winstreak)),
+                            text(format!("{:.2}", winrate)),
+                            text(format!("{:.2}", final_kill_death_ratio)),
+                            text(format!("{:.2}", kill_death_ratio)),
+                            text(format!("{}", wins)),
+                            text(format!("{}", losses)),
+                        )
+                    };
 
                 let username_row = row![level_widget, username_widget, clan_widget].spacing(5);
 
                 username_column = username_column.push(username_row);
-                winstreak_column = winstreak_column.push(winstreak_widget.color(Colors::Peach.get()));
+                winstreak_column =
+                    winstreak_column.push(winstreak_widget.color(Colors::Peach.get()));
                 winrate_column = winrate_column.push(winrate_widget.color(Colors::Mauve.get()));
                 fkdr_column = fkdr_column.push(fkdr.color(Colors::Blue.get()));
                 kdr_column = kdr_column.push(kdr.color(Colors::Blue.get()));
                 wins_column = wins_column.push(wins_text.color(Colors::Green.get()));
                 losses_column = losses_column.push(losses_text.color(Colors::Red.get()));
             }
-            let column_row = row![
-                username_column,
-                winstreak_column,
-                winrate_column,
-                fkdr_column,
-                kdr_column,
-                wins_column,
-                losses_column
-            ]
-            .spacing(15);
+            let mut column_row = row![username_column,].spacing(15);
+
+            if app.show_ws {
+                column_row = column_row.push(winstreak_column);
+            }
+            if app.show_wlr {
+                column_row = column_row.push(winrate_column);
+            }
+            if app.show_fkdr {
+                column_row = column_row.push(fkdr_column);
+            }
+            if app.show_kdr {
+                column_row = column_row.push(kdr_column);
+            }
+            if app.show_wins {
+                column_row = column_row.push(wins_column);
+            }
+            if app.show_losses {
+                column_row = column_row.push(losses_column);
+            }
+
             let container = container(column_row);
 
             let settings_btn = if app.rgb_buttons {
@@ -166,25 +191,29 @@ pub fn get_screen(
                 button_with_color("Ver jogador", app.get_rgb_color(0.2))
             } else {
                 button("Ver jogador")
-            }.on_press(Message::ChangeScreen(Screen::ViewPlayer));
+            }
+            .on_press(Message::ChangeScreen(Screen::ViewPlayer));
 
             let info = if app.rgb_buttons {
                 button_with_color("Sobre", app.get_rgb_color(0.4))
             } else {
                 button("Sobre")
-            }.on_press(Message::ChangeScreen(Screen::Info));
+            }
+            .on_press(Message::ChangeScreen(Screen::Info));
 
             let close = if app.rgb_buttons {
                 button_with_color("Sair", app.get_rgb_color(0.8))
             } else {
                 red_button("Sair")
-            }.on_press(Message::Close);
+            }
+            .on_press(Message::Close);
 
             let minimize = if app.rgb_buttons {
                 button_with_color("Minimizar", app.get_rgb_color(0.6))
             } else {
                 button("Minimizar")
-            }.on_press(Message::Minimize);
+            }
+            .on_press(Message::Minimize);
 
             let mut left_bottom_row = row![settings, view_player, info]
                 .spacing(15)
@@ -220,13 +249,12 @@ pub fn get_screen(
                 Some(app.stats_type.clone()),
                 Message::StatsSelect,
             );
-            let stats_row = row![text("Stats:"), stats_select].spacing(10);
 
-            let go_back = button("Voltar").on_press(Message::ChangeScreen(Screen::Main));
+            let stats_button =
+                button("Configurar stats").on_press(Message::ChangeScreen(Screen::StatsConfig));
+            let stats_row = row![text("Stats:"), stats_select, stats_button].spacing(10);
 
-            let mut main_column = column![client_row, stats_row]
-                .spacing(20)
-                .height(COLUMN_HEIGHT);
+            let mut main_column = column![client_row, stats_row].spacing(20).width(700);
 
             if let MineClient::Custom(path) = &app.client {
                 let custom_client_text = text("Último log do client (ex: logs/latest.log):");
@@ -271,7 +299,7 @@ pub fn get_screen(
                 .on_toggle(Message::ChangeRemoveEliminatedPlayers)
                 .size(20);
             let auto_manage_players_text =
-                text("Adicionar e remover jogadores automaticamente (ainda é necessário digitar o comando antes da partida iniciar)");
+                    text("Adicionar e remover jogadores automaticamente (ainda é necessário digitar o comando antes da partida iniciar)");
             let auto_manage_players_row =
                 row![auto_manage_players_toggler, auto_manage_players_text].spacing(10);
 
@@ -291,13 +319,20 @@ pub fn get_screen(
                 .size(20);
             let rgb_buttons_text = text("Botões RGB");
             let rgb_buttons_row = row![rgb_buttons_toggler, rgb_buttons_text].spacing(10);
-            
+
             main_column = main_column.push(rgb_buttons_row);
 
             main_column = main_column.push(auto_manage_players_row);
             main_column = main_column.push(window_scale_row);
 
-            column![main_column, go_back].padding(10).spacing(10)
+            column![
+                scrollable(main_column)
+                    .height(COLUMN_HEIGHT)
+                    .width(Length::Fill),
+                go_back
+            ]
+            .padding(10)
+            .spacing(10)
         }
         Screen::Welcome => {
             let welcome_text = text("Muito obrigado por usar a overlay! Selecione o client que você usa para proseguir.");
@@ -342,8 +377,6 @@ pub fn get_screen(
                 "https://github.com/jafkc2/KC-Overlay",
             )));
 
-            let go_back = button("Voltar").on_press(Message::ChangeScreen(Screen::Main));
-
             let discord_column = column![thanks_text, discord_button].spacing(10).height(125);
             let credits_column = column![creditos, github].spacing(10);
 
@@ -362,8 +395,6 @@ pub fn get_screen(
             let search_player = button("Ver stats").on_press(Message::ViewPlayer);
             let input_row = row![input, stats_pick_list, search_player].spacing(10);
             let mut main_column = column![input_row].height(COLUMN_HEIGHT).spacing(20);
-
-            let go_back = button("Voltar").on_press(Message::ChangeScreen(Screen::Main));
 
             if let Some(player) = &app.searched_player {
                 let connected = match player.is_connected {
@@ -465,6 +496,42 @@ pub fn get_screen(
 
                 main_column = main_column.push(player_column);
             }
+
+            column![main_column, go_back].spacing(10).padding(10)
+        }
+        Screen::StatsConfig => {
+            use crate::stats::BedwarStat;
+            let main_column = match app.stats_type {
+                StatsType::BedwarsAll
+                | StatsType::BedwarsSolo
+                | StatsType::BedwarsDoubles
+                | StatsType::BedwarsTrios
+                | StatsType::BedwarsQuads => {
+                    let ws = toggler(app.show_ws)
+                        .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Ws, x));
+                    let wlr = toggler(app.show_wlr)
+                        .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Wlr, x));
+                    let fkdr = toggler(app.show_fkdr)
+                        .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Fkdr, x));
+                    let kdr = toggler(app.show_kdr)
+                        .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Kdr, x));
+                    let wins = toggler(app.show_wins)
+                        .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Wins, x));
+                    let losses = toggler(app.show_losses)
+                        .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Losses, x));
+
+                    column![
+                        row![ws, "Mostrar winstreak"],
+                        row![wlr, "Mostrar WLR"],
+                        row![fkdr, "Mostrar FKDR"],
+                        row![kdr, "Mostrar KDR"],
+                        row![wins, "Mostrar vitórias"],
+                        row![losses, "Mostrar derrotas"]
+                    ]
+                    .height(COLUMN_HEIGHT)
+                    .spacing(10)
+                }
+            };
 
             column![main_column, go_back].spacing(10).padding(10)
         }

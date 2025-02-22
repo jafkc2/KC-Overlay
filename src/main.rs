@@ -9,11 +9,18 @@ use std::{
 };
 
 use iced::{
-    event, exit, futures::{
+    event, exit,
+    futures::{
         channel::mpsc::{self, Sender},
         executor::block_on,
         SinkExt, Stream, StreamExt,
-    }, mouse::Button, stream, theme::Style, time, window::{self, Position, Settings}, Color, Element, Font, Point, Size, Subscription, Task
+    },
+    mouse::Button,
+    stream,
+    theme::Style,
+    time,
+    window::{self, Position, Settings},
+    Color, Element, Font, Point, Size, Subscription, Task,
 };
 use player::Player;
 use screens::Screen;
@@ -24,8 +31,8 @@ mod config;
 mod player;
 mod screens;
 mod stats;
-mod themed_widgets;
 mod theme;
+mod themed_widgets;
 mod update;
 mod util;
 
@@ -88,6 +95,12 @@ struct KCOverlay {
     is_visible: bool,
     rgb_buttons: bool,
     rgb_offset: f32,
+    show_ws: bool,
+    show_wlr: bool,
+    show_fkdr: bool,
+    show_kdr: bool,
+    show_wins: bool,
+    show_losses: bool,
 }
 
 /// Mensagens enviadas para o programa saber quando atualizar variáveis, executar funções, e etc.
@@ -119,6 +132,7 @@ enum Message {
     UpdateWaitTime,
     ChangeRGBButtons(bool),
     UpdateRGB,
+    ShowStatsChanged(stats::BedwarStat, bool),
 }
 
 // Lógica principal do programa.
@@ -152,6 +166,12 @@ impl KCOverlay {
         let stats_type = StatsType::from_string(stats_type_str);
         let window_scale = config["window_scale"].as_f64().unwrap_or(1.0);
         let rgb_buttons = config["rgb_buttons"].as_bool().unwrap_or(false);
+        let show_ws = config["show_ws"].as_bool().unwrap_or(true);
+        let show_wlr = config["show_wlr"].as_bool().unwrap_or(true);
+        let show_fkdr = config["show_fkdr"].as_bool().unwrap_or(true);
+        let show_kdr = config["show_kdr"].as_bool().unwrap_or(true);
+        let show_wins = config["show_wins"].as_bool().unwrap_or(true);
+        let show_losses = config["show_losses"].as_bool().unwrap_or(true);
 
         let screen = if is_first_use {
             Screen::Welcome
@@ -193,6 +213,12 @@ impl KCOverlay {
                 is_visible: true,
                 rgb_buttons,
                 rgb_offset: 0.0,
+                show_ws,
+                show_wlr,
+                show_fkdr,
+                show_kdr,
+                show_wins,
+                show_losses,
             },
             Task::batch(vec![
                 Task::perform(update::check_updates(), Message::CheckedUpdates),
@@ -212,7 +238,6 @@ impl KCOverlay {
                 self.screen = screen;
                 Task::none()
             }
-
             Message::Log(log_reader) => match log_reader {
                 LogReader::Log(message) => {
                     // Checa se algum jogador entrou na partida.
@@ -273,8 +298,7 @@ impl KCOverlay {
                                 player::get_players(str_players, self.stats_type.clone()),
                                 |player_sender: PlayerSender| Message::PlayerSender(player_sender),
                             ),
-                            window::set_level(self.window_id, iced::window::Level::AlwaysOnTop)
-                            ,
+                            window::set_level(self.window_id, iced::window::Level::AlwaysOnTop),
                             if !self.is_visible {
                                 self.is_visible = true;
                                 window::minimize(self.window_id, false)
@@ -292,18 +316,14 @@ impl KCOverlay {
                     Task::future(async move { sender.send(client).await.unwrap() }).discard()
                 }
             },
-            // Minimiza a janela
             Message::ChangeLevel => {
                 if self.loading || self.never_minimize {
                     Task::none()
                 } else {
                     self.is_visible = false;
-                    Task::batch(vec![
-                        window::minimize(self.window_id, true)
-                    ])
+                    Task::batch(vec![window::minimize(self.window_id, true)])
                 }
             }
-            // Arrasta a janela quando o botão do mouse está segurado.
             Message::GotEvent(event) => match event {
                 iced::Event::Mouse(iced::mouse::Event::ButtonPressed(Button::Left)) => {
                     window::drag(self.window_id)
@@ -311,7 +331,6 @@ impl KCOverlay {
                 _ => Task::none(),
             },
             Message::Close => exit(),
-            // Seleciona o Client e salva no arquivo de configuração.
             Message::ClientSelect(mine_client) => {
                 self.client = mine_client.clone();
 
@@ -360,14 +379,12 @@ impl KCOverlay {
                 self.is_visible = false;
                 window::minimize(self.window_id, true)
             }
-            // Ordena o código responsável por ler os logs para ler os logs de outro client.
             Message::ClientUpdate => match &self.logs_sender {
                 Some(sender) => {
                     Task::future(update_client(sender.clone(), self.client.clone())).discard()
                 }
                 None => Task::none(),
             },
-            // Gerencia o output do código responsável por ler os logs.
             Message::PlayerSender(player_sender) => match player_sender {
                 PlayerSender::Player(player) => {
                     self.add_player(player);
@@ -402,7 +419,6 @@ impl KCOverlay {
                     Task::none()
                 }
             },
-            // Resultado da verificação de update.
             Message::CheckedUpdates(result) => {
                 match result {
                     Ok(url) => {
@@ -419,7 +435,6 @@ impl KCOverlay {
                 open::that(url).unwrap();
                 Task::none()
             }
-            // Começa a atualização
             Message::Update => {
                 self.update.available = false;
                 Task::perform(
@@ -427,7 +442,6 @@ impl KCOverlay {
                     Message::UpdateResult,
                 )
             }
-            // Resultado da atualização. Caso houver algum erro, a atualização não vai ser completada.
             Message::UpdateResult(result) => {
                 match result {
                     Ok(_) => {
@@ -476,18 +490,18 @@ impl KCOverlay {
             }
             Message::ChangeNeverMinimize(bool) => {
                 self.never_minimize = bool;
-                config::save_settings(Some(bool), None, None, None, None, None);
+                config::save_settings(Some(bool), None, None, None, None, None, None);
                 Task::none()
             }
             Message::ChangeSecondsToMinimize(f_seconds) => {
                 let u_seconds = f_seconds as u64;
                 self.seconds_to_minimize = u_seconds;
-                config::save_settings(None, Some(u_seconds), None, None, None, None);
+                config::save_settings(None, Some(u_seconds), None, None, None, None, None);
                 Task::none()
             }
             Message::ChangeRemoveEliminatedPlayers(bool) => {
                 self.auto_manage_players = bool;
-                config::save_settings(None, None, Some(bool), None, None, None);
+                config::save_settings(None, None, Some(bool), None, None, None, None);
                 Task::none()
             }
             Message::ViewPlayerInputChanged(text) => {
@@ -498,7 +512,6 @@ impl KCOverlay {
                 self.searched_player_stats_type = stats_type;
                 Task::none()
             }
-
             Message::ViewPlayer => {
                 if let Ok(player) = block_on(async {
                     player::get_player(
@@ -515,14 +528,25 @@ impl KCOverlay {
             Message::StatsSelect(stats_type) => {
                 self.stats_type = stats_type.clone();
                 self.players.clear();
-                config::save_settings(None, None, None, Some(stats_type.to_string()), None, None);
+                config::save_settings(
+                    None,
+                    None,
+                    None,
+                    Some(stats_type.to_string()),
+                    None,
+                    None,
+                    None,
+                );
                 Task::none()
             }
             Message::WindowScaleChanged(scale) => {
                 let scale = scale / 100.;
                 self.window_scale = scale;
-                config::save_settings(None, None, None, None, Some(scale), None);
-                window::resize(self.window_id, Size::new(745. * scale as f32, 460. * scale as f32))
+                config::save_settings(None, None, None, None, Some(scale), None, None);
+                window::resize(
+                    self.window_id,
+                    Size::new(745. * scale as f32, 460. * scale as f32),
+                )
             }
             Message::UpdateWaitTime => {
                 self.waiting -= 1;
@@ -530,11 +554,33 @@ impl KCOverlay {
             }
             Message::ChangeRGBButtons(enabled) => {
                 self.rgb_buttons = enabled;
-                config::save_settings(None, None, None, None, None, Some(enabled));
+                config::save_settings(None, None, None, None, None, Some(enabled), None);
                 Task::none()
             }
             Message::UpdateRGB => {
                 self.rgb_offset = (self.rgb_offset + 0.02) % 1.0;
+                Task::none()
+            }
+            Message::ShowStatsChanged(bedwar_stat, bool) => {
+                match bedwar_stat {
+                    stats::BedwarStat::Ws => self.show_ws = bool,
+                    stats::BedwarStat::Wlr => self.show_wlr = bool,
+                    stats::BedwarStat::Fkdr => self.show_fkdr = bool,
+                    stats::BedwarStat::Kdr => self.show_kdr = bool,
+                    stats::BedwarStat::Wins => self.show_wins = bool,
+                    stats::BedwarStat::Losses => self.show_losses = bool,
+                }
+
+                config::save_settings(
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some((bedwar_stat, bool)),
+                );
+
                 Task::none()
             }
         }

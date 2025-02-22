@@ -75,3 +75,13 @@ impl StatsType {
         ]
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum BedwarStat {
+    Ws,
+    Wlr,
+    Fkdr,
+    Kdr,
+    Wins,
+    Losses,
+}

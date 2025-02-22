@@ -8,6 +8,8 @@ use std::{
 
 use serde_json::Value;
 
+use crate::stats;
+
 pub fn get_config_file_path() -> String {
     format!(
         "{}/kc_overlay_config.json",
@@ -72,13 +74,13 @@ pub fn check_config_file() -> bool {
             );
         }
         if !map.contains_key("window_scale") {
-            let default_window_scale = match screen_size::get_primary_screen_size(){
+            let default_window_scale = match screen_size::get_primary_screen_size() {
                 Ok(screen_size) => {
-                    (screen_size.0 as f32 * screen_size.1 as f32 / (1920.*1080.)).clamp(0.7, 1.25)
-                },
+                    (screen_size.0 as f32 * screen_size.1 as f32 / (1920. * 1080.)).clamp(0.7, 1.25)
+                }
                 Err(_) => 1.0,
             };
-            
+
             println!("Escala de janela configurada para {}", default_window_scale);
 
             map.insert(
@@ -90,6 +92,27 @@ pub fn check_config_file() -> bool {
             map.insert(
                 "rgb_buttons".to_owned(),
                 serde_json::to_value(false).unwrap(),
+            );
+        }
+        if !map.contains_key("show_ws") {
+            map.insert("show_ws".to_owned(), serde_json::to_value(true).unwrap());
+        }
+        if !map.contains_key("show_wlr") {
+            map.insert("show_wlr".to_owned(), serde_json::to_value(true).unwrap());
+        }
+        if !map.contains_key("show_fkdr") {
+            map.insert("show_fkdr".to_owned(), serde_json::to_value(true).unwrap());
+        }
+        if !map.contains_key("show_kdr") {
+            map.insert("show_kdr".to_owned(), serde_json::to_value(true).unwrap());
+        }
+        if !map.contains_key("show_wins") {
+            map.insert("show_wins".to_owned(), serde_json::to_value(true).unwrap());
+        }
+        if !map.contains_key("show_losses") {
+            map.insert(
+                "show_losses".to_owned(),
+                serde_json::to_value(true).unwrap(),
             );
         }
     }
@@ -109,6 +132,7 @@ pub fn save_settings(
     stats_type: Option<String>,
     window_scale: Option<f64>,
     rgb_buttons: Option<bool>,
+    show_stats: Option<(stats::BedwarStat, bool)>,
 ) {
     let mut config = get_config();
 

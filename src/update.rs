@@ -1,10 +1,6 @@
 //! Módulo com funções para update do KC Overlay.
 
-use std::{
-    env,
-    fs::File,
-    io::Write,
-};
+use std::{env, fs::File, io::Write};
 
 use reqwest::header::{HeaderValue, USER_AGENT};
 use serde_json::Value;

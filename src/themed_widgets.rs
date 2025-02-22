@@ -5,15 +5,16 @@ use std::{borrow::Borrow, ops::RangeInclusive};
 use iced::{
     border::Radius,
     widget::{
-        slider::{Handle, HandleShape, Rail},
-        PickList, TextInput,
+        container,
+        scrollable::Scroller,
+        slider::{Handle, HandleShape},
+        PickList, Scrollable, TextInput,
     },
     Background, Border, Color, Renderer, Shadow, Theme,
 };
 
-use crate::Message;
 use crate::theme::Colors;
-
+use crate::Message;
 
 pub fn button<'a>(
     content: impl Into<iced::Element<'a, Message, Theme, Renderer>>,
@@ -154,7 +155,7 @@ where
     Message: Clone,
 {
     iced::widget::slider(range, value, on_change).style(|_, _| iced::widget::slider::Style {
-        rail: Rail {
+        rail: iced::widget::slider::Rail {
             backgrounds: (
                 Background::Color(Colors::ButtonColor.get()),
                 Background::Color(Colors::WidgetBackground.get()),
@@ -175,5 +176,34 @@ where
             border_width: 0.,
             border_color: Colors::ButtonColor.get(),
         },
+    })
+}
+
+pub fn scrollable<'a, Message>(
+    content: impl Into<iced::Element<'a, Message, Theme, Renderer>>,
+) -> Scrollable<'a, Message, Theme, Renderer> {
+    let border = Border {
+        color: Colors::WidgetBackground.get(),
+        width: 0.,
+        radius: Radius::new(10),
+    };
+    let rail = iced::widget::scrollable::Rail {
+        background: Some(Background::Color(Colors::WidgetBackground.get())),
+        border,
+        scroller: Scroller {
+            color: Colors::ButtonColor.get(),
+            border,
+        },
+    };
+
+    Scrollable::new(content).style(move |_, _| iced::widget::scrollable::Style {
+        container: {
+            container::Style {
+                ..Default::default()
+            }
+        },
+        vertical_rail: rail,
+        horizontal_rail: rail,
+        gap: Some(Background::Color(Colors::WidgetBackground.get())),
     })
 }

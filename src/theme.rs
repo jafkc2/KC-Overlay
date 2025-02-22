@@ -12,7 +12,7 @@ pub enum Colors {
     Red,
     Green,
     Blue,
-    Mauve
+    Mauve,
 }
 impl Colors {
     pub fn get(&self) -> Color {
