@@ -154,6 +154,28 @@ pub fn save_settings(
     if let Some(rgb) = rgb_buttons {
         config["rgb_buttons"] = serde_json::json!(rgb)
     }
+    if let Some(stat) = show_stats {
+        match stat.0 {
+            stats::BedwarStat::Ws => {
+                config["show_ws"] = serde_json::json!(stat.1)
+            },
+            stats::BedwarStat::Wlr => {
+                config["show_wlr"] = serde_json::json!(stat.1)
+            },
+            stats::BedwarStat::Fkdr => {
+                config["show_fkdr"] = serde_json::json!(stat.1)
+            },
+            stats::BedwarStat::Kdr => {
+                config["show_kdr"] = serde_json::json!(stat.1)
+            },
+            stats::BedwarStat::Wins => {
+                config["show_wins"] = serde_json::json!(stat.1)
+            },
+            stats::BedwarStat::Losses => {
+                config["show_losses"] = serde_json::json!(stat.1)
+            },
+        }
+    }
 
     let mut config_file = OpenOptions::new()
         .write(true)
