@@ -150,12 +150,12 @@ pub fn get_screen(
 
                 username_column = username_column.push(username_row);
                 winstreak_column =
-                    winstreak_column.push(winstreak_widget.color(Colors::Peach.get()));
-                winrate_column = winrate_column.push(winrate_widget.color(Colors::Mauve.get()));
-                fkdr_column = fkdr_column.push(fkdr.color(Colors::Blue.get()));
-                kdr_column = kdr_column.push(kdr.color(Colors::Blue.get()));
-                wins_column = wins_column.push(wins_text.color(Colors::Green.get()));
-                losses_column = losses_column.push(losses_text.color(Colors::Red.get()));
+                    winstreak_column.push(winstreak_widget);
+                winrate_column = winrate_column.push(winrate_widget);
+                fkdr_column = fkdr_column.push(fkdr);
+                kdr_column = kdr_column.push(kdr);
+                wins_column = wins_column.push(wins_text);
+                losses_column = losses_column.push(losses_text);
             }
             let mut column_row = row![username_column,].spacing(15);
 
