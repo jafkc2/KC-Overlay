@@ -641,7 +641,7 @@ enum LogReader {
 }
 /// Função para ler os logs. Envia toda linha dos logs para a lógica principal, com o objetivo de obter a lista de jogadores.
 fn logs_reader() -> impl Stream<Item = LogReader> {
-    stream::channel(100, |mut output| async move {
+    stream::channel(100, |mut output: mpsc::Sender<LogReader>| async move {
         // comunicação entre a lógica principal e esta stream.
         let (sender, mut receiver) = mpsc::channel(100);
         output.send(LogReader::Sender(sender)).await.unwrap();

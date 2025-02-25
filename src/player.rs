@@ -109,7 +109,7 @@ pub fn get_players(
     stats_type: StatsType,
     old_player_list: Vec<Player>,
 ) -> impl Stream<Item = PlayerSender> {
-    stream::channel(100, |mut output| async move {
+    stream::channel(100, |mut output: iced::futures::channel::mpsc::Sender<PlayerSender>| async move {
         let client = Client::new();
         const MUSH_API: &str = "https://mush.com.br/api/player/";
 
