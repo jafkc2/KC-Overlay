@@ -110,12 +110,13 @@ pub fn get_screen(
                 let level_widget = if player.is_nicked {
                     row![text("[NICKED]").color(Color::from_rgb8(255, 255, 0))]
                 } else if player.is_possible_cheater {
-                    row![text("[")
-                        .color(Color::from_rgb8(255, 0, 0)),
+                    row![
+                        text("[").color(Color::from_rgb8(255, 0, 0)),
                         text("☢️")
-                        .color(Color::from_rgb8(255, 0, 0)).font(Font::with_name("Noto Emoji")),
-                        text("]")
-                        .color(Color::from_rgb8(255, 0, 0))]
+                            .color(Color::from_rgb8(255, 0, 0))
+                            .font(Font::with_name("Noto Emoji")),
+                        text("]").color(Color::from_rgb8(255, 0, 0))
+                    ]
                 } else {
                     row![
                         text(format!("[{}", level)).color(level_color.to_color()),
@@ -149,7 +150,16 @@ pub fn get_screen(
                         )
                     };
 
-                let username_row = row![level_widget, username_widget, clan_widget].spacing(5);
+                let mut username_row = row![level_widget, username_widget, clan_widget].spacing(5);
+
+                if player.bans > 0{
+                    let ban_row = row![
+                        text(format!("({}", player.bans)).color(Color::from_rgb8(255, 0, 0)),
+                        text("🔨").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)),
+                        text(")").color(Color::from_rgb8(255, 0, 0))
+                    ];
+                    username_row = username_row.push(ban_row);
+                }
 
                 username_column = username_column.push(username_row);
                 winstreak_column = winstreak_column.push(winstreak_widget);
@@ -521,6 +531,7 @@ pub fn get_screen(
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Wins, x));
                     let losses = toggler(app.show_losses)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Losses, x));
+                    let bans = toggler(app.show_bans).on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Bans, x));
 
                     column![
                         row![ws, "Mostrar winstreak"],
@@ -528,7 +539,8 @@ pub fn get_screen(
                         row![fkdr, "Mostrar FKDR"],
                         row![kdr, "Mostrar KDR"],
                         row![wins, "Mostrar vitórias"],
-                        row![losses, "Mostrar derrotas"]
+                        row![losses, "Mostrar derrotas"],
+                        row![bans, "Mostrar bans"]
                     ]
                     .height(COLUMN_HEIGHT)
                     .spacing(10)

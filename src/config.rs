@@ -115,6 +115,9 @@ pub fn check_config_file() -> bool {
                 serde_json::to_value(true).unwrap(),
             );
         }
+        if !map.contains_key("show_bans") {
+            map.insert("show_bans".to_owned(), serde_json::to_value(false).unwrap());
+        }
     }
 
     let serializedjson = serde_json::to_string_pretty(&conf_json).unwrap();
@@ -162,6 +165,7 @@ pub fn save_settings(
             stats::BedwarStat::Kdr => config["show_kdr"] = serde_json::json!(stat.1),
             stats::BedwarStat::Wins => config["show_wins"] = serde_json::json!(stat.1),
             stats::BedwarStat::Losses => config["show_losses"] = serde_json::json!(stat.1),
+            stats::BedwarStat::Bans => config["show_bans"] = serde_json::json!(stat.1),
         }
     }
 

@@ -84,4 +84,5 @@ pub enum BedwarStat {
     Kdr,
     Wins,
     Losses,
+    Bans
 }

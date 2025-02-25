@@ -90,6 +90,7 @@ struct KCOverlay {
     show_kdr: bool,
     show_wins: bool,
     show_losses: bool,
+    show_bans: bool,
 }
 
 /// Mensagens enviadas para o programa saber quando atualizar variáveis, executar funções, e etc.
@@ -162,6 +163,7 @@ impl KCOverlay {
         let show_kdr = config["show_kdr"].as_bool().unwrap_or(true);
         let show_wins = config["show_wins"].as_bool().unwrap_or(true);
         let show_losses = config["show_losses"].as_bool().unwrap_or(true);
+        let show_bans = config["show_losses"].as_bool().unwrap_or(false);
 
         let screen = if is_first_use {
             Screen::Welcome
@@ -209,6 +211,7 @@ impl KCOverlay {
                 show_kdr,
                 show_wins,
                 show_losses,
+                show_bans,
             },
             Task::batch(vec![
                 Task::perform(update::check_updates(), Message::CheckedUpdates),
@@ -560,6 +563,7 @@ impl KCOverlay {
                     stats::BedwarStat::Kdr => self.show_kdr = bool,
                     stats::BedwarStat::Wins => self.show_wins = bool,
                     stats::BedwarStat::Losses => self.show_losses = bool,
+                    stats::BedwarStat::Bans => self.show_bans = bool,
                 }
 
                 config::save_settings(
