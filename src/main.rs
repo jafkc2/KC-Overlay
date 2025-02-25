@@ -623,7 +623,7 @@ impl KCOverlay {
             };
             b_level.partial_cmp(&a_level).unwrap()
         });
-        self.players.truncate(16);
+        self.players.truncate(48);
     }
 
     fn get_rgb_color(&self, offset: f32) -> Color {

@@ -56,7 +56,7 @@ pub fn get_screen(
 
             let screen_title_widget = text(screen_title_text);
 
-            let bar = row![screen_title_widget];
+            let title = screen_title_widget;
 
             let mut username_column = Column::new().width(300);
             let mut winstreak_column = Column::new().align_x(Alignment::Center);
@@ -154,7 +154,7 @@ pub fn get_screen(
 
                 let mut username_row = row![level_widget, username_widget, clan_widget].spacing(5);
 
-                if player.bans > 0{
+                if app.show_bans && player.bans > 0{
                     let ban_row = row![
                         text(format!("({}", player.bans)).color(Color::from_rgb8(255, 0, 0)),
                         text("🔨").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)),
@@ -175,7 +175,7 @@ pub fn get_screen(
                 wins_column = wins_column.push(wins_text);
                 losses_column = losses_column.push(losses_text);
             }
-            let mut column_row = row![username_column,].spacing(15);
+            let mut column_row = row![username_column,].spacing(15).width(Length::Fill);
 
             if app.show_ws {
                 column_row = column_row.push(winstreak_column);
@@ -244,7 +244,7 @@ pub fn get_screen(
 
             let bottom_row = row![left_bottom_row, right_bottom_row].spacing(20);
 
-            let main_column = column![bar, container].spacing(10).height(COLUMN_HEIGHT);
+            let main_column = column![title, scrollable(container)].spacing(10).height(COLUMN_HEIGHT);
 
             column![main_column, bottom_row].padding(10).spacing(10)
         }

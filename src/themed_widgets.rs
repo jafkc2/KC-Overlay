@@ -185,13 +185,13 @@ pub fn scrollable<'a, Message>(
     let border = Border {
         color: Colors::WidgetBackground.get(),
         width: 0.,
-        radius: Radius::new(10),
+        radius: Radius::new(5),
     };
     let rail = iced::widget::scrollable::Rail {
         background: Some(Background::Color(Colors::WidgetBackground.get())),
         border,
         scroller: Scroller {
-            color: Colors::ButtonColor.get(),
+            color: Colors::WidgedBackgroundHighlight.get(),
             border,
         },
     };
