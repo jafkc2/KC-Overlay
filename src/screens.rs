@@ -88,6 +88,7 @@ pub fn get_screen(
                     kill_death_ratio,
                     wins,
                     losses,
+                    final_deaths
                 ) = match player.stats {
                     crate::stats::Stats::Bedwars(bedwars) => (
                         bedwars.level,
@@ -99,6 +100,7 @@ pub fn get_screen(
                         bedwars.kill_death_ratio,
                         bedwars.wins,
                         bedwars.losses,
+                        bedwars.final_deaths
                     ),
                 };
                 let clan = if let Some(value) = &player.clan {
@@ -159,6 +161,10 @@ pub fn get_screen(
                         text(")").color(Color::from_rgb8(255, 0, 0))
                     ];
                     username_row = username_row.push(ban_row);
+                }
+
+                if losses > 10 && losses as f32 / final_deaths as f32 > 1.5{
+                    username_row = username_row.push(text("🗡️").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)));
                 }
 
                 username_column = username_column.push(username_row);
