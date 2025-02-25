@@ -131,6 +131,37 @@ pub fn get_screen(
 
                 let username_widget = text(player.username).color(player.username_color.to_color());
                 let clan_widget = text(clan).color(player.clan_color.to_color());
+
+                let winstreak_color = if winstreak  > 50{
+                    Colors::Mauve.get()
+                } else if winstreak > 20{
+                    Colors::Red.get()
+                } else if winstreak > 10{
+                    Colors::Peach.get()
+                } else{
+                    Color::WHITE
+                };
+
+                let wlr_color = if winrate > 5.{
+                    Colors::Mauve.get()
+                } else if winrate > 3.{
+                    Colors::Red.get()
+                } else if winrate > 2.{
+                    Colors::Peach.get()
+                } else{
+                    Color::WHITE
+                };
+
+                let fkdr_color = if final_kill_death_ratio > 15.{
+                    Colors::Mauve.get()
+                } else if final_kill_death_ratio > 10.{
+                    Colors::Red.get()
+                } else if final_kill_death_ratio > 5.{
+                    Colors::Peach.get()
+                } else{
+                    Color::WHITE
+                };
+
                 let (winstreak_widget, winrate_widget, fkdr, kdr, wins_text, losses_text) =
                     if player.is_nicked {
                         (
@@ -143,9 +174,9 @@ pub fn get_screen(
                         )
                     } else {
                         (
-                            text(format!("{}", winstreak)),
-                            text(format!("{:.2}", winrate)),
-                            text(format!("{:.2}", final_kill_death_ratio)),
+                            text(format!("{}", winstreak)).color(winstreak_color),
+                            text(format!("{:.2}", winrate)).color(wlr_color),
+                            text(format!("{:.2}", final_kill_death_ratio)).color(fkdr_color),
                             text(format!("{:.2}", kill_death_ratio)),
                             text(format!("{}", wins)),
                             text(format!("{}", losses)),
