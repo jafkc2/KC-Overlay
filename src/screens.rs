@@ -555,7 +555,9 @@ pub fn get_screen(
                 | StatsType::BedwarsSolo
                 | StatsType::BedwarsDoubles
                 | StatsType::BedwarsTrios
-                | StatsType::BedwarsQuads => {
+                | StatsType::BedwarsQuads
+                | StatsType::Bedwars1v1
+                | StatsType::Bedwars2v2 => {
                     let ws = toggler(app.show_ws)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Ws, x));
                     let wlr = toggler(app.show_wlr)

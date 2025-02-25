@@ -67,7 +67,9 @@ impl Player {
             | StatsType::BedwarsSolo
             | StatsType::BedwarsDoubles
             | StatsType::BedwarsTrios
-            | StatsType::BedwarsQuads => Stats::Bedwars(crate::stats::Bedwars {
+            | StatsType::BedwarsQuads
+            | StatsType::Bedwars1v1
+            | StatsType::Bedwars2v2 => Stats::Bedwars(crate::stats::Bedwars {
                 level: 999,
                 level_symbol: "?".to_string(),
                 winstreak: 0,
@@ -246,7 +248,9 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
         | StatsType::BedwarsSolo
         | StatsType::BedwarsDoubles
         | StatsType::BedwarsTrios
-        | StatsType::BedwarsQuads => {
+        | StatsType::BedwarsQuads
+        | StatsType::Bedwars1v1
+        | StatsType::Bedwars2v2 => {
             let bedwars_stats = response["stats"]["bedwars"].clone();
             let level = if !is_possible_cheater {
                 bedwars_stats["level"].as_i64().unwrap_or(0)
@@ -282,61 +286,82 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 hours_played_entry,
             ) = match stats_type {
                 StatsType::BedwarsAll => (
-                    "winstreak",
-                    "wins",
-                    "losses",
-                    "kills",
-                    "deaths",
-                    "final_kills",
-                    "final_deaths",
-                    "assists",
-                    "bedwars",
-                ),
+                                "winstreak",
+                                "wins",
+                                "losses",
+                                "kills",
+                                "deaths",
+                                "final_kills",
+                                "final_deaths",
+                                "assists",
+                                "bedwars",
+                            ),
                 StatsType::BedwarsSolo => (
-                    "solo_winstreak",
-                    "solo_wins",
-                    "solo_losses",
-                    "solo_kills",
-                    "solo_deaths",
-                    "solo_final_kills",
-                    "solo_final_deaths",
-                    "solo_assists",
-                    "bedwars_solo",
-                ),
+                                "solo_winstreak",
+                                "solo_wins",
+                                "solo_losses",
+                                "solo_kills",
+                                "solo_deaths",
+                                "solo_final_kills",
+                                "solo_final_deaths",
+                                "solo_assists",
+                                "bedwars_solo",
+                            ),
                 StatsType::BedwarsDoubles => (
-                    "doubles_winstreak",
-                    "doubles_wins",
-                    "doubles_losses",
-                    "doubles_kills",
-                    "doubles_deaths",
-                    "doubles_final_kills",
-                    "doubles_final_deaths",
-                    "doubles_assists",
-                    "bedwars_doubles",
-                ),
+                                "doubles_winstreak",
+                                "doubles_wins",
+                                "doubles_losses",
+                                "doubles_kills",
+                                "doubles_deaths",
+                                "doubles_final_kills",
+                                "doubles_final_deaths",
+                                "doubles_assists",
+                                "bedwars_doubles",
+                            ),
                 StatsType::BedwarsTrios => (
-                    "3v3v3v3_winstreak",
-                    "3v3v3v3_wins",
-                    "3v3v3v3_losses",
-                    "3v3v3v3_kills",
-                    "3v3v3v3_deaths",
-                    "3v3v3v3_final_kills",
-                    "3v3v3v3_final_deaths",
-                    "3v3v3v3_assists",
-                    "bedwars_3v3v3v3",
-                ),
+                                "3v3v3v3_winstreak",
+                                "3v3v3v3_wins",
+                                "3v3v3v3_losses",
+                                "3v3v3v3_kills",
+                                "3v3v3v3_deaths",
+                                "3v3v3v3_final_kills",
+                                "3v3v3v3_final_deaths",
+                                "3v3v3v3_assists",
+                                "bedwars_3v3v3v3",
+                            ),
                 StatsType::BedwarsQuads => (
-                    "4v4v4v4_winstreak",
-                    "4v4v4v4_wins",
-                    "4v4v4v4_losses",
-                    "4v4v4v4_kills",
-                    "4v4v4v4_deaths",
-                    "4v4v4v4_final_kills",
-                    "4v4v4v4_final_deaths",
-                    "4v4v4v4_assists",
-                    "bedwars_4v4v4v4",
+                                "4v4v4v4_winstreak",
+                                "4v4v4v4_wins",
+                                "4v4v4v4_losses",
+                                "4v4v4v4_kills",
+                                "4v4v4v4_deaths",
+                                "4v4v4v4_final_kills",
+                                "4v4v4v4_final_deaths",
+                                "4v4v4v4_assists",
+                                "bedwars_4v4v4v4",
+                            ),
+                StatsType::Bedwars1v1 => (
+                    "1v1_winstreak",
+                    "1v1_wins",
+                    "1v1_losses",
+                    "1v1_kills",
+                    "1v1_deaths",
+                    "1v1_final_kills",
+                    "1v1_final_deaths",
+                    "1v1_assists",
+                    "bedwars_1v1",
                 ),
-                //_ => panic!("Impossível!"),
+                StatsType::Bedwars2v2 => (
+                    "2v2_winstreak",
+                    "2v2_wins",
+                    "2v2_losses",
+                    "2v2_kills",
+                    "2v2_deaths",
+                    "2v2_final_kills",
+                    "2v2_final_deaths",
+                    "2v2_assists",
+                    "bedwars_2v2",
+                ),
             };
 
             let winstreak = bedwars_stats[ws_entry].as_i64().unwrap_or(0) as i32;

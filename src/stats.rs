@@ -38,6 +38,8 @@ pub enum StatsType {
     BedwarsDoubles,
     BedwarsTrios,
     BedwarsQuads,
+    Bedwars1v1,
+    Bedwars2v2
 }
 
 impl Display for StatsType {
@@ -48,6 +50,8 @@ impl Display for StatsType {
             StatsType::BedwarsDoubles => write!(f, "Bedwars Duplas"),
             StatsType::BedwarsTrios => write!(f, "Bedwars Trios"),
             StatsType::BedwarsQuads => write!(f, "Bedwars Quartetos"),
+            StatsType::Bedwars1v1 => write!(f, "Bedwars 1v1"),
+            StatsType::Bedwars2v2 => write!(f, "Bedwars 2v2"),
         }
     }
 }
@@ -60,6 +64,8 @@ impl StatsType {
             "Bedwars Duplas" => StatsType::BedwarsDoubles,
             "Bedwars Trios" => StatsType::BedwarsTrios,
             "Bedwars Quartetos" => StatsType::BedwarsQuads,
+            "Bedwars 1v1" => StatsType::Bedwars1v1,
+            "Bedwars 2v2" => StatsType::Bedwars2v2,
 
             _ => StatsType::BedwarsAll,
         }
@@ -72,6 +78,8 @@ impl StatsType {
             StatsType::BedwarsDoubles,
             StatsType::BedwarsTrios,
             StatsType::BedwarsQuads,
+            StatsType::Bedwars1v1,
+            StatsType::Bedwars2v2
         ]
     }
 }
