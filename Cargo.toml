@@ -23,5 +23,5 @@ screen_size = "0.1.0"
 winres = "0.1.12"
 
 [patch.crates-io]
-iced = { git = "https://github.com/iced-rs/iced", rev = "34314b3f576fdfffdd82968a685020d4dca47992" }
-iced_core = { git = "https://github.com/iced-rs/iced", rev = "34314b3f576fdfffdd82968a685020d4dca47992" }
+iced = { git = "https://github.com/iced-rs/iced", rev = "7916a9c2272a3d6d89e7545b33e2991657ad5990" }
+iced_core = { git = "https://github.com/iced-rs/iced", rev = "7916a9c2272a3d6d89e7545b33e2991657ad5990" }
