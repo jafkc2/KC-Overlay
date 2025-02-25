@@ -199,8 +199,12 @@ impl Rgb {
 }
 
 pub fn unix_time_to_date(time: i64) -> String {
-    let date_time = DateTime::from_timestamp(time / 1000, 0)
+    if time == 0{
+        "?".to_owned()
+    } else{
+        let date_time = DateTime::from_timestamp(time / 1000, 0)
         .unwrap()
         .with_timezone(&chrono::FixedOffset::east_opt(-3 * 3600).unwrap());
-    date_time.format("%d/%m/%y às %H:%M").to_string()
+        date_time.format("%d/%m/%y às %H:%M").to_string()
+    }
 }

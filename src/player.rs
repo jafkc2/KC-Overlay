@@ -218,8 +218,8 @@ pub async fn get_player(username: &str, stats_type: StatsType) -> Result<Player,
 
 /// Função para processar o Json de stats e transformar na estrutura de jogador.
 fn get_player_data(username: String, response: Value, stats_type: StatsType) -> Player {
-    let is_possible_cheater = response["last_login"].as_i64().unwrap()
-        - response["first_login"].as_i64().unwrap()
+    let is_possible_cheater = response["last_login"].as_i64().unwrap_or(9_999_999_999_999)
+        - response["first_login"].as_i64().unwrap_or(0)
         < 7200000;
 
     let username_color = response["rank_tag"]["color"].as_str().unwrap();
@@ -232,8 +232,8 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
         (None, "#ffffff")
     };
 
-    let account_creation = response["first_login"].as_i64().unwrap();
-    let last_login = response["last_login"].as_i64().unwrap();
+    let account_creation = response["first_login"].as_i64().unwrap_or(0);
+    let last_login = response["last_login"].as_i64().unwrap_or(0);
     let is_connected = response["connected"].as_bool().unwrap();
 
     let stats = match stats_type {

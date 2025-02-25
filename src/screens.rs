@@ -432,7 +432,7 @@ pub fn get_screen(
                             text(format!("[{}", bedwars.level))
                                 .color(bedwars.level_color.to_color()),
                             text(bedwars.level_symbol.clone())
-                                .font(Font::with_name("Noto Sans Symbols 2"))
+                                .font(Font::with_name("Balsamiq Sans"))
                                 .color(bedwars.level_color.to_color()),
                             text("]").color(bedwars.level_color.to_color())
                         ];
