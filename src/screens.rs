@@ -149,8 +149,7 @@ pub fn get_screen(
                 let username_row = row![level_widget, username_widget, clan_widget].spacing(5);
 
                 username_column = username_column.push(username_row);
-                winstreak_column =
-                    winstreak_column.push(winstreak_widget);
+                winstreak_column = winstreak_column.push(winstreak_widget);
                 winrate_column = winrate_column.push(winrate_widget);
                 fkdr_column = fkdr_column.push(fkdr);
                 kdr_column = kdr_column.push(kdr);

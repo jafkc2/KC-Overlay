@@ -248,13 +248,21 @@ impl KCOverlay {
                             for (index, part) in splitted_message.clone().into_iter().enumerate() {
                                 if part == "entrou" {
                                     let player_name = splitted_message[index - 1];
-                                    let player = block_on(async {
-                                        player::get_player(player_name, self.stats_type.clone())
-                                            .await
-                                    });
 
-                                    if let Ok(ok) = player {
-                                        self.add_player(ok);
+                                    let is_already_in_list = self
+                                        .players
+                                        .iter()
+                                        .any(|player| player.username == player_name);
+
+                                    if !is_already_in_list {
+                                        let player = block_on(async {
+                                            player::get_player(player_name, self.stats_type.clone())
+                                                .await
+                                        });
+
+                                        if let Ok(ok) = player {
+                                            self.add_player(ok);
+                                        }
                                     }
                                 }
                             }
@@ -278,7 +286,7 @@ impl KCOverlay {
                     }
 
                     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
-                    if message.contains("[CHAT] Jogadores") && self.waiting < 1 {
+                    if message.contains("[CHAT] Jogadores") && self.waiting < 1 && !self.loading {
                         let split = message.split("):").map(|x| x.to_string());
                         let split_vector: Vec<String> = split.clone().collect();
 
@@ -290,12 +298,17 @@ impl KCOverlay {
                             .map(|x| x.to_string())
                             .collect();
 
+                        let old_players = self.players.clone();
                         self.players.clear();
                         self.loading = true;
 
                         Task::batch(vec![
                             Task::run(
-                                player::get_players(str_players, self.stats_type.clone()),
+                                player::get_players(
+                                    str_players,
+                                    self.stats_type.clone(),
+                                    old_players,
+                                ),
                                 |player_sender: PlayerSender| Message::PlayerSender(player_sender),
                             ),
                             window::set_level(self.window_id, iced::window::Level::AlwaysOnTop),
@@ -401,18 +414,6 @@ impl KCOverlay {
                     } else {
                         Task::none()
                     }
-                }
-                PlayerSender::Sender(new_sender) => {
-                    match self.player_getter_sender.clone() {
-                        Some(mut sender) => {
-                            block_on(async {
-                                sender.send(()).await.unwrap();
-                            });
-                            self.player_getter_sender = Some(new_sender)
-                        }
-                        None => self.player_getter_sender = Some(new_sender),
-                    }
-                    Task::none()
                 }
                 PlayerSender::WaitOrder => {
                     self.waiting = 50;
@@ -756,7 +757,6 @@ fn get_logs_path(client: MineClient) -> String {
 enum PlayerSender {
     Player(Player),
     WaitOrder,
-    Sender(mpsc::Sender<()>),
     Done,
 }
 

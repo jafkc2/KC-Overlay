@@ -1,7 +1,7 @@
 //! Módulo de jogadores.
 
 use iced::{
-    futures::{channel::mpsc, future, SinkExt, Stream},
+    futures::{future, SinkExt, Stream},
     stream,
 };
 use reqwest::Client;
@@ -101,36 +101,42 @@ impl Player {
 pub fn get_players(
     str_player_list: Vec<String>,
     stats_type: StatsType,
+    old_player_list: Vec<Player>,
 ) -> impl Stream<Item = PlayerSender> {
     stream::channel(100, |mut output| async move {
-        let (sender, mut receiver) = mpsc::channel(100);
-
-        output.send(PlayerSender::Sender(sender)).await.unwrap();
         let client = Client::new();
         const MUSH_API: &str = "https://mush.com.br/api/player/";
 
-        let mut interrupted = false;
         let rate_limited_arc = Arc::new(Mutex::new(false));
 
-        // Processa jogadores em grupos de 4
-        for chunk in str_player_list.chunks(4) {
-            let mut futures = Vec::new();
+        let mut futures = vec![];
 
-            // Cria futures para cada jogador no grupo
-            for player_name in chunk {
-                let client = client.clone();
-                let stats_type = stats_type.clone();
-                let url = format!("{}{}", MUSH_API, player_name);
+        for player_name in str_player_list {
+            let client = client.clone();
+            let stats_type = stats_type.clone();
+            let url = format!("{}{}", MUSH_API, player_name);
 
-                let rate_limited = Arc::clone(&rate_limited_arc);
+            let rate_limited = Arc::clone(&rate_limited_arc);
 
-                futures.push(async move {
+            let future_output = output.clone();
+
+            let cloned_old_player_list = old_player_list.clone();
+
+            futures.push(async move {
+                    for player in cloned_old_player_list{
+                        if player.username == player_name{
+                            future_output.clone().send(PlayerSender::Player(player)).await.unwrap();
+                            return None;
+                        }
+                    }
+
                     let request = match client.get(url).send().await {
                         Ok(response) => {
                             let rate_limit = response.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap().parse().unwrap_or(0);
                             if rate_limit < 1{
                                 let mut rate_limited = rate_limited.lock().await;
                                 *rate_limited = true;
+                                future_output.clone().send(PlayerSender::WaitOrder).await.unwrap();
                                 println!("Esperar até podermos consultar a API novamente.");
                                 return None;
                             }
@@ -157,42 +163,19 @@ pub fn get_players(
                     };
 
                     if !json["success"].as_bool().unwrap() {
-                        return Some(Player::new_nicked(player_name.to_string(), stats_type));
+                        future_output.clone().send(PlayerSender::Player(Player::new_nicked(player_name, stats_type))).await.unwrap();
+
+                    } else{
+                        let response = json["response"].clone();
+                        future_output.clone().send(PlayerSender::Player(get_player_data(player_name.to_string(), response, stats_type))).await.unwrap();
                     }
 
-                    let response = json["response"].clone();
-                    Some(get_player_data(player_name.to_string(), response, stats_type))
+                    Some(())
                 });
-
-                let rate_limited_outer = Arc::clone(&rate_limited_arc);
-
-                if *rate_limited_outer.lock().await {
-                    break;
-                }
-            }
-
-            // Executa o grupo de futures concorrentemente
-            let results = future::join_all(futures).await;
-
-            // Envia resultados para thread principal
-            for player in results.into_iter().flatten() {
-                if receiver.try_next().is_ok() {
-                    interrupted = true;
-                    break;
-                }
-                output.send(PlayerSender::Player(player)).await.unwrap();
-            }
-
-            if interrupted || *rate_limited_arc.lock().await {
-                break;
-            }
         }
-        if *rate_limited_arc.lock().await {
-            output.send(PlayerSender::WaitOrder).await.unwrap()
-        }
-        if !interrupted {
-            output.send(PlayerSender::Done).await.unwrap();
-        }
+        // Executa o grupo de futures concorrentemente
+        future::join_all(futures).await;
+        output.send(PlayerSender::Done).await.unwrap();
     })
 }
 
