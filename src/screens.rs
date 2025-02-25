@@ -117,7 +117,7 @@ pub fn get_screen(
                     row![
                         text(format!("[{}", level)).color(level_color.to_color()),
                         text(level_symbol)
-                            .font(Font::with_name("Noto Sans Symbols 2"))
+                            .font(Font::with_name("Balsamiq Sans"))
                             .color(level_color.to_color()),
                         text("]").color(level_color.to_color())
                     ]

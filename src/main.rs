@@ -49,18 +49,6 @@ fn main() {
     // Executa a lógica do programa.
     iced::daemon(KCOverlay::title, KCOverlay::update, KCOverlay::view)
         .subscription(KCOverlay::subscription)
-        //.resizable(false)
-        //.decorations(false)
-        //.transparent(true)
-        // .window(Settings {
-        //     size: Size::new(745., 460.),
-        //     position: Position::Specific(Point::new(0., 50.)),
-        //     resizable: false,
-        //     decorations: false,
-        //     transparent: true,
-        //     icon: Some(window::icon::from_file_data(icon, None).unwrap()),
-        //     ..Default::default()
-        // })
         .style(|_, _| Style {
             background_color: Color::from_rgba8(24, 25, 33, 0.75),
             text_color: Color::WHITE,
@@ -139,7 +127,7 @@ enum Message {
 impl KCOverlay {
     // Fontes :D
     const FONT: &'static [u8] = include_bytes!("../fonts/Manrope-Regular.ttf");
-    const SYMBOL_FONT: &'static [u8] = include_bytes!("../fonts/NotoSansSymbols2-Regular.ttf");
+    const SYMBOL_FONT: &'static [u8] = include_bytes!("../fonts/BalsamiqSans-Regular.ttf");
 
     /// Função executada após o início da lógica. Ela coleta os dados do arquivo de configuração.
     fn new() -> (Self, Task<Message>) {
