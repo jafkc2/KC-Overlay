@@ -110,9 +110,12 @@ pub fn get_screen(
                 let level_widget = if player.is_nicked {
                     row![text("[NICKED]").color(Color::from_rgb8(255, 255, 0))]
                 } else if player.is_possible_cheater {
-                    row![text("[possível CHEATER]")
-                        .color(Color::from_rgb8(255, 0, 0))
-                        .size(12)]
+                    row![text("[")
+                        .color(Color::from_rgb8(255, 0, 0)),
+                        text("☢️")
+                        .color(Color::from_rgb8(255, 0, 0)).font(Font::with_name("Noto Emoji")),
+                        text("]")
+                        .color(Color::from_rgb8(255, 0, 0))]
                 } else {
                     row![
                         text(format!("[{}", level)).color(level_color.to_color()),

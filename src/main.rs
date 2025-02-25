@@ -55,6 +55,7 @@ fn main() {
         })
         .font(KCOverlay::FONT)
         .font(KCOverlay::SYMBOL_FONT)
+        .font(KCOverlay::EMOJI_FONT)
         .default_font(Font::with_name("Manrope"))
         .scale_factor(KCOverlay::scale_factor)
         .run_with(KCOverlay::new)
@@ -128,6 +129,7 @@ impl KCOverlay {
     // Fontes :D
     const FONT: &'static [u8] = include_bytes!("../fonts/Manrope-Regular.ttf");
     const SYMBOL_FONT: &'static [u8] = include_bytes!("../fonts/BalsamiqSans-Regular.ttf");
+    const EMOJI_FONT: &'static [u8] = include_bytes!("../fonts/NotoEmoji-Regular.ttf");
 
     /// Função executada após o início da lógica. Ela coleta os dados do arquivo de configuração.
     fn new() -> (Self, Task<Message>) {
