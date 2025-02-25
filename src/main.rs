@@ -163,7 +163,7 @@ impl KCOverlay {
         let show_kdr = config["show_kdr"].as_bool().unwrap_or(true);
         let show_wins = config["show_wins"].as_bool().unwrap_or(true);
         let show_losses = config["show_losses"].as_bool().unwrap_or(true);
-        let show_bans = config["show_losses"].as_bool().unwrap_or(false);
+        let show_bans = config["show_bans"].as_bool().unwrap_or(false);
 
         let screen = if is_first_use {
             Screen::Welcome
