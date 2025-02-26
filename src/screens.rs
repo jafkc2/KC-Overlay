@@ -10,8 +10,8 @@ use crate::{
     stats::StatsType,
     theme::Colors,
     themed_widgets::{
-        button, button_with_color, pick_list, red_button, scrollable, secondary_button, slider,
-        text_input, toggler,
+        button, button_with_color, pick_list, scrollable, secondary_button, slider,
+        text_input, toggler, window_button,
     },
     util, Message, MineClient,
 };
@@ -56,7 +56,15 @@ pub fn get_screen(
 
             let screen_title_widget = text(screen_title_text);
 
-            let title = screen_title_widget;
+            let close = 
+                window_button("x", Color::from_rgb8(230, 69, 83))
+            .on_press(Message::Close);
+
+            let minimize =
+                window_button("–", Colors::ButtonColor.get())
+            .on_press(Message::Minimize);
+
+            let title_bar = row![screen_title_widget.width(Length::Fill), minimize, close].spacing(15);
 
             let mut username_column = Column::new().width(300);
             let mut winstreak_column = Column::new().align_x(Alignment::Center);
@@ -270,32 +278,19 @@ pub fn get_screen(
             }
             .on_press(Message::ChangeScreen(Screen::Info));
 
-            let close = if app.rgb_buttons {
-                button_with_color("Sair", app.get_rgb_color(0.8))
-            } else {
-                red_button("Sair")
-            }
-            .on_press(Message::Close);
 
-            let minimize = if app.rgb_buttons {
-                button_with_color("Minimizar", app.get_rgb_color(0.6))
-            } else {
-                button("Minimizar")
-            }
-            .on_press(Message::Minimize);
 
             let mut left_bottom_row = row![settings, view_player, info]
                 .spacing(15)
                 .width(Length::Fill);
-            let right_bottom_row = row![minimize, close].spacing(15);
             if app.update.available {
                 let update_button = secondary_button("Atualizar").on_press(Message::Update);
                 left_bottom_row = left_bottom_row.push(update_button);
             }
 
-            let bottom_row = row![left_bottom_row, right_bottom_row].spacing(20);
+            let bottom_row = row![left_bottom_row].spacing(20);
 
-            let main_column = column![title, scrollable(container)]
+            let main_column = column![title_bar, scrollable(container)]
                 .spacing(10)
                 .height(COLUMN_HEIGHT);
 
