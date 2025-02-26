@@ -113,26 +113,28 @@ pub fn get_players(
     stats_type: StatsType,
     old_player_list: Vec<Player>,
 ) -> impl Stream<Item = PlayerSender> {
-    stream::channel(100, |mut output: iced::futures::channel::mpsc::Sender<PlayerSender>| async move {
-        let client = Client::new();
-        const MUSH_API: &str = "https://mush.com.br/api/player/";
+    stream::channel(
+        100,
+        |mut output: iced::futures::channel::mpsc::Sender<PlayerSender>| async move {
+            let client = Client::new();
+            const MUSH_API: &str = "https://mush.com.br/api/player/";
 
-        let rate_limited_arc = Arc::new(Mutex::new(false));
+            let rate_limited_arc = Arc::new(Mutex::new(false));
 
-        let mut futures = vec![];
+            let mut futures = vec![];
 
-        for player_name in str_player_list {
-            let client = client.clone();
-            let stats_type = stats_type.clone();
-            let url = format!("{}{}", MUSH_API, player_name);
+            for player_name in str_player_list {
+                let client = client.clone();
+                let stats_type = stats_type.clone();
+                let url = format!("{}{}", MUSH_API, player_name);
 
-            let rate_limited = Arc::clone(&rate_limited_arc);
+                let rate_limited = Arc::clone(&rate_limited_arc);
 
-            let future_output = output.clone();
+                let future_output = output.clone();
 
-            let cloned_old_player_list = old_player_list.clone();
+                let cloned_old_player_list = old_player_list.clone();
 
-            futures.push(async move {
+                futures.push(async move {
                     for player in cloned_old_player_list{
                         if player.username == player_name{
                             future_output.clone().send(PlayerSender::Player(player)).await.unwrap();
@@ -182,11 +184,12 @@ pub fn get_players(
 
                     Some(())
                 });
-        }
-        // Executa o grupo de futures concorrentemente
-        future::join_all(futures).await;
-        output.send(PlayerSender::Done).await.unwrap();
-    })
+            }
+            // Executa o grupo de futures concorrentemente
+            future::join_all(futures).await;
+            output.send(PlayerSender::Done).await.unwrap();
+        },
+    )
 }
 
 /// Função para coletar os stats de apenas um jogador.
@@ -291,60 +294,60 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 hours_played_entry,
             ) = match stats_type {
                 StatsType::BedwarsAll => (
-                                "winstreak",
-                                "wins",
-                                "losses",
-                                "kills",
-                                "deaths",
-                                "final_kills",
-                                "final_deaths",
-                                "assists",
-                                "bedwars",
-                            ),
+                    "winstreak",
+                    "wins",
+                    "losses",
+                    "kills",
+                    "deaths",
+                    "final_kills",
+                    "final_deaths",
+                    "assists",
+                    "bedwars",
+                ),
                 StatsType::BedwarsSolo => (
-                                "solo_winstreak",
-                                "solo_wins",
-                                "solo_losses",
-                                "solo_kills",
-                                "solo_deaths",
-                                "solo_final_kills",
-                                "solo_final_deaths",
-                                "solo_assists",
-                                "bedwars_solo",
-                            ),
+                    "solo_winstreak",
+                    "solo_wins",
+                    "solo_losses",
+                    "solo_kills",
+                    "solo_deaths",
+                    "solo_final_kills",
+                    "solo_final_deaths",
+                    "solo_assists",
+                    "bedwars_solo",
+                ),
                 StatsType::BedwarsDoubles => (
-                                "doubles_winstreak",
-                                "doubles_wins",
-                                "doubles_losses",
-                                "doubles_kills",
-                                "doubles_deaths",
-                                "doubles_final_kills",
-                                "doubles_final_deaths",
-                                "doubles_assists",
-                                "bedwars_doubles",
-                            ),
+                    "doubles_winstreak",
+                    "doubles_wins",
+                    "doubles_losses",
+                    "doubles_kills",
+                    "doubles_deaths",
+                    "doubles_final_kills",
+                    "doubles_final_deaths",
+                    "doubles_assists",
+                    "bedwars_doubles",
+                ),
                 StatsType::BedwarsTrios => (
-                                "3v3v3v3_winstreak",
-                                "3v3v3v3_wins",
-                                "3v3v3v3_losses",
-                                "3v3v3v3_kills",
-                                "3v3v3v3_deaths",
-                                "3v3v3v3_final_kills",
-                                "3v3v3v3_final_deaths",
-                                "3v3v3v3_assists",
-                                "bedwars_3v3v3v3",
-                            ),
+                    "3v3v3v3_winstreak",
+                    "3v3v3v3_wins",
+                    "3v3v3v3_losses",
+                    "3v3v3v3_kills",
+                    "3v3v3v3_deaths",
+                    "3v3v3v3_final_kills",
+                    "3v3v3v3_final_deaths",
+                    "3v3v3v3_assists",
+                    "bedwars_3v3v3v3",
+                ),
                 StatsType::BedwarsQuads => (
-                                "4v4v4v4_winstreak",
-                                "4v4v4v4_wins",
-                                "4v4v4v4_losses",
-                                "4v4v4v4_kills",
-                                "4v4v4v4_deaths",
-                                "4v4v4v4_final_kills",
-                                "4v4v4v4_final_deaths",
-                                "4v4v4v4_assists",
-                                "bedwars_4v4v4v4",
-                            ),
+                    "4v4v4v4_winstreak",
+                    "4v4v4v4_wins",
+                    "4v4v4v4_losses",
+                    "4v4v4v4_kills",
+                    "4v4v4v4_deaths",
+                    "4v4v4v4_final_kills",
+                    "4v4v4v4_final_deaths",
+                    "4v4v4v4_assists",
+                    "bedwars_4v4v4v4",
+                ),
                 StatsType::Bedwars1v1 => (
                     "1v1_winstreak",
                     "1v1_wins",

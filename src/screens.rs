@@ -132,39 +132,39 @@ pub fn get_screen(
                 let username_widget = text(player.username).color(player.username_color.to_color());
                 let clan_widget = text(clan).color(player.clan_color.to_color());
 
-                let winstreak_color = if winstreak > 100{
+                let winstreak_color = if winstreak > 100 {
                     app.get_rgb_color(0.6)
-                } else if winstreak  > 50{
-                    Color::from_rgb8(	128, 0, 128)
-                } else if winstreak > 20{
-                    Color::from_rgb8(	255, 0, 0)
-                } else if winstreak > 10{
-                    Color::from_rgb8(	255, 128, 0)
-                } else{
+                } else if winstreak > 50 {
+                    Color::from_rgb8(128, 0, 128)
+                } else if winstreak > 20 {
+                    Color::from_rgb8(255, 0, 0)
+                } else if winstreak > 10 {
+                    Color::from_rgb8(255, 128, 0)
+                } else {
                     Color::WHITE
                 };
 
-                let wlr_color = if winrate > 10.{
+                let wlr_color = if winrate > 10. {
                     app.get_rgb_color(0.6)
-                } else if winrate > 5.{
-                    Color::from_rgb8(	128, 0, 128)
-                } else if winrate > 3.{
-                    Color::from_rgb8(	255, 0, 0)
-                } else if winrate > 2.{
-                    Color::from_rgb8(	255, 128, 0)
-                } else{
+                } else if winrate > 5. {
+                    Color::from_rgb8(128, 0, 128)
+                } else if winrate > 3. {
+                    Color::from_rgb8(255, 0, 0)
+                } else if winrate > 2. {
+                    Color::from_rgb8(255, 128, 0)
+                } else {
                     Color::WHITE
                 };
 
-                let fkdr_color = if final_kill_death_ratio > 50.{
+                let fkdr_color = if final_kill_death_ratio > 50. {
                     app.get_rgb_color(0.6)
-                } else if final_kill_death_ratio > 15.{
-                    Color::from_rgb8(	128, 0, 128)
-                } else if final_kill_death_ratio > 10.{
-                    Color::from_rgb8(	255, 0, 0)
-                } else if final_kill_death_ratio > 5.{
-                    Color::from_rgb8(	255, 128, 0)
-                } else{
+                } else if final_kill_death_ratio > 15. {
+                    Color::from_rgb8(128, 0, 128)
+                } else if final_kill_death_ratio > 10. {
+                    Color::from_rgb8(255, 0, 0)
+                } else if final_kill_death_ratio > 5. {
+                    Color::from_rgb8(255, 128, 0)
+                } else {
                     Color::WHITE
                 };
 
@@ -191,21 +191,31 @@ pub fn get_screen(
 
                 let mut username_row = row![level_widget, username_widget, clan_widget].spacing(5);
 
-                if app.show_bans && player.bans > 0{
+                if app.show_bans && player.bans > 0 {
                     let ban_row = row![
                         text(format!("({}", player.bans)).color(Color::from_rgb8(255, 0, 0)),
-                        text("🔨").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)),
+                        text("🔨")
+                            .font(Font::with_name("Noto Emoji"))
+                            .color(Color::from_rgb8(255, 0, 0)),
                         text(")").color(Color::from_rgb8(255, 0, 0))
                     ];
                     username_row = username_row.push(ban_row);
                 }
 
-                if player.is_muted{
-                    username_row = username_row.push(text("🔇").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)));
+                if player.is_muted {
+                    username_row = username_row.push(
+                        text("🔇")
+                            .font(Font::with_name("Noto Emoji"))
+                            .color(Color::from_rgb8(255, 0, 0)),
+                    );
                 }
-                
-                if losses > 10 && losses as f32 / final_deaths as f32 > 1.5{
-                    username_row = username_row.push(text("🗡️").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)));
+
+                if losses > 10 && losses as f32 / final_deaths as f32 > 1.5 {
+                    username_row = username_row.push(
+                        text("🗡️")
+                            .font(Font::with_name("Noto Emoji"))
+                            .color(Color::from_rgb8(255, 0, 0)),
+                    );
                 }
 
                 username_column = username_column.push(username_row);
@@ -285,7 +295,9 @@ pub fn get_screen(
 
             let bottom_row = row![left_bottom_row, right_bottom_row].spacing(20);
 
-            let main_column = column![title, scrollable(container)].spacing(10).height(COLUMN_HEIGHT);
+            let main_column = column![title, scrollable(container)]
+                .spacing(10)
+                .height(COLUMN_HEIGHT);
 
             column![main_column, bottom_row].padding(10).spacing(10)
         }
@@ -580,7 +592,8 @@ pub fn get_screen(
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Wins, x));
                     let losses = toggler(app.show_losses)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Losses, x));
-                    let bans = toggler(app.show_bans).on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Bans, x));
+                    let bans = toggler(app.show_bans)
+                        .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Bans, x));
 
                     column![
                         row![ws, "Mostrar winstreak"],

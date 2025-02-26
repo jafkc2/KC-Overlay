@@ -39,7 +39,7 @@ pub enum StatsType {
     BedwarsTrios,
     BedwarsQuads,
     Bedwars1v1,
-    Bedwars2v2
+    Bedwars2v2,
 }
 
 impl Display for StatsType {
@@ -79,7 +79,7 @@ impl StatsType {
             StatsType::BedwarsTrios,
             StatsType::BedwarsQuads,
             StatsType::Bedwars1v1,
-            StatsType::Bedwars2v2
+            StatsType::Bedwars2v2,
         ]
     }
 }
@@ -92,5 +92,5 @@ pub enum BedwarStat {
     Kdr,
     Wins,
     Losses,
-    Bans
+    Bans,
 }

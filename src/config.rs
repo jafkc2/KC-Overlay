@@ -116,7 +116,7 @@ pub fn check_config_file() -> bool {
             );
         }
         if !map.contains_key("show_bans") {
-            map.insert("show_bans".to_owned(), serde_json::to_value(false).unwrap());
+            map.insert("show_bans".to_owned(), serde_json::to_value(true).unwrap());
         }
     }
 
