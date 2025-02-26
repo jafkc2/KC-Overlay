@@ -88,7 +88,7 @@ pub fn get_screen(
                     kill_death_ratio,
                     wins,
                     losses,
-                    final_deaths
+                    final_deaths,
                 ) = match player.stats {
                     crate::stats::Stats::Bedwars(bedwars) => (
                         bedwars.level,
@@ -100,7 +100,7 @@ pub fn get_screen(
                         bedwars.kill_death_ratio,
                         bedwars.wins,
                         bedwars.losses,
-                        bedwars.final_deaths
+                        bedwars.final_deaths,
                     ),
                 };
                 let clan = if let Some(value) = &player.clan {
@@ -132,32 +132,38 @@ pub fn get_screen(
                 let username_widget = text(player.username).color(player.username_color.to_color());
                 let clan_widget = text(clan).color(player.clan_color.to_color());
 
-                let winstreak_color = if winstreak  > 50{
-                    Colors::Mauve.get()
+                let winstreak_color = if winstreak > 100{
+                    app.get_rgb_color(0.6)
+                } else if winstreak  > 50{
+                    Color::from_rgb8(	128, 0, 128)
                 } else if winstreak > 20{
-                    Colors::Red.get()
+                    Color::from_rgb8(	255, 0, 0)
                 } else if winstreak > 10{
-                    Colors::Peach.get()
+                    Color::from_rgb8(	255, 128, 0)
                 } else{
                     Color::WHITE
                 };
 
-                let wlr_color = if winrate > 5.{
-                    Colors::Mauve.get()
+                let wlr_color = if winrate > 10.{
+                    app.get_rgb_color(0.6)
+                } else if winrate > 5.{
+                    Color::from_rgb8(	128, 0, 128)
                 } else if winrate > 3.{
-                    Colors::Red.get()
+                    Color::from_rgb8(	255, 0, 0)
                 } else if winrate > 2.{
-                    Colors::Peach.get()
+                    Color::from_rgb8(	255, 128, 0)
                 } else{
                     Color::WHITE
                 };
 
-                let fkdr_color = if final_kill_death_ratio > 15.{
-                    Colors::Mauve.get()
+                let fkdr_color = if final_kill_death_ratio > 50.{
+                    app.get_rgb_color(0.6)
+                } else if final_kill_death_ratio > 15.{
+                    Color::from_rgb8(	128, 0, 128)
                 } else if final_kill_death_ratio > 10.{
-                    Colors::Red.get()
+                    Color::from_rgb8(	255, 0, 0)
                 } else if final_kill_death_ratio > 5.{
-                    Colors::Peach.get()
+                    Color::from_rgb8(	255, 128, 0)
                 } else{
                     Color::WHITE
                 };
@@ -194,6 +200,10 @@ pub fn get_screen(
                     username_row = username_row.push(ban_row);
                 }
 
+                if player.is_muted{
+                    username_row = username_row.push(text("🔇").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)));
+                }
+                
                 if losses > 10 && losses as f32 / final_deaths as f32 > 1.5{
                     username_row = username_row.push(text("🗡️").font(Font::with_name("Noto Emoji")).color(Color::from_rgb8(255, 0, 0)));
                 }

@@ -595,16 +595,13 @@ impl KCOverlay {
         let client_updater =
             time::every(Duration::from_secs(20)).map(move |_| Message::ClientUpdate);
 
-        let mut subscriptions = vec![event, logs_reader, client_updater];
+        let rgb_update = time::every(Duration::from_millis(50)).map(|_| Message::UpdateRGB);
+
+        let mut subscriptions = vec![event, logs_reader, client_updater, rgb_update];
 
         if self.waiting > 0 {
             subscriptions.push(time::every(Duration::from_secs(1)).map(|_| Message::UpdateWaitTime))
         }
-
-        if self.rgb_buttons {
-            subscriptions.push(time::every(Duration::from_millis(50)).map(|_| Message::UpdateRGB));
-        }
-
         Subscription::batch(subscriptions)
     }
 
