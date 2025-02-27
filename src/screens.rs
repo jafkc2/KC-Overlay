@@ -119,14 +119,6 @@ pub fn get_screen(
 
                 let level_widget = if player.is_nicked {
                     row![text("[NICKED]").color(Color::from_rgb8(255, 255, 0))]
-                } else if player.is_possible_cheater {
-                    row![
-                        text("[").color(Color::from_rgb8(255, 0, 0)),
-                        text("☢️")
-                            .color(Color::from_rgb8(255, 0, 0))
-                            .font(Font::with_name("Noto Emoji")),
-                        text("]").color(Color::from_rgb8(255, 0, 0))
-                    ]
                 } else {
                     row![
                         text(format!("[{}", level)).color(level_color.to_color()),
@@ -198,6 +190,15 @@ pub fn get_screen(
                     };
 
                 let mut username_row = row![level_widget, username_widget, clan_widget].spacing(5);
+                
+
+                if player.is_possible_cheater{
+                    username_row = username_row.push(
+                        text("☢️")
+                            .font(Font::with_name("Noto Emoji"))
+                            .color(Color::from_rgb8(255, 0, 0)),
+                    );
+                }
 
                 if app.show_bans && player.bans > 0 {
                     let ban_row = row![

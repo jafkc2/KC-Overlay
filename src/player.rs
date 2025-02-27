@@ -260,11 +260,8 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
         | StatsType::Bedwars1v1
         | StatsType::Bedwars2v2 => {
             let bedwars_stats = response["stats"]["bedwars"].clone();
-            let level = if !is_possible_cheater {
-                bedwars_stats["level"].as_i64().unwrap_or(0)
-            } else {
-                998
-            };
+            let level = bedwars_stats["level"].as_i64().unwrap_or(0);
+
             let level_symbol_raw: String = bedwars_stats["level_badge"]["format"]
                 .as_str()
                 .unwrap()
