@@ -10,8 +10,8 @@ use crate::{
     stats::StatsType,
     theme::Colors,
     themed_widgets::{
-        button, button_with_color, pick_list, scrollable, secondary_button, slider,
-        text_input, toggler, window_button,
+        button, button_with_color, pick_list, scrollable, secondary_button, slider, text_input,
+        toggler, window_button,
     },
     util, Message, MineClient,
 };
@@ -56,15 +56,13 @@ pub fn get_screen(
 
             let screen_title_widget = text(screen_title_text);
 
-            let close = 
-                window_button("x", Color::from_rgb8(230, 69, 83))
-            .on_press(Message::Close);
+            let close = window_button("x", Color::from_rgb8(230, 69, 83)).on_press(Message::Close);
 
             let minimize =
-                window_button("–", Colors::ButtonColor.get())
-            .on_press(Message::Minimize);
+                window_button("–", Colors::ButtonColor.get()).on_press(Message::Minimize);
 
-            let title_bar = row![screen_title_widget.width(Length::Fill), minimize, close].spacing(15);
+            let title_bar =
+                row![screen_title_widget.width(Length::Fill), minimize, close].spacing(15);
 
             let mut username_column = Column::new().width(300);
             let mut winstreak_column = Column::new().align_x(Alignment::Center);
@@ -168,31 +166,42 @@ pub fn get_screen(
                     Color::WHITE
                 };
 
-                let (winstreak_widget, winrate_widget, fkdr, kdr, wins_text, losses_text) =
-                    if player.is_nicked {
-                        (
-                            text("?"),
-                            text("?"),
-                            text("?"),
-                            text("?"),
-                            text("?"),
-                            text("?"),
-                        )
+                let (winstreak_widget, winrate_widget, fkdr, kdr, wins_text, losses_text) = (
+                    if winstreak > 0 {
+                        text(format!("{}", winstreak)).color(winstreak_color)
                     } else {
-                        (
-                            text(format!("{}", winstreak)).color(winstreak_color),
-                            text(format!("{:.2}", winrate)).color(wlr_color),
-                            text(format!("{:.2}", final_kill_death_ratio)).color(fkdr_color),
-                            text(format!("{:.2}", kill_death_ratio)),
-                            text(format!("{}", wins)),
-                            text(format!("{}", losses)),
-                        )
-                    };
+                        text("-")
+                    },
+                    if winrate > 0. {
+                        text(format!("{:.2}", winrate)).color(wlr_color)
+                    } else {
+                        text("-")
+                    },
+                    if final_kill_death_ratio > 0. {
+                        text(format!("{:.2}", final_kill_death_ratio)).color(fkdr_color)
+                    } else {
+                        text("-")
+                    },
+                    if kill_death_ratio > 0. {
+                        text(format!("{:.2}", kill_death_ratio))
+                    } else {
+                        text("-")
+                    },
+                    if wins > 0 {
+                        text(format!("{}", wins))
+                    } else {
+                        text("-")
+                    },
+                    if losses > 0 {
+                        text(format!("{}", losses))
+                    } else {
+                        text("-")
+                    },
+                );
 
                 let mut username_row = row![level_widget, username_widget, clan_widget].spacing(5);
-                
 
-                if player.is_possible_cheater{
+                if player.is_possible_cheater {
                     username_row = username_row.push(
                         text("☢️")
                             .font(Font::with_name("Noto Emoji"))
@@ -278,8 +287,6 @@ pub fn get_screen(
                 button("Sobre")
             }
             .on_press(Message::ChangeScreen(Screen::Info));
-
-
 
             let mut left_bottom_row = row![settings, view_player, info]
                 .spacing(15)

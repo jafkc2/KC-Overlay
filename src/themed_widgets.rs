@@ -64,26 +64,25 @@ pub fn button_with_color<'a>(
 
 pub fn window_button<'a>(
     content: impl Into<iced::Element<'a, Message, Theme, Renderer>>,
-    highlight_color: Color
+    highlight_color: Color,
 ) -> iced::widget::Button<'a, Message, Theme, Renderer> {
-
-
     iced::widget::button(content).style(move |_: &Theme, status| {
-        let color = match status{
+        let color = match status {
             iced::widget::button::Status::Hovered => highlight_color,
-            _ => Colors::WidgetBackground.get()
+            _ => Colors::WidgetBackground.get(),
         };
 
         iced::widget::button::Style {
-        background: Some(Background::Color(color)),
-        text_color: Color::WHITE,
-        border: Border {
-            color,
-            width: 0.,
-            radius: Radius::new(10),
-        },
-        shadow: Shadow::default(),
-    }})
+            background: Some(Background::Color(color)),
+            text_color: Color::WHITE,
+            border: Border {
+                color,
+                width: 0.,
+                radius: Radius::new(10),
+            },
+            shadow: Shadow::default(),
+        }
+    })
 }
 
 pub fn pick_list<'a, T, L, V, Message>(

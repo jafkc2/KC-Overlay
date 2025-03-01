@@ -602,6 +602,7 @@ impl KCOverlay {
         if self.waiting > 0 {
             subscriptions.push(time::every(Duration::from_secs(1)).map(|_| Message::UpdateWaitTime))
         }
+
         Subscription::batch(subscriptions)
     }
 
