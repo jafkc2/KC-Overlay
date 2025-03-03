@@ -1,6 +1,6 @@
 [package]
 name = "KC-Overlay"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2021"
 authors = ["jafkc2"]
 repository = "https://github.com/jafkc2/KC-Overlay"
