@@ -6,7 +6,7 @@ use iced::{
 };
 use reqwest::Client;
 use serde_json::Value;
-use std::sync::Arc;
+use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -115,7 +115,7 @@ impl Player {
 pub fn get_players(
     str_player_list: Vec<String>,
     stats_type: StatsType,
-    old_player_list: Vec<Player>,
+    cached_players: VecDeque<Player>,
 ) -> impl Stream<Item = PlayerSender> {
     stream::channel(
         100,
@@ -136,10 +136,10 @@ pub fn get_players(
 
                 let future_output = output.clone();
 
-                let cloned_old_player_list = old_player_list.clone();
+                let cloned_cached_players = cached_players.clone();
 
                 futures.push(async move {
-                    for player in cloned_old_player_list{
+                    for player in cloned_cached_players{
                         if player.username == player_name{
                             future_output.clone().send(PlayerSender::Player(player)).await.unwrap();
                             return None;
@@ -149,6 +149,10 @@ pub fn get_players(
                     let request = match client.get(url).send().await {
                         Ok(response) => {
                             let rate_limit = response.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap().parse().unwrap_or(0);
+
+                            if (55..=60).contains(&rate_limit){
+                                future_output.clone().send(PlayerSender::FullRateLimitRemaining).await.unwrap();
+                            }
                             if rate_limit < 1{
                                 let mut rate_limited = rate_limited.lock().await;
                                 *rate_limited = true;

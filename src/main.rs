@@ -1,11 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::{
-    env,
-    fmt::Display,
-    fs::{self, File, OpenOptions},
-    io::{BufRead, BufReader, Seek, SeekFrom, Write},
-    path::Path,
-    time::Duration,
+    collections::VecDeque, env, fmt::Display, fs::{self, File, OpenOptions}, io::{BufRead, BufReader, Seek, SeekFrom, Write}, path::Path, time::{Duration, Instant}
 };
 
 use iced::{
@@ -71,8 +66,10 @@ struct KCOverlay {
 struct State {
     screen: Screen,
     players: Vec<Player>,
+    cached_players: VecDeque<Player>,
     loading: bool,
     waiting: i32,
+    time_next_rate_limit_update: Instant,
     logs_sender: Option<mpsc::Sender<MineClient>>,
     player_getter_sender: Option<mpsc::Sender<()>>,
     update: Update,
@@ -194,6 +191,7 @@ impl KCOverlay {
         let state = State {
             screen,
             players: vec![],
+            cached_players: VecDeque::new(),
             loading: false,
             waiting: 0,
             logs_sender: None,
@@ -205,6 +203,7 @@ impl KCOverlay {
             window_id,
             rgb_offset: 0.0,
             is_visible: true,
+            time_next_rate_limit_update: Instant::now(),
         };
 
         let settings = KCSettings {
@@ -311,7 +310,23 @@ impl KCOverlay {
                             .map(|x| x.to_string())
                             .collect();
 
-                        let old_players = self.state.players.clone();
+                        // Sistema de cachê de jogadores para evitar o uso da api
+                        for player in self.state.players.clone(){
+                            let mut already_in_cache = false;
+                            for cached_player in self.state.cached_players.clone(){
+                                if player.username == cached_player.username{
+                                    already_in_cache = true;
+                                }
+                            }
+                            
+                            if !already_in_cache{
+                                self.state.cached_players.push_back(player);
+                                if self.state.cached_players.len() > 200{
+                                    self.state.cached_players.pop_front();
+                                }
+                            }
+                        }
+
                         self.state.players.clear();
                         self.state.loading = true;
 
@@ -320,7 +335,7 @@ impl KCOverlay {
                                 player::get_players(
                                     str_players,
                                     self.settings.stats_type.clone(),
-                                    old_players,
+                                    self.state.cached_players.clone(),
                                 ),
                                 |player_sender: PlayerSender| Message::PlayerSender(player_sender),
                             ),
@@ -418,25 +433,29 @@ impl KCOverlay {
             },
             Message::PlayerSender(player_sender) => match player_sender {
                 PlayerSender::Player(player) => {
-                    self.add_player(player);
-                    Task::none()
-                }
+                                self.add_player(player);
+                                Task::none()
+                            }
                 PlayerSender::Done => {
-                    self.state.loading = false;
-                    self.state.player_getter_sender = None;
-                    if !self.settings.never_minimize {
-                        Task::perform(
-                            util::wait(Duration::from_secs(self.settings.seconds_to_minimize)),
-                            |_| Message::ChangeLevel,
-                        )
-                    } else {
-                        Task::none()
-                    }
-                }
+                                self.state.loading = false;
+                                self.state.player_getter_sender = None;
+                                if !self.settings.never_minimize {
+                                    Task::perform(
+                                        util::wait(Duration::from_secs(self.settings.seconds_to_minimize)),
+                                        |_| Message::ChangeLevel,
+                                    )
+                                } else {
+                                    Task::none()
+                                }
+                            }
                 PlayerSender::WaitOrder => {
-                    self.state.waiting = 50;
+                                self.state.waiting = 60 - self.state.time_next_rate_limit_update.elapsed().as_secs() as i32;
+                                Task::none()
+                            }
+                PlayerSender::FullRateLimitRemaining => {
+                    self.state.time_next_rate_limit_update = Instant::now();
                     Task::none()
-                }
+                },
             },
             Message::CheckedUpdates(result) => {
                 match result {
@@ -775,6 +794,7 @@ enum PlayerSender {
     Player(Player),
     WaitOrder,
     Done,
+    FullRateLimitRemaining
 }
 
 async fn update_client(mut sender: Sender<MineClient>, client: MineClient) {
