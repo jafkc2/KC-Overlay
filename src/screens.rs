@@ -38,19 +38,19 @@ pub fn get_screen(
 
     match screen {
         Screen::Main => {
-            let screen_title_text = if app.players.is_empty() {
+            let screen_title_text = if app.state.players.is_empty() {
                 String::from(
                     "Digite o comando /jogando no chat do Mush para ver os stats dos jogadores",
                 )
-            } else if app.loading {
+            } else if app.state.loading {
                 String::from("Carregando jogadores...")
-            } else if app.waiting > 0 {
-                format!("Espere {} segundos para usar novamente", app.waiting)
+            } else if app.state.waiting > 0 {
+                format!("Espere {} segundos para usar novamente", app.state.waiting)
             } else {
                 format!(
                     "Top {} jogadores da sala ({})",
-                    app.players.len(),
-                    app.stats_type
+                    app.state.players.len(),
+                    app.settings.stats_type
                 )
             };
 
@@ -72,7 +72,7 @@ pub fn get_screen(
             let mut wins_column = Column::new().align_x(Alignment::Center);
             let mut losses_column = Column::new().align_x(Alignment::Center);
 
-            let players = app.players.clone();
+            let players = app.state.players.clone();
 
             if !players.is_empty() {
                 username_column = username_column.push(text("Nome"));
@@ -209,7 +209,7 @@ pub fn get_screen(
                     );
                 }
 
-                if app.show_bans && player.bans > 0 {
+                if app.settings.show_bans && player.bans > 0 {
                     let ban_row = row![
                         text(format!("({}", player.bans)).color(Color::from_rgb8(255, 0, 0)),
                         text("🔨")
@@ -246,42 +246,42 @@ pub fn get_screen(
             }
             let mut column_row = row![username_column,].spacing(15).width(Length::Fill);
 
-            if app.show_ws {
+            if app.settings.show_ws {
                 column_row = column_row.push(winstreak_column);
             }
-            if app.show_wlr {
+            if app.settings.show_wlr {
                 column_row = column_row.push(winrate_column);
             }
-            if app.show_fkdr {
+            if app.settings.show_fkdr {
                 column_row = column_row.push(fkdr_column);
             }
-            if app.show_kdr {
+            if app.settings.show_kdr {
                 column_row = column_row.push(kdr_column);
             }
-            if app.show_wins {
+            if app.settings.show_wins {
                 column_row = column_row.push(wins_column);
             }
-            if app.show_losses {
+            if app.settings.show_losses {
                 column_row = column_row.push(losses_column);
             }
 
             let container = container(column_row);
 
-            let settings_btn = if app.rgb_buttons {
+            let settings_btn = if app.settings.rgb_buttons {
                 button_with_color("Configurações", app.get_rgb_color(0.0))
             } else {
                 button("Configurações")
             };
             let settings = settings_btn.on_press(Message::ChangeScreen(Screen::Settings));
 
-            let view_player = if app.rgb_buttons {
+            let view_player = if app.settings.rgb_buttons {
                 button_with_color("Ver jogador", app.get_rgb_color(0.2))
             } else {
                 button("Ver jogador")
             }
             .on_press(Message::ChangeScreen(Screen::ViewPlayer));
 
-            let info = if app.rgb_buttons {
+            let info = if app.settings.rgb_buttons {
                 button_with_color("Sobre", app.get_rgb_color(0.4))
             } else {
                 button("Sobre")
@@ -291,7 +291,7 @@ pub fn get_screen(
             let mut left_bottom_row = row![settings, view_player, info]
                 .spacing(15)
                 .width(Length::Fill);
-            if app.update.available {
+            if app.state.update.available {
                 let update_button = secondary_button("Atualizar").on_press(Message::Update);
                 left_bottom_row = left_bottom_row.push(update_button);
             }
@@ -315,12 +315,16 @@ pub fn get_screen(
                 MineClient::Custom(" ".to_string()),
             ];
 
-            let client_select = pick_list(clients, Some(app.client.clone()), Message::ClientSelect);
+            let client_select = pick_list(
+                clients,
+                Some(app.settings.client.clone()),
+                Message::ClientSelect,
+            );
             let client_row = row![text("Client:"), client_select].spacing(10);
 
             let stats_select = pick_list(
                 StatsType::get_stats_list(),
-                Some(app.stats_type.clone()),
+                Some(app.settings.stats_type.clone()),
                 Message::StatsSelect,
             );
 
@@ -330,7 +334,7 @@ pub fn get_screen(
 
             let mut main_column = column![client_row, stats_row].spacing(20).width(700);
 
-            if let MineClient::Custom(path) = &app.client {
+            if let MineClient::Custom(path) = &app.settings.client {
                 let custom_client_text = text("Último log do client (ex: logs/latest.log):");
                 let custom_client_path = text_input("Insira o último arquivo de log", path)
                     .on_input(Message::CustomClientPathModified);
@@ -343,7 +347,7 @@ pub fn get_screen(
                     .spacing(20)
             }
 
-            let never_minimize_toggler = toggler(app.never_minimize)
+            let never_minimize_toggler = toggler(app.settings.never_minimize)
                 .on_toggle(Message::ChangeNeverMinimize)
                 .size(20);
 
@@ -354,22 +358,22 @@ pub fn get_screen(
 
             let seconds_to_minimize_text = text(format!(
                 "Mostrar o KC Overlay por {} segundos após carregar os jogadores",
-                app.seconds_to_minimize
+                app.settings.seconds_to_minimize
             ));
             let seconds_to_minimize_slider = slider(
                 5.0..=120.,
-                app.seconds_to_minimize as f64,
+                app.settings.seconds_to_minimize as f64,
                 Message::ChangeSecondsToMinimize,
             )
             .width(240);
             let seconds_to_minimize_column =
                 column![seconds_to_minimize_text, seconds_to_minimize_slider].spacing(5);
 
-            if !app.never_minimize {
+            if !app.settings.never_minimize {
                 main_column = main_column.push(seconds_to_minimize_column)
             }
 
-            let auto_manage_players_toggler = toggler(app.auto_manage_players)
+            let auto_manage_players_toggler = toggler(app.settings.auto_manage_players)
                 .on_toggle(Message::ChangeRemoveEliminatedPlayers)
                 .size(20);
             let auto_manage_players_text =
@@ -379,16 +383,19 @@ pub fn get_screen(
 
             let window_scale_slider = slider(
                 50.0..=125.,
-                app.window_scale * 100.,
+                app.settings.window_scale * 100.,
                 Message::WindowScaleChanged,
             );
             let window_scale_row = row![
-                text(format!("Tamanho da janela ({:.2}x):", app.window_scale)),
+                text(format!(
+                    "Tamanho da janela ({:.2}x):",
+                    app.settings.window_scale
+                )),
                 window_scale_slider
             ]
             .spacing(10);
 
-            let rgb_buttons_toggler = toggler(app.rgb_buttons)
+            let rgb_buttons_toggler = toggler(app.settings.rgb_buttons)
                 .on_toggle(Message::ChangeRGBButtons)
                 .size(20);
             let rgb_buttons_text = text("Botões RGB");
@@ -459,123 +466,147 @@ pub fn get_screen(
             column![main_column, go_back].spacing(10).padding(10)
         }
         Screen::ViewPlayer => {
-            let input = text_input("Nome do jogador", &app.player_to_view_username)
+            let input = text_input("Nome do jogador", &app.state.player_to_view_username)
                 .on_input(Message::ViewPlayerInputChanged);
             let stats_pick_list = pick_list(
                 StatsType::get_stats_list(),
-                Some(app.searched_player_stats_type.clone()),
+                Some(app.state.searched_player_stats_type.clone()),
                 Message::ViewPlayerStatsChanged,
             );
             let search_player = button("Ver stats").on_press(Message::ViewPlayer);
             let input_row = row![input, stats_pick_list, search_player].spacing(10);
             let mut main_column = column![input_row].height(COLUMN_HEIGHT).spacing(20);
 
-            if let Some(player) = &app.searched_player {
-                let connected = match player.is_connected {
-                    true => text("Sim").color(Color::from_rgb8(166, 218, 149)),
-                    false => text("Não").color(Color::from_rgb8(237, 135, 150)),
-                };
-
-                let connected_row = row![text("Online:"), connected].spacing(10);
-
-                let first_login_date = format!(
-                    "Primeiro login: {}.",
-                    util::unix_time_to_date(player.account_creation)
-                );
-                let first_login_widget = text(first_login_date);
-                let last_login_date = format!(
-                    "Último login: {}.",
-                    util::unix_time_to_date(player.last_login)
-                );
-                let last_login_widget = text(last_login_date);
-
-                let clan = if let Some(value) = &player.clan {
-                    format!("[{}]", value)
+            if let Some(player) = &app.state.searched_player {
+                if player.is_nicked {
+                    main_column = main_column.push("O jogador que você pesquisou não existe.");
                 } else {
-                    String::new()
-                };
+                    let connected = match player.is_connected {
+                        true => text("Sim").color(Color::from_rgb8(166, 218, 149)),
+                        false => text("Não").color(Color::from_rgb8(237, 135, 150)),
+                    };
 
-                let username_widget =
-                    text(player.username.clone()).color(player.username_color.to_color());
-                let clan_widget = text(clan).color(player.clan_color.to_color());
+                    let connected_row = row![text("Online:"), connected].spacing(10);
 
-                let player_column = match &player.stats {
-                    crate::stats::Stats::Bedwars(bedwars) => {
-                        let hours_played = text(format!("Horas jogadas: {}", bedwars.hours_played));
+                    let first_login_date = format!(
+                        "Primeiro login: {}.",
+                        util::unix_time_to_date(player.account_creation)
+                    );
+                    let first_login_widget = text(first_login_date);
+                    let last_login_date = format!(
+                        "Último login: {}.",
+                        util::unix_time_to_date(player.last_login)
+                    );
+                    let last_login_widget = text(last_login_date);
 
-                        let level_widget = row![
-                            text(format!("[{}", bedwars.level))
-                                .color(bedwars.level_color.to_color()),
-                            text(bedwars.level_symbol.clone())
-                                .font(Font::with_name("Balsamiq Sans"))
-                                .color(bedwars.level_color.to_color()),
-                            text("]").color(bedwars.level_color.to_color())
-                        ];
-                        let (
-                            winstreak_widget,
-                            winrate_widget,
-                            fkdr,
-                            kdr,
-                            wins,
-                            losses,
-                            final_kills,
-                            final_deaths,
-                            kills,
-                            deaths,
-                            assists,
-                        ) = (
-                            text(format!("Winstreak: {}", bedwars.winstreak)),
-                            text(format!("WLR: {:.2}", bedwars.winrate)),
-                            text(format!("FKDR: {:.2}", bedwars.final_kill_death_ratio)),
-                            text(format!("KDR: {:.2}", bedwars.kill_death_ratio)),
-                            text(format!("Vitórias: {}", bedwars.wins)),
-                            text(format!("Derrotas: {}", bedwars.losses)),
-                            text(format!("Final kills: {}", bedwars.final_kills)),
-                            text(format!("Final deaths: {}", bedwars.final_deaths)),
-                            text(format!("Kills: {}", bedwars.kills)),
-                            text(format!("Mortes: {}", bedwars.deaths)),
-                            text(format!("Assistências: {}", bedwars.assists)),
-                        );
+                    let clan = if let Some(value) = &player.clan {
+                        format!("[{}]", value)
+                    } else {
+                        String::new()
+                    };
 
-                        let username_row =
-                            row![level_widget, username_widget, clan_widget].spacing(5);
+                    let is_banned = match player.is_banned {
+                        true => text("Sim").color(Color::from_rgb8(237, 135, 150)),
+                        false => text("Não").color(Color::from_rgb8(166, 218, 149)),
+                    };
 
-                        let left_column = column![
-                            connected_row,
-                            first_login_widget,
-                            last_login_widget,
-                            hours_played
-                        ]
-                        .spacing(10);
-                        let middle_column =
-                            column![winstreak_widget, winrate_widget, fkdr, kdr].spacing(10);
-                        let right_column = column![
-                            wins,
-                            losses,
-                            final_kills,
-                            final_deaths,
-                            kills,
-                            deaths,
-                            assists
-                        ]
-                        .spacing(10);
+                    let banned_row = row![text("Banido:"), is_banned].spacing(10);
 
-                        column![
-                            username_row,
-                            row![left_column, middle_column, right_column].spacing(60)
-                        ]
-                        .spacing(10)
-                    }
-                };
+                    let is_muted = match player.is_muted {
+                        true => text("Sim").color(Color::from_rgb8(237, 135, 150)),
+                        false => text("Não").color(Color::from_rgb8(166, 218, 149)),
+                    };
 
-                main_column = main_column.push(player_column);
+                    let muted_row = row![text("Mutado:"), is_muted].spacing(10);
+
+                    let username_widget =
+                        text(player.username.clone()).color(player.username_color.to_color());
+                    let clan_widget = text(clan).color(player.clan_color.to_color());
+
+                    let player_column = match &player.stats {
+                        crate::stats::Stats::Bedwars(bedwars) => {
+                            let hours_played =
+                                text(format!("Horas jogadas: {}", bedwars.hours_played));
+
+                            let level_widget = row![
+                                text(format!("[{}", bedwars.level))
+                                    .color(bedwars.level_color.to_color()),
+                                text(bedwars.level_symbol.clone())
+                                    .font(Font::with_name("Balsamiq Sans"))
+                                    .color(bedwars.level_color.to_color()),
+                                text("]").color(bedwars.level_color.to_color())
+                            ];
+                            let (
+                                winstreak_widget,
+                                winrate_widget,
+                                fkdr,
+                                kdr,
+                                wins,
+                                losses,
+                                final_kills,
+                                final_deaths,
+                                kills,
+                                deaths,
+                                assists,
+                                bans,
+                            ) = (
+                                text(format!("Winstreak: {}", bedwars.winstreak)),
+                                text(format!("WLR: {:.2}", bedwars.winrate)),
+                                text(format!("FKDR: {:.2}", bedwars.final_kill_death_ratio)),
+                                text(format!("KDR: {:.2}", bedwars.kill_death_ratio)),
+                                text(format!("Vitórias: {}", bedwars.wins)),
+                                text(format!("Derrotas: {}", bedwars.losses)),
+                                text(format!("Final kills: {}", bedwars.final_kills)),
+                                text(format!("Final deaths: {}", bedwars.final_deaths)),
+                                text(format!("Kills: {}", bedwars.kills)),
+                                text(format!("Mortes: {}", bedwars.deaths)),
+                                text(format!("Assistências: {}", bedwars.assists)),
+                                text(format!("Bans: {}", player.bans)),
+                            );
+
+                            let username_row =
+                                row![level_widget, username_widget, clan_widget].spacing(5);
+
+                            let left_column = column![
+                                connected_row,
+                                banned_row,
+                                muted_row,
+                                first_login_widget,
+                                last_login_widget,
+                                hours_played
+                            ]
+                            .spacing(10);
+                            let middle_column =
+                                column![winstreak_widget, winrate_widget, fkdr, kdr].spacing(10);
+                            let right_column = column![
+                                wins,
+                                losses,
+                                final_kills,
+                                final_deaths,
+                                kills,
+                                deaths,
+                                assists,
+                                bans
+                            ]
+                            .spacing(10);
+
+                            column![
+                                username_row,
+                                row![left_column, middle_column, right_column].spacing(60)
+                            ]
+                            .spacing(10)
+                        }
+                    };
+
+                    main_column = main_column.push(player_column);
+                }
             }
 
             column![main_column, go_back].spacing(10).padding(10)
         }
         Screen::StatsConfig => {
             use crate::stats::BedwarStat;
-            let main_column = match app.stats_type {
+            let main_column = match app.settings.stats_type {
                 StatsType::BedwarsAll
                 | StatsType::BedwarsSolo
                 | StatsType::BedwarsDoubles
@@ -583,19 +614,19 @@ pub fn get_screen(
                 | StatsType::BedwarsQuads
                 | StatsType::Bedwars1v1
                 | StatsType::Bedwars2v2 => {
-                    let ws = toggler(app.show_ws)
+                    let ws = toggler(app.settings.show_ws)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Ws, x));
-                    let wlr = toggler(app.show_wlr)
+                    let wlr = toggler(app.settings.show_wlr)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Wlr, x));
-                    let fkdr = toggler(app.show_fkdr)
+                    let fkdr = toggler(app.settings.show_fkdr)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Fkdr, x));
-                    let kdr = toggler(app.show_kdr)
+                    let kdr = toggler(app.settings.show_kdr)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Kdr, x));
-                    let wins = toggler(app.show_wins)
+                    let wins = toggler(app.settings.show_wins)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Wins, x));
-                    let losses = toggler(app.show_losses)
+                    let losses = toggler(app.settings.show_losses)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Losses, x));
-                    let bans = toggler(app.show_bans)
+                    let bans = toggler(app.settings.show_bans)
                         .on_toggle(|x| Message::ShowStatsChanged(BedwarStat::Bans, x));
 
                     column![

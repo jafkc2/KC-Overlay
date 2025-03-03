@@ -64,26 +64,34 @@ fn main() {
 
 /// Estrutura do programa, aqui estão salvas todas as variáveis necessárias.
 struct KCOverlay {
+    state: State,
+    settings: KCSettings,
+}
+
+struct State {
     screen: Screen,
     players: Vec<Player>,
     loading: bool,
     waiting: i32,
-    client: MineClient,
     logs_sender: Option<mpsc::Sender<MineClient>>,
     player_getter_sender: Option<mpsc::Sender<()>>,
     update: Update,
-    never_minimize: bool,
-    seconds_to_minimize: u64,
-    auto_manage_players: bool,
     player_to_view_username: String,
     searched_player: Option<Player>,
     searched_player_stats_type: StatsType,
+    window_id: window::Id,
+    rgb_offset: f32,
+    is_visible: bool,
+}
+
+struct KCSettings {
+    client: MineClient,
+    never_minimize: bool,
+    seconds_to_minimize: u64,
+    auto_manage_players: bool,
     stats_type: StatsType,
     window_scale: f64,
-    window_id: window::Id,
-    is_visible: bool,
     rgb_buttons: bool,
-    rgb_offset: f32,
     show_ws: bool,
     show_wlr: bool,
     show_fkdr: bool,
@@ -183,36 +191,41 @@ impl KCOverlay {
             ..Default::default()
         });
 
+        let state = State {
+            screen,
+            players: vec![],
+            loading: false,
+            waiting: 0,
+            logs_sender: None,
+            player_getter_sender: None,
+            update: Update::empty(),
+            player_to_view_username: String::new(),
+            searched_player: None,
+            searched_player_stats_type: StatsType::BedwarsAll,
+            window_id,
+            rgb_offset: 0.0,
+            is_visible: true,
+        };
+
+        let settings = KCSettings {
+            client,
+            never_minimize,
+            seconds_to_minimize,
+            auto_manage_players,
+            stats_type,
+            window_scale,
+            rgb_buttons,
+            show_ws,
+            show_wlr,
+            show_fkdr,
+            show_kdr,
+            show_wins,
+            show_losses,
+            show_bans,
+        };
+
         (
-            Self {
-                screen,
-                players: vec![],
-                loading: false,
-                waiting: 0,
-                client,
-                logs_sender: None,
-                player_getter_sender: None,
-                update: Update::empty(),
-                never_minimize,
-                seconds_to_minimize,
-                auto_manage_players,
-                player_to_view_username: String::new(),
-                searched_player: None,
-                searched_player_stats_type: StatsType::BedwarsAll,
-                stats_type,
-                window_scale,
-                window_id,
-                is_visible: true,
-                rgb_buttons,
-                rgb_offset: 0.0,
-                show_ws,
-                show_wlr,
-                show_fkdr,
-                show_kdr,
-                show_wins,
-                show_losses,
-                show_bans,
-            },
+            Self { state, settings },
             Task::batch(vec![
                 Task::perform(update::check_updates(), Message::CheckedUpdates),
                 window_task.discard(),
@@ -228,14 +241,14 @@ impl KCOverlay {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::ChangeScreen(screen) => {
-                self.screen = screen;
+                self.state.screen = screen;
                 Task::none()
             }
             Message::Log(log_reader) => match log_reader {
                 LogReader::Log(message) => {
                     // Checa se algum jogador entrou na partida.
-                    if self.auto_manage_players {
-                        if message.contains("entrou na sala") && !self.players.is_empty() {
+                    if self.settings.auto_manage_players {
+                        if message.contains("entrou na sala") && !self.state.players.is_empty() {
                             // com certeza não é a maneira mais eficiente de fazer isso!
                             let splitted_message: Vec<&str> = message.split(" ").collect();
                             for (index, part) in splitted_message.clone().into_iter().enumerate() {
@@ -243,14 +256,18 @@ impl KCOverlay {
                                     let player_name = splitted_message[index - 1];
 
                                     let is_already_in_list = self
+                                        .state
                                         .players
                                         .iter()
                                         .any(|player| player.username == player_name);
 
                                     if !is_already_in_list {
                                         let player = block_on(async {
-                                            player::get_player(player_name, self.stats_type.clone())
-                                                .await
+                                            player::get_player(
+                                                player_name,
+                                                self.settings.stats_type.clone(),
+                                            )
+                                            .await
                                         });
 
                                         if let Ok(ok) = player {
@@ -262,24 +279,27 @@ impl KCOverlay {
                         }
                         // Checa se o jogador saiu da sala
                         else if message.contains("saiu da sala") {
-                            for (index, player) in self.players.clone().iter().enumerate() {
+                            for (index, player) in self.state.players.clone().iter().enumerate() {
                                 if message.contains(&player.username) {
-                                    self.players.remove(index);
+                                    self.state.players.remove(index);
                                 }
                             }
                         }
                         // Checa se algum jogador que está na lista foi eliminado da partida.
                         else if message.contains("KILL FINAL") {
-                            for (index, player) in self.players.clone().iter().enumerate() {
+                            for (index, player) in self.state.players.clone().iter().enumerate() {
                                 if message.contains(&format!("{} morreu", player.username)) {
-                                    self.players.remove(index);
+                                    self.state.players.remove(index);
                                 }
                             }
                         }
                     }
 
                     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
-                    if message.contains("[CHAT] Jogadores") && self.waiting < 1 && !self.loading {
+                    if message.contains("[CHAT] Jogadores")
+                        && self.state.waiting < 1
+                        && !self.state.loading
+                    {
                         let split = message.split("):").map(|x| x.to_string());
                         let split_vector: Vec<String> = split.clone().collect();
 
@@ -291,23 +311,26 @@ impl KCOverlay {
                             .map(|x| x.to_string())
                             .collect();
 
-                        let old_players = self.players.clone();
-                        self.players.clear();
-                        self.loading = true;
+                        let old_players = self.state.players.clone();
+                        self.state.players.clear();
+                        self.state.loading = true;
 
                         Task::batch(vec![
                             Task::run(
                                 player::get_players(
                                     str_players,
-                                    self.stats_type.clone(),
+                                    self.settings.stats_type.clone(),
                                     old_players,
                                 ),
                                 |player_sender: PlayerSender| Message::PlayerSender(player_sender),
                             ),
-                            window::set_level(self.window_id, iced::window::Level::AlwaysOnTop),
-                            if !self.is_visible {
-                                self.is_visible = true;
-                                window::minimize(self.window_id, false)
+                            window::set_level(
+                                self.state.window_id,
+                                iced::window::Level::AlwaysOnTop,
+                            ),
+                            if !self.state.is_visible {
+                                self.state.is_visible = true;
+                                window::minimize(self.state.window_id, false)
                             } else {
                                 Task::none()
                             },
@@ -317,28 +340,28 @@ impl KCOverlay {
                     }
                 }
                 LogReader::Sender(mut sender) => {
-                    let client = self.client.clone();
-                    self.logs_sender = Some(sender.clone());
+                    let client = self.settings.client.clone();
+                    self.state.logs_sender = Some(sender.clone());
                     Task::future(async move { sender.send(client).await.unwrap() }).discard()
                 }
             },
             Message::ChangeLevel => {
-                if self.loading || self.never_minimize {
+                if self.state.loading || self.settings.never_minimize {
                     Task::none()
                 } else {
-                    self.is_visible = false;
-                    Task::batch(vec![window::minimize(self.window_id, true)])
+                    self.state.is_visible = false;
+                    Task::batch(vec![window::minimize(self.state.window_id, true)])
                 }
             }
             Message::GotEvent(event) => match event {
                 iced::Event::Mouse(iced::mouse::Event::ButtonPressed(Button::Left)) => {
-                    window::drag(self.window_id)
+                    window::drag(self.state.window_id)
                 }
                 _ => Task::none(),
             },
             Message::Close => exit(),
             Message::ClientSelect(mine_client) => {
-                self.client = mine_client.clone();
+                self.settings.client = mine_client.clone();
 
                 let mut config = config::get_config();
                 let client_number = match mine_client {
@@ -352,7 +375,7 @@ impl KCOverlay {
                         } else {
                             let custom_client_path =
                                 config["custom_client_path"].as_str().unwrap().to_string();
-                            self.client = MineClient::Custom(custom_client_path)
+                            self.settings.client = MineClient::Custom(custom_client_path)
                         }
                         4
                     }
@@ -370,24 +393,26 @@ impl KCOverlay {
                     .write_all(serde_json::to_string_pretty(&config).unwrap().as_bytes())
                     .unwrap();
 
-                if let Screen::Welcome = self.screen {
-                    self.screen = Screen::Main
+                if let Screen::Welcome = self.state.screen {
+                    self.state.screen = Screen::Main
                 }
 
-                match &self.logs_sender {
+                match &self.state.logs_sender {
                     Some(sender) => {
-                        Task::future(update_client(sender.clone(), self.client.clone())).discard()
+                        Task::future(update_client(sender.clone(), self.settings.client.clone()))
+                            .discard()
                     }
                     None => Task::none(),
                 }
             }
             Message::Minimize => {
-                self.is_visible = false;
-                window::minimize(self.window_id, true)
+                self.state.is_visible = false;
+                window::minimize(self.state.window_id, true)
             }
-            Message::ClientUpdate => match &self.logs_sender {
+            Message::ClientUpdate => match &self.state.logs_sender {
                 Some(sender) => {
-                    Task::future(update_client(sender.clone(), self.client.clone())).discard()
+                    Task::future(update_client(sender.clone(), self.settings.client.clone()))
+                        .discard()
                 }
                 None => Task::none(),
             },
@@ -397,11 +422,11 @@ impl KCOverlay {
                     Task::none()
                 }
                 PlayerSender::Done => {
-                    self.loading = false;
-                    self.player_getter_sender = None;
-                    if !self.never_minimize {
+                    self.state.loading = false;
+                    self.state.player_getter_sender = None;
+                    if !self.settings.never_minimize {
                         Task::perform(
-                            util::wait(Duration::from_secs(self.seconds_to_minimize)),
+                            util::wait(Duration::from_secs(self.settings.seconds_to_minimize)),
                             |_| Message::ChangeLevel,
                         )
                     } else {
@@ -409,14 +434,14 @@ impl KCOverlay {
                     }
                 }
                 PlayerSender::WaitOrder => {
-                    self.waiting = 50;
+                    self.state.waiting = 50;
                     Task::none()
                 }
             },
             Message::CheckedUpdates(result) => {
                 match result {
                     Ok(url) => {
-                        self.update = Update {
+                        self.state.update = Update {
                             available: true,
                             url,
                         }
@@ -430,9 +455,9 @@ impl KCOverlay {
                 Task::none()
             }
             Message::Update => {
-                self.update.available = false;
+                self.state.update.available = false;
                 Task::perform(
-                    update::install_update(self.update.url.clone()),
+                    update::install_update(self.state.update.url.clone()),
                     Message::UpdateResult,
                 )
             }
@@ -483,45 +508,45 @@ impl KCOverlay {
                 )
             }
             Message::ChangeNeverMinimize(bool) => {
-                self.never_minimize = bool;
+                self.settings.never_minimize = bool;
                 config::save_settings(Some(bool), None, None, None, None, None, None);
                 Task::none()
             }
             Message::ChangeSecondsToMinimize(f_seconds) => {
                 let u_seconds = f_seconds as u64;
-                self.seconds_to_minimize = u_seconds;
+                self.settings.seconds_to_minimize = u_seconds;
                 config::save_settings(None, Some(u_seconds), None, None, None, None, None);
                 Task::none()
             }
             Message::ChangeRemoveEliminatedPlayers(bool) => {
-                self.auto_manage_players = bool;
+                self.settings.auto_manage_players = bool;
                 config::save_settings(None, None, Some(bool), None, None, None, None);
                 Task::none()
             }
             Message::ViewPlayerInputChanged(text) => {
-                self.player_to_view_username = text;
+                self.state.player_to_view_username = text;
                 Task::none()
             }
             Message::ViewPlayerStatsChanged(stats_type) => {
-                self.searched_player_stats_type = stats_type;
+                self.state.searched_player_stats_type = stats_type;
                 Task::none()
             }
             Message::ViewPlayer => {
                 if let Ok(player) = block_on(async {
                     player::get_player(
-                        &self.player_to_view_username,
-                        self.searched_player_stats_type.clone(),
+                        &self.state.player_to_view_username,
+                        self.state.searched_player_stats_type.clone(),
                     )
                     .await
                 }) {
-                    self.searched_player = Some(player);
+                    self.state.searched_player = Some(player);
                 }
 
                 Task::none()
             }
             Message::StatsSelect(stats_type) => {
-                self.stats_type = stats_type.clone();
-                self.players.clear();
+                self.settings.stats_type = stats_type.clone();
+                self.state.players.clear();
                 config::save_settings(
                     None,
                     None,
@@ -535,35 +560,35 @@ impl KCOverlay {
             }
             Message::WindowScaleChanged(scale) => {
                 let scale = scale / 100.;
-                self.window_scale = scale;
+                self.settings.window_scale = scale;
                 config::save_settings(None, None, None, None, Some(scale), None, None);
                 window::resize(
-                    self.window_id,
+                    self.state.window_id,
                     Size::new(745. * scale as f32, 460. * scale as f32),
                 )
             }
             Message::UpdateWaitTime => {
-                self.waiting -= 1;
+                self.state.waiting -= 1;
                 Task::none()
             }
             Message::ChangeRGBButtons(enabled) => {
-                self.rgb_buttons = enabled;
+                self.settings.rgb_buttons = enabled;
                 config::save_settings(None, None, None, None, None, Some(enabled), None);
                 Task::none()
             }
             Message::UpdateRGB => {
-                self.rgb_offset = (self.rgb_offset + 0.02) % 1.0;
+                self.state.rgb_offset = (self.state.rgb_offset + 0.02) % 1.0;
                 Task::none()
             }
             Message::ShowStatsChanged(bedwar_stat, bool) => {
                 match bedwar_stat {
-                    stats::BedwarStat::Ws => self.show_ws = bool,
-                    stats::BedwarStat::Wlr => self.show_wlr = bool,
-                    stats::BedwarStat::Fkdr => self.show_fkdr = bool,
-                    stats::BedwarStat::Kdr => self.show_kdr = bool,
-                    stats::BedwarStat::Wins => self.show_wins = bool,
-                    stats::BedwarStat::Losses => self.show_losses = bool,
-                    stats::BedwarStat::Bans => self.show_bans = bool,
+                    stats::BedwarStat::Ws => self.settings.show_ws = bool,
+                    stats::BedwarStat::Wlr => self.settings.show_wlr = bool,
+                    stats::BedwarStat::Fkdr => self.settings.show_fkdr = bool,
+                    stats::BedwarStat::Kdr => self.settings.show_kdr = bool,
+                    stats::BedwarStat::Wins => self.settings.show_wins = bool,
+                    stats::BedwarStat::Losses => self.settings.show_losses = bool,
+                    stats::BedwarStat::Bans => self.settings.show_bans = bool,
                 }
 
                 config::save_settings(
@@ -583,7 +608,7 @@ impl KCOverlay {
 
     /// Renderiza a interface.
     fn view(&self, _window: window::Id) -> Element<Message> {
-        screens::get_screen(self.screen, self).into()
+        screens::get_screen(self.state.screen, self).into()
     }
 
     /// Gerencia subscriptions, que são basicamente código que é executado fora da lógica principal e que tem a capacidade de enviar mensagens.
@@ -599,7 +624,7 @@ impl KCOverlay {
 
         let mut subscriptions = vec![event, logs_reader, client_updater, rgb_update];
 
-        if self.waiting > 0 {
+        if self.state.waiting > 0 {
             subscriptions.push(time::every(Duration::from_secs(1)).map(|_| Message::UpdateWaitTime))
         }
 
@@ -607,12 +632,12 @@ impl KCOverlay {
     }
 
     fn scale_factor(&self, _window: window::Id) -> f64 {
-        self.window_scale
+        self.settings.window_scale
     }
 
     fn add_player(&mut self, player: Player) {
-        self.players.push(player);
-        self.players.sort_by(|a, b| {
+        self.state.players.push(player);
+        self.state.players.sort_by(|a, b| {
             let b_level = match &b.stats {
                 Stats::Bedwars(bedwars) => bedwars.level,
             };
@@ -621,11 +646,11 @@ impl KCOverlay {
             };
             b_level.partial_cmp(&a_level).unwrap()
         });
-        self.players.truncate(48);
+        self.state.players.truncate(48);
     }
 
     fn get_rgb_color(&self, offset: f32) -> Color {
-        let hue = (self.rgb_offset + offset) % 1.0;
+        let hue = (self.state.rgb_offset + offset) % 1.0;
         let (r, g, b) = util::hsv_to_rgb(hue, 0.7, 1.0);
         Color::from_rgb(r, g, b)
     }
