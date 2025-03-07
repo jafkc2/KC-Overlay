@@ -4,18 +4,11 @@ use std::{
 };
 
 use iced::{
-    event, exit,
-    futures::{
+    daemon::Appearance, event, exit, futures::{
         channel::mpsc::{self, Sender},
         executor::block_on,
         SinkExt, Stream, StreamExt,
-    },
-    mouse::Button,
-    stream,
-    theme::Style,
-    time,
-    window::{self, Position, Settings},
-    Color, Element, Font, Point, Size, Subscription, Task,
+    }, mouse::Button, stream, time, window::{self, Position, Settings}, Color, Element, Font, Point, Size, Subscription, Task
 };
 use player::Player;
 use screens::Screen;
@@ -44,7 +37,7 @@ fn main() {
     // Executa a lógica do programa.
     iced::daemon(KCOverlay::title, KCOverlay::update, KCOverlay::view)
         .subscription(KCOverlay::subscription)
-        .style(|_, _| Style {
+        .style(|_, _| Appearance {
             background_color: Color::from_rgba8(24, 25, 33, 0.75),
             text_color: Color::WHITE,
         })
@@ -79,6 +72,8 @@ struct State {
     window_id: window::Id,
     rgb_offset: f32,
     is_visible: bool,
+    // Para reconhecer 2 clicks e minimizar
+    click_instant: Instant,
 }
 
 struct KCSettings {
@@ -204,6 +199,7 @@ impl KCOverlay {
             rgb_offset: 0.0,
             is_visible: true,
             time_next_rate_limit_update: Instant::now(),
+            click_instant: Instant::now(),
         };
 
         let settings = KCSettings {
@@ -339,7 +335,7 @@ impl KCOverlay {
                                 ),
                                 |player_sender: PlayerSender| Message::PlayerSender(player_sender),
                             ),
-                            window::set_level(
+                            window::change_level(
                                 self.state.window_id,
                                 iced::window::Level::AlwaysOnTop,
                             ),
@@ -370,7 +366,12 @@ impl KCOverlay {
             }
             Message::GotEvent(event) => match event {
                 iced::Event::Mouse(iced::mouse::Event::ButtonPressed(Button::Left)) => {
-                    window::drag(self.state.window_id)
+                    let mut tasks = vec![window::drag(self.state.window_id)];
+                    if (50..=300).contains(&self.state.click_instant.elapsed().as_millis()){
+                        tasks.push(Task::perform(async {}, |()|Message::Minimize));
+                    }
+                    self.state.click_instant = Instant::now();
+                    Task::batch(tasks)
                 }
                 _ => Task::none(),
             },

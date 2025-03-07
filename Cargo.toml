@@ -10,7 +10,7 @@ strip = true
 lto = true
 
 [dependencies]
-iced = {version = "0.14.0-dev", features = ["tokio", "image"]}
+iced = {version = "0.13.1", features = ["tokio", "image", "wgpu"]}
 reqwest = {version = "0.12.12", features = ["json"]}
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
@@ -21,7 +21,3 @@ screen_size = "0.1.0"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.12"
-
-[patch.crates-io]
-iced = { git = "https://github.com/iced-rs/iced", rev = "97f1db3783dca5a4f60a9f89668613de4dfe9edd" }
-iced_core = { git = "https://github.com/iced-rs/iced", rev = "97f1db3783dca5a4f60a9f89668613de4dfe9edd" }
