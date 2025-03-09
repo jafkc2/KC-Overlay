@@ -154,6 +154,8 @@ async fn read_logs(
     let mut buffer = String::new();
     reader.seek(SeekFrom::End(0)).await.unwrap();
 
+    let mut time_since_client_refresh = Instant::now();
+
     loop {
         match reader.read_line(&mut buffer).await {
             Ok(0) => {
@@ -167,8 +169,9 @@ async fn read_logs(
             Err(e) => println!("Error at reading logs: {e}"),
         }
 
-        // Verifica se a lógica principal pediu para atualizar o client.
-        if app.lock().await.settings.client != client {
+        // Atualiza o arquivo de logs do client, se necessário
+        if app.lock().await.settings.client != client || time_since_client_refresh.elapsed() > Duration::from_secs(15){
+            println!("Refreshed client file");
             client = app.lock().await.settings.client.clone();
             let logs_path = client.get_logs_path();
 
@@ -183,6 +186,8 @@ async fn read_logs(
             reader = BufReader::new(file);
             buffer = String::new();
             reader.seek(SeekFrom::End(0)).await.unwrap();
+
+            time_since_client_refresh = Instant::now()
         }
     }
     Ok(())
@@ -272,7 +277,5 @@ async fn handle_log_line(
         app.state.loading = true;
 
         player::get_players(str_players, app.settings.stats_type.clone(), app.state.cached_players.clone(), handle).await;
-
-
     }
 }

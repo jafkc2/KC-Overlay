@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::VecDeque, future, sync::Arc};
+use std::{collections::VecDeque, sync::Arc};
 use tauri::{async_runtime::spawn, AppHandle, Emitter};
 use tauri_plugin_http::reqwest::Client;
 use tokio::sync::Mutex;
