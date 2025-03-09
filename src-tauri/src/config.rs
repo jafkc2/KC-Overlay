@@ -4,11 +4,12 @@ use std::{
     fs::{self, File, OpenOptions},
     io::Write,
     path::Path,
+    sync::Mutex,
 };
 
 use serde_json::Value;
 
-use crate::stats;
+use crate::{stats, KCOverlay};
 
 pub fn get_config_file_path() -> String {
     format!(
@@ -24,7 +25,8 @@ pub fn get_config() -> Value {
 /// Checa se o arquivo existe.
 /// Caso não exista, esta função cria o arquivo e retorna **False**.
 /// Caso exista, adiciona configurações ausentes e retorna **True**.
-pub fn check_config_file() -> bool {
+#[tauri::command]
+pub fn check_config_file(state: tauri::State<'_, KCOverlay>) -> bool {
     let file_exists = Path::new(&get_config_file_path()).exists();
     let mut conf_json = match file_exists {
         true => super::util::get_json(get_config_file_path()),
@@ -74,13 +76,9 @@ pub fn check_config_file() -> bool {
             );
         }
         if !map.contains_key("window_scale") {
-            tauri::window::
-            let default_window_scale = match screen_size::get_primary_screen_size() {
-                Ok(screen_size) => {
-                    (screen_size.0 as f32 * screen_size.1 as f32 / (1920. * 1080.)).clamp(0.7, 1.25)
-                }
-                Err(_) => 1.0,
-            };
+            let screen_size = state.inner().state.screen_size;
+            let default_window_scale =
+                (screen_size.0 as f32 * screen_size.1 as f32 / (1920. * 1080.)).clamp(0.7, 1.25);
 
             println!("Escala de janela configurada para {}", default_window_scale);
 

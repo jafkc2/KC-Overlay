@@ -4,7 +4,6 @@
         <button>Ver jogador</button>
         <button>Sobre</button>
 
-
         <div class="window_buttons">
             <button>–</button>
             <button>X</button>

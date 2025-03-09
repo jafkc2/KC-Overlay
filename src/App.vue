@@ -1,15 +1,33 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { onMounted, Ref, ref } from "vue";
 
 import Titlebar from './components/Titlebar.vue'
+import PlayerRow from "./components/PlayerRow.vue";
+
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+
+import {Player} from "./types"
 
 const greetMsg = ref("");
-const name = ref("");
 
-async function greet() {
-  greetMsg.value = await invoke("greet", { name: name.value });
+let players : Ref<Player[]> = ref([]);
+
+function player_html(player: Player){
+
 }
+
+onMounted(async () => {
+  listen<Player>('player', (event) => {
+    const player : Player = event.payload;
+    players.value.push(player);
+    console.log(player)
+  })
+
+  await invoke("read_logs");
+})
+
+
 </script>
 
 <template>
@@ -17,7 +35,7 @@ async function greet() {
     <Titlebar></Titlebar>
     <p>Digite /jogando no chat do Mush para ver os stats dos jogadores.</p>
 
-    <p>{{ greetMsg }}</p>
+    <div><PlayerRow v-for="(player, index) in players" :key="index" :username="player.username" :level="player.stats.Bedwars.level" :level_color="player.stats.Bedwars.level_color"></PlayerRow></div>
   </main>
 </template>
 
