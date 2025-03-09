@@ -24,6 +24,11 @@ onMounted(async () => {
     console.log(player)
   })
 
+  listen<boolean>('loading', (event) => {
+    if (event.payload){
+      players.value = []
+    }
+  })
   await invoke("read_logs");
 })
 

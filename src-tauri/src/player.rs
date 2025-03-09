@@ -113,6 +113,7 @@ pub async fn get_players(
     stats_type: StatsType,
     cached_players: VecDeque<Player>,
     handle: AppHandle,
+    app_mutex: &tauri::State<'_, Mutex<crate::KCOverlay>>
 ) {
     println!("getting players");
 
@@ -123,12 +124,15 @@ pub async fn get_players(
 
     let mut futures = vec![];
 
+    let players_arc =  Arc::new(Mutex::new(vec![]));
+
     for player_name in str_player_list {
         let http_client = http_client.clone();
         let stats_type = stats_type.clone();
         let url = format!("{}{}", MUSH_API, player_name);
 
         let rate_limited = Arc::clone(&rate_limited_arc);
+        let players = players_arc.clone();
 
         let cloned_cached_players = cached_players.clone();
         let handle = handle.clone();
@@ -137,6 +141,7 @@ pub async fn get_players(
             println!("getting {}", player_name.clone());
             for player in cloned_cached_players{
                 if player.username == player_name{
+                    players.lock().await.push(player.clone());
                     handle.emit("player", player).unwrap();
                     return None;
                 }
@@ -179,21 +184,33 @@ pub async fn get_players(
             };
 
             if !json["success"].as_bool().unwrap() {
-                handle.emit("player", Player::new_nicked(player_name, stats_type)).unwrap();
+                let player = Player::new_nicked(player_name, stats_type);
+                players.lock().await.push(player.clone());
+                handle.emit("player", player).unwrap();
 
             } else{
                 println!("sending {}", player_name);
                 let response = json["response"].clone();
-                handle.emit("player", get_player_data(player_name.to_string(), response, stats_type)).unwrap();
+                let player = get_player_data(player_name.to_string(), response, stats_type);
+                players.lock().await.push(player.clone());
+                handle.emit("player", player).unwrap();
 
             }
 
             Some(())
         });
     }
-    for i in futures{
-        spawn(i);
-    }
+
+    futures::future::join_all(futures).await;
+
+    let mut app = app_mutex.lock().await;
+    let players = players_arc.lock().await;
+    app.add_players_to_cache(players.to_vec());
+
+    handle.emit("loading", false).unwrap();
+    app.state.loading = false;
+
+
 }
 
 /// Função para coletar os stats de apenas um jogador.

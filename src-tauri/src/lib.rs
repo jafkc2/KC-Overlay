@@ -8,7 +8,7 @@ use std::{
 use minecraft_clients::MineClient;
 use player::Player;
 use stats::{Stats, StatsType};
-use tauri::{Emitter, Manager};
+use tauri::{async_runtime::spawn, Emitter, Manager};
 use tokio::{
     fs::File, io::{AsyncBufReadExt, AsyncSeekExt, BufReader}, sync::Mutex, time::sleep
 };
@@ -37,6 +37,25 @@ impl KCOverlay {
             b_level.partial_cmp(&a_level).unwrap()
         });
         self.state.players.truncate(48);
+    }
+    
+    fn add_players_to_cache(&mut self, players: Vec<Player>) {
+                // Sistema de cachê de jogadores para evitar o uso da api
+                for player in players {
+                    let mut already_in_cache = false;
+                    for cached_player in self.state.cached_players.clone() {
+                        if player.username == cached_player.username {
+                            already_in_cache = true;
+                        }
+                    }
+        
+                    if !already_in_cache {
+                        self.state.cached_players.push_back(player);
+                        if self.state.cached_players.len() > 200 {
+                            self.state.cached_players.pop_front();
+                        }
+                    }
+                }
     }
 }
 
@@ -187,7 +206,9 @@ async fn read_logs(
             buffer = String::new();
             reader.seek(SeekFrom::End(0)).await.unwrap();
 
-            time_since_client_refresh = Instant::now()
+            time_since_client_refresh = Instant::now();
+
+            println!("Cachê de jogadores: {} jogadores", app.lock().await.state.cached_players.len());
         }
     }
     Ok(())
@@ -196,11 +217,11 @@ async fn read_logs(
 async fn handle_log_line(
     line: String,
     handle: tauri::AppHandle,
-    app: &tauri::State<'_, Mutex<KCOverlay>>,
+    app_mutex: &tauri::State<'_, Mutex<KCOverlay>>,
 ) {
-    let mut app = app.lock().await;
     // Checa se algum jogador entrou na partida.
-    if app.settings.auto_manage_players {
+    if app_mutex.lock().await.settings.auto_manage_players {
+        let mut app = app_mutex.lock().await;
         if line.contains("entrou na sala") && !app.state.players.is_empty() {
             // com certeza não é a maneira mais eficiente de fazer isso!
             let splitted_line: Vec<&str> = line.split(" ").collect();
@@ -244,7 +265,7 @@ async fn handle_log_line(
     }
 
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
-    if line.contains("[CHAT] Jogadores") && app.state.waiting < 1 && !app.state.loading {
+    if line.contains("[CHAT] Jogadores") && app_mutex.lock().await.state.waiting < 1 && !app_mutex.lock().await.state.loading {
         let split = line.split("):").map(|x| x.to_string());
         let split_vector: Vec<String> = split.clone().collect();
 
@@ -256,26 +277,14 @@ async fn handle_log_line(
             .map(|x| x.to_string())
             .collect();
 
-        // Sistema de cachê de jogadores para evitar o uso da api
-        for player in app.state.players.clone() {
-            let mut already_in_cache = false;
-            for cached_player in app.state.cached_players.clone() {
-                if player.username == cached_player.username {
-                    already_in_cache = true;
-                }
-            }
+        app_mutex.lock().await.state.players.clear();
+        app_mutex.lock().await.state.loading = true;
 
-            if !already_in_cache {
-                app.state.cached_players.push_back(player);
-                if app.state.cached_players.len() > 200 {
-                    app.state.cached_players.pop_front();
-                }
-            }
-        }
+        handle.emit("loading", true).unwrap();
 
-        app.state.players.clear();
-        app.state.loading = true;
+        let cached_players = app_mutex.lock().await.state.cached_players.clone();
+        let stats_type = app_mutex.lock().await.settings.stats_type.clone();
 
-        player::get_players(str_players, app.settings.stats_type.clone(), app.state.cached_players.clone(), handle).await;
+        player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
     }
 }
