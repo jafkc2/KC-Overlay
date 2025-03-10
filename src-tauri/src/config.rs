@@ -26,7 +26,7 @@ pub fn get_config() -> Value {
 /// Caso não exista, esta função cria o arquivo e retorna **False**.
 /// Caso exista, adiciona configurações ausentes e retorna **True**.
 #[tauri::command]
-pub fn check_config_file(state: tauri::State<'_, KCOverlay>) -> bool {
+pub fn check_config_file(screen_size: (u32, u32)) -> bool {
     let file_exists = Path::new(&get_config_file_path()).exists();
     let mut conf_json = match file_exists {
         true => super::util::get_json(get_config_file_path()),
@@ -76,7 +76,6 @@ pub fn check_config_file(state: tauri::State<'_, KCOverlay>) -> bool {
             );
         }
         if !map.contains_key("window_scale") {
-            let screen_size = state.inner().state.screen_size;
             let default_window_scale =
                 (screen_size.0 as f32 * screen_size.1 as f32 / (1920. * 1080.)).clamp(0.7, 1.25);
 

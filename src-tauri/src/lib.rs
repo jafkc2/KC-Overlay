@@ -8,9 +8,12 @@ use std::{
 use minecraft_clients::MineClient;
 use player::Player;
 use stats::{Stats, StatsType};
-use tauri::{async_runtime::spawn, Emitter, Manager};
+use tauri::{async_runtime::spawn, Emitter, LogicalSize, Manager, PhysicalSize, Size};
 use tokio::{
-    fs::File, io::{AsyncBufReadExt, AsyncSeekExt, BufReader}, sync::Mutex, time::sleep
+    fs::File,
+    io::{AsyncBufReadExt, AsyncSeekExt, BufReader},
+    sync::Mutex,
+    time::sleep,
 };
 
 mod config;
@@ -25,43 +28,28 @@ struct KCOverlay {
 }
 
 impl KCOverlay {
-    fn add_player(&mut self, player: Player) {
-        self.state.players.push(player);
-        self.state.players.sort_by(|a, b| {
-            let b_level = match &b.stats {
-                Stats::Bedwars(bedwars) => bedwars.level,
-            };
-            let a_level = match &a.stats {
-                Stats::Bedwars(bedwars) => bedwars.level,
-            };
-            b_level.partial_cmp(&a_level).unwrap()
-        });
-        self.state.players.truncate(48);
-    }
-    
     fn add_players_to_cache(&mut self, players: Vec<Player>) {
-                // Sistema de cachê de jogadores para evitar o uso da api
-                for player in players {
-                    let mut already_in_cache = false;
-                    for cached_player in self.state.cached_players.clone() {
-                        if player.username == cached_player.username {
-                            already_in_cache = true;
-                        }
-                    }
-        
-                    if !already_in_cache {
-                        self.state.cached_players.push_back(player);
-                        if self.state.cached_players.len() > 200 {
-                            self.state.cached_players.pop_front();
-                        }
-                    }
+        // Sistema de cachê de jogadores para evitar o uso da api
+        for player in players {
+            let mut already_in_cache = false;
+            for cached_player in self.state.cached_players.clone() {
+                if player.username == cached_player.username {
+                    already_in_cache = true;
                 }
+            }
+
+            if !already_in_cache {
+                self.state.cached_players.push_back(player);
+                if self.state.cached_players.len() > 200 {
+                    self.state.cached_players.pop_front();
+                }
+            }
+        }
     }
 }
 
 struct State {
     screen_size: (u32, u32),
-    players: Vec<Player>,
     cached_players: VecDeque<Player>,
     loading: bool,
     waiting: i32,
@@ -99,10 +87,41 @@ pub fn run() {
 
             let screen = monitors[0].size();
             let screen_size = (screen.width, screen.height);
+
+            let is_first_use = config::check_config_file(screen_size);
+
+            let config = config::get_config();
+            let custom_client_path = config["custom_client_path"]
+                .as_str()
+                .unwrap_or("")
+                .to_string();
+            let client = match config["client"].as_i64().unwrap_or(0) {
+                0 => MineClient::Default,
+                1 => MineClient::Badlion,
+                2 => MineClient::Lunar,
+                3 => MineClient::LegacyLauncher,
+                4 => MineClient::Custom(custom_client_path),
+                5 => MineClient::Silent,
+                _ => MineClient::Default,
+            };
+            let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
+            let seconds_to_minimize = config["seconds_to_minimize"].as_u64().unwrap_or(10);
+            let auto_manage_players = config["auto_manage_players"].as_bool().unwrap_or(true);
+            let stats_type_str = config["stats_type"].as_str().unwrap_or("Bedwars Geral");
+            let stats_type = StatsType::from_string(stats_type_str);
+            let window_scale = config["window_scale"].as_f64().unwrap_or(1.0);
+            let rgb_buttons = config["rgb_buttons"].as_bool().unwrap_or(false);
+            let show_ws = config["show_ws"].as_bool().unwrap_or(true);
+            let show_wlr = config["show_wlr"].as_bool().unwrap_or(true);
+            let show_fkdr = config["show_fkdr"].as_bool().unwrap_or(true);
+            let show_kdr = config["show_kdr"].as_bool().unwrap_or(true);
+            let show_wins = config["show_wins"].as_bool().unwrap_or(true);
+            let show_losses = config["show_losses"].as_bool().unwrap_or(true);
+            let show_bans = config["show_bans"].as_bool().unwrap_or(false);
+
             app.manage(Mutex::new(KCOverlay {
                 state: State {
                     screen_size,
-                    players: vec![],
                     cached_players: VecDeque::new(),
                     loading: false,
                     waiting: 0,
@@ -115,22 +134,28 @@ pub fn run() {
                     click_instant: Instant::now(),
                 },
                 settings: Settings {
-                    client: MineClient::Default,
-                    auto_manage_players: true,
-                    never_minimize: false,
-                    seconds_to_minimize: 13,
-                    stats_type: StatsType::BedwarsAll,
-                    window_scale: 1.0,
-                    rgb_buttons: false,
-                    show_ws: true,
-                    show_wlr: true,
-                    show_fkdr: true,
-                    show_kdr: true,
-                    show_wins: true,
-                    show_losses: true,
-                    show_bans: true,
+                    client,
+                    auto_manage_players,
+                    never_minimize,
+                    seconds_to_minimize,
+                    stats_type,
+                    window_scale,
+                    rgb_buttons,
+                    show_ws,
+                    show_wlr,
+                    show_fkdr,
+                    show_kdr,
+                    show_wins,
+                    show_losses,
+                    show_bans,
                 },
             }));
+
+            // let window = app.get_webview_window("main").unwrap();
+            // let size = PhysicalSize::new(745. * window_scale, 460. * window_scale);
+            // println!("{:?} {}", window.inner_size().unwrap(), window.scale_factor().unwrap());
+            // window.set_size(size).unwrap();
+            // println!("{:?} {}", window.inner_size().unwrap(), window.scale_factor().unwrap());
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
@@ -145,7 +170,12 @@ async fn read_logs(
     app: tauri::State<'_, Mutex<KCOverlay>>,
 ) -> Result<(), ()> {
     println!("Starting");
-    handle.emit("player", Player::new_nicked("Jogador_test".to_string(), StatsType::BedwarsAll)).unwrap();
+    handle
+        .emit(
+            "player",
+            Player::new_nicked("Jogador_test".to_string(), StatsType::BedwarsAll),
+        )
+        .unwrap();
     let mut client = app.lock().await.settings.client.clone();
     let logs_path = client.get_logs_path();
     let mut file = File::open(&logs_path).await;
@@ -189,7 +219,9 @@ async fn read_logs(
         }
 
         // Atualiza o arquivo de logs do client, se necessário
-        if app.lock().await.settings.client != client || time_since_client_refresh.elapsed() > Duration::from_secs(15){
+        if app.lock().await.settings.client != client
+            || time_since_client_refresh.elapsed() > Duration::from_secs(15)
+        {
             println!("Refreshed client file");
             client = app.lock().await.settings.client.clone();
             let logs_path = client.get_logs_path();
@@ -208,7 +240,10 @@ async fn read_logs(
 
             time_since_client_refresh = Instant::now();
 
-            println!("Cachê de jogadores: {} jogadores", app.lock().await.state.cached_players.len());
+            println!(
+                "Cachê de jogadores: {} jogadores",
+                app.lock().await.state.cached_players.len()
+            );
         }
     }
     Ok(())
@@ -222,50 +257,55 @@ async fn handle_log_line(
     // Checa se algum jogador entrou na partida.
     if app_mutex.lock().await.settings.auto_manage_players {
         let mut app = app_mutex.lock().await;
-        if line.contains("entrou na sala") && !app.state.players.is_empty() {
+        if line.contains("entrou na sala") {
             // com certeza não é a maneira mais eficiente de fazer isso!
             let splitted_line: Vec<&str> = line.split(" ").collect();
             for (index, part) in splitted_line.clone().into_iter().enumerate() {
                 if part == "entrou" {
-                    let player_name = splitted_line[index - 1];
+                    let player_name: &str = splitted_line[index - 1];
 
-                    let is_already_in_list = app
-                        .state
-                        .players
-                        .iter()
-                        .any(|player| player.username == player_name);
+                    let player =
+                        player::get_player(player_name, app.settings.stats_type.clone()).await;
 
-                    if !is_already_in_list {
-                        let player =
-                            player::get_player(player_name, app.settings.stats_type.clone()).await;
-
-                        if let Ok(ok) = player {
-                            app.add_player(ok);
-                        }
+                    if let Ok(ok) = player {
+                        handle.emit("player", ok).unwrap();
                     }
+
+                    break;
                 }
             }
         }
         // Checa se o jogador saiu da sala
         else if line.contains("saiu da sala") {
-            for (index, player) in app.state.players.clone().iter().enumerate() {
-                if line.contains(&player.username) {
-                    app.state.players.remove(index);
+            let splitted_line: Vec<&str> = line.split(" ").collect();
+
+            for (index, part) in splitted_line.clone().into_iter().enumerate() {
+                if part == "saiu" {
+                    let player_name: &str = splitted_line[index - 1];
+                    handle.emit("remove_player", player_name).unwrap();
+                    break;
                 }
             }
         }
         // Checa se algum jogador que está na lista foi eliminado da partida.
         else if line.contains("KILL FINAL") {
-            for (index, player) in app.state.players.clone().iter().enumerate() {
-                if line.contains(&format!("{} morreu", player.username)) {
-                    app.state.players.remove(index);
+            let splitted_line: Vec<&str> = line.split(" ").collect();
+
+            for (index, part) in splitted_line.clone().into_iter().enumerate() {
+                if part == "morreu" {
+                    let player_name: &str = splitted_line[index - 1];
+                    handle.emit("remove_player", player_name).unwrap();
+                    break;
                 }
             }
         }
     }
 
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
-    if line.contains("[CHAT] Jogadores") && app_mutex.lock().await.state.waiting < 1 && !app_mutex.lock().await.state.loading {
+    if line.contains("[CHAT] Jogadores")
+        && app_mutex.lock().await.state.waiting < 1
+        && !app_mutex.lock().await.state.loading
+    {
         let split = line.split("):").map(|x| x.to_string());
         let split_vector: Vec<String> = split.clone().collect();
 
@@ -277,7 +317,6 @@ async fn handle_log_line(
             .map(|x| x.to_string())
             .collect();
 
-        app_mutex.lock().await.state.players.clear();
         app_mutex.lock().await.state.loading = true;
 
         handle.emit("loading", true).unwrap();
