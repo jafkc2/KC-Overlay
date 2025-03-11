@@ -2,8 +2,8 @@
 
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::VecDeque, sync::Arc};
-use tauri::{async_runtime::spawn, AppHandle, Emitter};
+use std::{collections::VecDeque, sync::Arc, time::Instant};
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_http::reqwest::Client;
 use tokio::sync::Mutex;
 
@@ -125,6 +125,7 @@ pub async fn get_players(
     let mut futures = vec![];
 
     let players_arc = Arc::new(Mutex::new(vec![]));
+    let full_rates_instant = Arc::new(Mutex::new(None));
 
     for player_name in str_player_list {
         let http_client = http_client.clone();
@@ -136,6 +137,7 @@ pub async fn get_players(
 
         let cloned_cached_players = cached_players.clone();
         let handle = handle.clone();
+        let full_rates_instant = full_rates_instant.clone();
 
         futures.push(async move {
             println!("getting {}", player_name.clone());
@@ -152,7 +154,8 @@ pub async fn get_players(
                     let rate_limit = response.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap().parse().unwrap_or(0);
 
                     if (55..=60).contains(&rate_limit){
-                        handle.emit("rate_limit", true).unwrap()
+                        handle.emit("rate_limit_full", true).unwrap();
+                        *full_rates_instant.lock().await = Some(Instant::now());
                     }
                     if rate_limit < 1{
                         let mut rate_limited = rate_limited.lock().await;
@@ -205,13 +208,20 @@ pub async fn get_players(
 
     let mut app = app_mutex.lock().await;
     let players = players_arc.lock().await;
+
     app.add_players_to_cache(players.to_vec());
+
+    match *full_rates_instant.lock().await{
+        Some(instant) => app.state.rates_full_time = instant,
+        None => (),
+    }
 
     handle.emit("loading", false).unwrap();
     app.state.loading = false;
 }
 
 /// Função para coletar os stats de apenas um jogador.
+#[tauri::command]
 pub async fn get_player(username: &str, stats_type: StatsType) -> Result<Player, ()> {
     let client = Client::new();
     let url = "https://mush.com.br/api/player/".to_string() + username;

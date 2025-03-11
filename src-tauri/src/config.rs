@@ -126,46 +126,12 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
 }
 
 /// Função para salvar as configurações para o arquivo.
+#[tauri::command]
 pub fn save_settings(
-    never_minimize: Option<bool>,
-    seconds_to_minimize: Option<u64>,
-    auto_manage_players: Option<bool>,
-    stats_type: Option<String>,
-    window_scale: Option<f64>,
-    rgb_buttons: Option<bool>,
-    show_stats: Option<(stats::BedwarStat, bool)>,
+    app: tauri::State<'_, KCOverlay>
 ) {
-    let mut config = get_config();
-
-    if let Some(never_minimize_option) = never_minimize {
-        config["never_minimize"] = serde_json::json!(never_minimize_option)
-    }
-    if let Some(seconds) = seconds_to_minimize {
-        config["seconds_to_minimize"] = serde_json::json!(seconds)
-    }
-    if let Some(auto_manage_players_option) = auto_manage_players {
-        config["auto_manage_players"] = serde_json::json!(auto_manage_players_option)
-    }
-    if let Some(stats_type_option) = stats_type {
-        config["stats_type"] = serde_json::json!(stats_type_option)
-    }
-    if let Some(scale) = window_scale {
-        config["window_scale"] = serde_json::json!(scale)
-    }
-    if let Some(rgb) = rgb_buttons {
-        config["rgb_buttons"] = serde_json::json!(rgb)
-    }
-    if let Some(stat) = show_stats {
-        match stat.0 {
-            stats::BedwarStat::Ws => config["show_ws"] = serde_json::json!(stat.1),
-            stats::BedwarStat::Wlr => config["show_wlr"] = serde_json::json!(stat.1),
-            stats::BedwarStat::Fkdr => config["show_fkdr"] = serde_json::json!(stat.1),
-            stats::BedwarStat::Kdr => config["show_kdr"] = serde_json::json!(stat.1),
-            stats::BedwarStat::Wins => config["show_wins"] = serde_json::json!(stat.1),
-            stats::BedwarStat::Losses => config["show_losses"] = serde_json::json!(stat.1),
-            stats::BedwarStat::Bans => config["show_bans"] = serde_json::json!(stat.1),
-        }
-    }
+    let settings = app.settings.clone();
+    let settings_json = serde_json::json!(settings);
 
     let mut config_file = OpenOptions::new()
         .write(true)
@@ -173,6 +139,6 @@ pub fn save_settings(
         .open(get_config_file_path())
         .unwrap();
     config_file
-        .write_all(serde_json::to_string_pretty(&config).unwrap().as_bytes())
+        .write_all(serde_json::to_string_pretty(&settings_json).unwrap().as_bytes())
         .unwrap();
 }

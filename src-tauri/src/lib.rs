@@ -7,8 +7,9 @@ use std::{
 
 use minecraft_clients::MineClient;
 use player::Player;
-use stats::{Stats, StatsType};
-use tauri::{async_runtime::spawn, Emitter, LogicalSize, Manager, PhysicalSize, Size};
+use serde::Serialize;
+use stats::StatsType;
+use tauri::{Emitter, Manager};
 use tokio::{
     fs::File,
     io::{AsyncBufReadExt, AsyncSeekExt, BufReader},
@@ -53,16 +54,11 @@ struct State {
     cached_players: VecDeque<Player>,
     loading: bool,
     waiting: i32,
-    time_next_rate_limit_update: Instant,
-    player_to_view_username: String,
-    searched_player: Option<Player>,
+    rates_full_time: Instant,
     searched_player_stats_type: StatsType,
-    rgb_offset: f32,
-    is_visible: bool,
-    // Para reconhecer 2 clicks e minimizar
-    click_instant: Instant,
 }
 
+#[derive(Serialize, Clone)]
 struct Settings {
     client: MineClient,
     never_minimize: bool,
@@ -125,13 +121,8 @@ pub fn run() {
                     cached_players: VecDeque::new(),
                     loading: false,
                     waiting: 0,
-                    time_next_rate_limit_update: Instant::now(),
-                    player_to_view_username: String::new(),
-                    searched_player: None,
+                    rates_full_time: Instant::now(),
                     searched_player_stats_type: StatsType::BedwarsAll,
-                    rgb_offset: 0.,
-                    is_visible: true,
-                    click_instant: Instant::now(),
                 },
                 settings: Settings {
                     client,
@@ -164,6 +155,10 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+#[tauri::command]
+fn get_settings(app: tauri::State<'_, KCOverlay>) -> Settings{
+    app.settings.clone()
+}
 #[tauri::command]
 async fn read_logs(
     handle: tauri::AppHandle,
@@ -246,7 +241,6 @@ async fn read_logs(
             );
         }
     }
-    Ok(())
 }
 
 async fn handle_log_line(
@@ -256,7 +250,7 @@ async fn handle_log_line(
 ) {
     // Checa se algum jogador entrou na partida.
     if app_mutex.lock().await.settings.auto_manage_players {
-        let mut app = app_mutex.lock().await;
+        let app = app_mutex.lock().await;
         if line.contains("entrou na sala") {
             // com certeza não é a maneira mais eficiente de fazer isso!
             let splitted_line: Vec<&str> = line.split(" ").collect();

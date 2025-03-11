@@ -32,7 +32,7 @@ pub struct Bedwars {
     pub assists: u64,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub enum StatsType {
     #[default]
     BedwarsAll,
