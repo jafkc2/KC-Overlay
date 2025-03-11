@@ -156,7 +156,7 @@ pub fn run() {
 }
 
 #[tauri::command]
-fn get_settings(app: tauri::State<'_, KCOverlay>) -> Settings{
+fn get_settings(app: tauri::State<'_, KCOverlay>) -> Settings {
     app.settings.clone()
 }
 #[tauri::command]
@@ -300,6 +300,7 @@ async fn handle_log_line(
         && app_mutex.lock().await.state.waiting < 1
         && !app_mutex.lock().await.state.loading
     {
+        println!("Jogador digitou /jogando");
         let split = line.split("):").map(|x| x.to_string());
         let split_vector: Vec<String> = split.clone().collect();
 

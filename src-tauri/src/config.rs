@@ -4,12 +4,11 @@ use std::{
     fs::{self, File, OpenOptions},
     io::Write,
     path::Path,
-    sync::Mutex,
 };
 
 use serde_json::Value;
 
-use crate::{stats, KCOverlay};
+use crate::KCOverlay;
 
 pub fn get_config_file_path() -> String {
     format!(
@@ -127,9 +126,7 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
 
 /// Função para salvar as configurações para o arquivo.
 #[tauri::command]
-pub fn save_settings(
-    app: tauri::State<'_, KCOverlay>
-) {
+pub fn save_settings(app: tauri::State<'_, KCOverlay>) {
     let settings = app.settings.clone();
     let settings_json = serde_json::json!(settings);
 
@@ -139,6 +136,10 @@ pub fn save_settings(
         .open(get_config_file_path())
         .unwrap();
     config_file
-        .write_all(serde_json::to_string_pretty(&settings_json).unwrap().as_bytes())
+        .write_all(
+            serde_json::to_string_pretty(&settings_json)
+                .unwrap()
+                .as_bytes(),
+        )
         .unwrap();
 }

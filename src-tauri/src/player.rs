@@ -115,9 +115,20 @@ pub async fn get_players(
     handle: AppHandle,
     app_mutex: &tauri::State<'_, Mutex<crate::KCOverlay>>,
 ) {
-    println!("getting players");
+    let http_client = Client::builder()
+        .http2_prior_knowledge()
+        .pool_max_idle_per_host(30)
+        .https_only(true)
+        .build()
+        .unwrap();
 
-    let http_client = Client::new();
+    let http_client2 = Client::builder()
+        .http2_prior_knowledge()
+        .pool_max_idle_per_host(30)
+        .https_only(true)
+        .build()
+        .unwrap();
+
     const MUSH_API: &str = "https://mush.com.br/api/player/";
 
     let rate_limited_arc = Arc::new(Mutex::new(false));
@@ -127,8 +138,20 @@ pub async fn get_players(
     let players_arc = Arc::new(Mutex::new(vec![]));
     let full_rates_instant = Arc::new(Mutex::new(None));
 
+    let mut i = 1;
     for player_name in str_player_list {
-        let http_client = http_client.clone();
+        //let http_client = http_client.clone();
+        let http_client = if i % 2 == 0{
+            println!("1");
+            i += 1;
+
+            http_client.clone()
+        } else{
+            println!("2");
+            i += 1;
+
+            http_client2.clone()
+        };
         let stats_type = stats_type.clone();
         let url = format!("{}{}", MUSH_API, player_name);
 
@@ -140,7 +163,7 @@ pub async fn get_players(
         let full_rates_instant = full_rates_instant.clone();
 
         futures.push(async move {
-            println!("getting {}", player_name.clone());
+            let start = Instant::now();
             for player in cloned_cached_players{
                 if player.username == player_name{
                     players.lock().await.push(player.clone());
@@ -192,14 +215,13 @@ pub async fn get_players(
                 handle.emit("player", player).unwrap();
 
             } else{
-                println!("sending {}", player_name);
                 let response = json["response"].clone();
                 let player = get_player_data(player_name.to_string(), response, stats_type);
                 players.lock().await.push(player.clone());
                 handle.emit("player", player).unwrap();
 
             }
-
+            println!("fim {} segundos", start.elapsed().as_secs_f32());
             Some(())
         });
     }
@@ -211,7 +233,7 @@ pub async fn get_players(
 
     app.add_players_to_cache(players.to_vec());
 
-    match *full_rates_instant.lock().await{
+    match *full_rates_instant.lock().await {
         Some(instant) => app.state.rates_full_time = instant,
         None => (),
     }
