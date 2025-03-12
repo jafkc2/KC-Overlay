@@ -1,47 +1,57 @@
 <script setup lang="ts">
-import { onMounted, Ref, ref } from "vue";
-
-import Titlebar from './components/Titlebar.vue'
+import { onMounted, ref, Ref } from "vue";
 import PlayerRow from "./components/PlayerRow.vue";
-
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-
-import {Player} from "./types"
-
-const greetMsg = ref("");
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import type { Player } from "./types";
 
 let players : Ref<Player[]> = ref([]);
 
-function player_html(player: Player){
-
-}
-
 onMounted(async () => {
-  listen<Player>('player', (event) => {
-    const player : Player = event.payload;
+  listen('player', (event) => {
+    const player = event.payload as Player;
     players.value.push(player);
-    console.log(player)
-  })
+    console.log(player);
+  });
 
-  listen<boolean>('loading', (event) => {
-    if (event.payload){
-      players.value = []
+  listen('loading', (event) => {
+    if (event.payload) {
+      players.value = [];
     }
-  })
+  });
+  
   await invoke("read_logs");
-})
-
-
+});
 </script>
 
 <template>
-  <main data-tauri-drag-region class="container">
-    <Titlebar></Titlebar>
-    <p>Digite /jogando no chat do Mush para ver os stats dos jogadores.</p>
+  <div class="main-container">
+    <div class="title-bar">
+      <h1 class="text-lg font-bold">KC Overlay</h1>
+      <div class="controls">
+        <button v-on:click="getCurrentWindow().minimize()" class="control-btn">
+          ━
+        </button>
+        <button v-on:click="getCurrentWindow().close()" class="control-btn">
+          ✕
+        </button>
+      </div>
+    </div>
 
-    <div><PlayerRow v-for="(player, index) in players" :key="index" :username="player.username" :level="player.stats.Bedwars.level" :level_color="player.stats.Bedwars.level_color"></PlayerRow></div>
-  </main>
+    <div class="players-container">
+      <TransitionGroup 
+        name="list" 
+        tag="div"
+        class="space-y-2"
+      >
+        <PlayerRow
+          v-for="player in players"
+          :player="player"
+        />
+      </TransitionGroup>
+    </div>
+  </div>
 </template>
 
 <style>
@@ -114,5 +124,52 @@ button {
 
 #greet-input {
   margin-right: 5px;
+}
+
+.main-container {
+  padding: 1rem;
+  min-width: 400px;
+  border-radius: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.list-leave-active {
+  position: absolute;
 }
 </style>
