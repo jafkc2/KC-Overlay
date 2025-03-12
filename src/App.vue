@@ -56,7 +56,7 @@ onMounted(async () => {
 
 <style>
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Minecraftia";
 
   color: rgb(205, 214, 244);
   background-color: rgba(24, 24, 37, 0.75);
@@ -67,6 +67,13 @@ onMounted(async () => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+@font-face {
+  font-family: "Minecraftia";
+  src: url("@/../../fonts/Minecraftia-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
 }
 
 .container {
