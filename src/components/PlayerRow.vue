@@ -50,6 +50,7 @@ defineProps<Props>();
   display: flex;
   align-items: center;
   vertical-align: middle;
+  width: 320px;
 }
 .symbol_div{
   display: inline-block;
@@ -65,7 +66,7 @@ defineProps<Props>();
 
 span{
   margin-right: 2px;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 2.0;
 }
 .player_row{
@@ -74,8 +75,8 @@ span{
 }
 .stat {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  min-width: 60px;
+  text-align: center;
+  margin-right: 20px;
 }
 </style>

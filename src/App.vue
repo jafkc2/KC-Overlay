@@ -2,6 +2,8 @@
 import { onMounted, ref, Ref } from "vue";
 import PlayerRow from "./components/PlayerRow.vue";
 import TitleBar from "./components/Titlebar.vue";
+import StatsIndicator from "./components/StatsIndicator.vue";
+
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { Player } from "./types";
@@ -55,6 +57,8 @@ onMounted(async () => {
   <div>
     <TitleBar></TitleBar>
 
+    <StatsIndicator :player_number="players.length"></StatsIndicator>
+
     <div class="players-container">
       <TransitionGroup 
         name="list" 
@@ -81,6 +85,8 @@ onMounted(async () => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+  font-size: 15px;
+  line-height: 0.0;
 }
 
 @font-face {
