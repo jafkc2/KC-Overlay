@@ -1,12 +1,26 @@
+<script setup lang="ts">
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
+</script>
+
 <template>
     <div class="titlebar">
-        <button>Configurações</button>
-        <button>Ver jogador</button>
-        <button>Sobre</button>
+        <button class="flex_button">
+            <img src="../../assets/settings.svg"/>
+            <span>Configurações</span>
+        </button>
+        <button class="flex_button">
+            <img src="../../assets/search.svg"/>
+            <span>Ver jogador</span>
+        </button>
+        <button class="flex_button">
+            <img src="../../assets/favorite.svg"/>
+            <span>Sobre</span>
+        </button>
 
-        <div class="window_buttons">
-            <button>–</button>
-            <button>X</button>
+        <div class="window_buttons_div">
+            <button class="window_button" v-on:click="getCurrentWindow().minimize()">-</button>
+            <button class="window_button" v-on:click="getCurrentWindow().close()">x</button>
         </div>
     </div>
 </template>
@@ -15,12 +29,30 @@
     .titlebar{
         display: flex;
         align-items: center;
+        margin-bottom: 20px;
     }
-    .window_buttons{
+    .window_buttons_div{
         margin-left: auto;
     }
+    .window_button{
+        padding-left: 12px;
+        padding-right: 12px;
+    }
     button{
-        margin-left: 10px;
+        padding: 6px;
+        margin-right: 10px;
+        padding-left: 4px;
+        padding-right: 4px;
         font-size: 0.75rem;
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+    }
+    .flex_button{
+        display: flex;
+    }
+    img{
+        margin-right: 10px;
+        width: 18px;
     }
 </style>

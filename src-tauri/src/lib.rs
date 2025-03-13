@@ -168,9 +168,9 @@ async fn read_logs(
     handle
         .emit(
             "player",
-            Player::new_nicked("Jogador_test".to_string(), StatsType::BedwarsAll),
-        )
+            player::get_player("JafKC", app.lock().await.settings.stats_type.clone()).await.unwrap())
         .unwrap();
+
     let mut client = app.lock().await.settings.client.clone();
     let logs_path = client.get_logs_path();
     let mut file = File::open(&logs_path).await;
@@ -262,7 +262,7 @@ async fn handle_log_line(
                         player::get_player(player_name, app.settings.stats_type.clone()).await;
 
                     if let Ok(ok) = player {
-                        handle.emit("player", ok).unwrap();
+                        handle.emit("player_joined", ok).unwrap();
                     }
 
                     break;

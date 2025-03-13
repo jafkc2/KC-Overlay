@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref, Ref } from "vue";
 import PlayerRow from "./components/PlayerRow.vue";
+import TitleBar from "./components/Titlebar.vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { Player } from "./types";
 
 let players : Ref<Player[]> = ref([]);
@@ -12,8 +12,34 @@ onMounted(async () => {
   listen('player', (event) => {
     const player = event.payload as Player;
     players.value.push(player);
-    console.log(player);
+    players.value.sort((a, b) => b.stats.Bedwars.level - a.stats.Bedwars.level)
   });
+
+  listen('player_joined', (event) => {
+    const player = event.payload as Player;
+    let already_in_list = false;
+    for (const i of players.value){
+      if (player == i){
+        already_in_list = true;
+        break;
+      }
+    }
+
+    if (!already_in_list){
+      players.value.push(player)
+      players.value.sort((a, b) => b.stats.Bedwars.level - a.stats.Bedwars.level)
+    }
+  })
+
+  listen('remove_player', (event) => {
+    const player_name = event.payload as string;
+
+    players.value.forEach((player, index) => {
+      if (player.username == player_name){
+        players.value.splice(index, 1);
+      }
+    })
+  })
 
   listen('loading', (event) => {
     if (event.payload) {
@@ -26,18 +52,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="main-container">
-    <div class="title-bar">
-      <h1 class="text-lg font-bold">KC Overlay</h1>
-      <div class="controls">
-        <button v-on:click="getCurrentWindow().minimize()" class="control-btn">
-          ━
-        </button>
-        <button v-on:click="getCurrentWindow().close()" class="control-btn">
-          ✕
-        </button>
-      </div>
-    </div>
+  <div>
+    <TitleBar></TitleBar>
 
     <div class="players-container">
       <TransitionGroup 
@@ -56,12 +72,10 @@ onMounted(async () => {
 
 <style>
 :root {
-  font-family: "Minecraftia";
-
-  color: rgb(205, 214, 244);
+  font-family: "Minecraftia", "Symbols";
+  color: #ffffff;
   background-color: rgba(24, 24, 37, 0.75);
   border-radius: 15px;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -74,6 +88,16 @@ onMounted(async () => {
   src: url("@/../../fonts/Minecraftia-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
+  font-size: inherit;
+}
+
+@font-face {
+  font-family: "Symbols";
+  src: url("@/../../fonts/BalsamiqSans-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-size: inherit;
+
 }
 
 .container {
@@ -102,11 +126,9 @@ input,
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  color: rgb(205, 214, 244);
+  color: #ffffff;
   background-color: rgb(49, 50, 68);
   transition: border-color 0.25s;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
@@ -133,13 +155,6 @@ button {
   margin-right: 5px;
 }
 
-.main-container {
-  padding: 1rem;
-  min-width: 400px;
-  border-radius: 0.5rem;
-  background-color: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-}
 
 .title-bar {
   display: flex;
@@ -167,7 +182,7 @@ button {
 .list-move,
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.5s ease;
 }
 
 .list-enter-from,
@@ -176,6 +191,7 @@ button {
   transform: translateX(-30px);
 }
 
+.list-enter-active,
 .list-leave-active {
   position: absolute;
 }
