@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { onMounted, ref, Ref } from "vue";
-import PlayerRow from "./components/PlayerRow.vue";
-import TitleBar from "./components/Titlebar.vue";
-import StatsIndicator from "./components/StatsIndicator.vue";
-
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { Player } from "./types";
+import { Player, View } from "./types";
+import { onMounted, Ref, ref } from "vue";
+
+import PlayerTable from "./components/PlayerTable.vue";
+import TitleBar from "./components/Titlebar.vue";
+
+import About from "./About.vue";
+import Settings  from "./Settings.vue";
+import ViewPlayer from "./ViewPlayer.vue";
 
 let players : Ref<Player[]> = ref([]);
+
+let current_view = ref(View.main);
 
 onMounted(async () => {
   listen('player', (event) => {
@@ -49,28 +54,32 @@ onMounted(async () => {
     }
   });
   
+  listen('change_view', (event) => {
+    const view = event.payload as View;
+    current_view.value = view;
+    console.log(event);
+    console.log("eae " + current_view);
+
+  })
   await invoke("read_logs");
 });
+
+
 </script>
 
 <template>
-  <div>
+  <div v-if="current_view == View.main">
     <TitleBar></TitleBar>
-
-    <StatsIndicator :player_number="players.length"></StatsIndicator>
-
-    <div class="players-container">
-      <TransitionGroup 
-        name="list" 
-        tag="div"
-        class="space-y-2"
-      >
-        <PlayerRow
-          v-for="player in players"
-          :player="player"
-        />
-      </TransitionGroup>
-    </div>
+    <PlayerTable :players="players"></PlayerTable>
+  </div>
+  <div v-else-if="current_view == View.settings">
+    <Settings></Settings>
+  </div>
+  <div v-else-if="current_view == View.about">
+    <About></About>
+  </div>
+  <div v-else-if="current_view == View.viewPlayer">
+    <ViewPlayer></ViewPlayer>
   </div>
 </template>
 
@@ -124,9 +133,6 @@ onMounted(async () => {
   justify-content: center;
 }
 
-h1 {
-  text-align: center;
-}
 
 input,
 button {

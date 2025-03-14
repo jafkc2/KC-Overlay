@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { emit } from '@tauri-apps/api/event';
+import { View } from '../types'
+
 
 </script>
 
 <template>
     <div class="titlebar">
-        <button class="flex_button">
+        <button v-on:click="emit('change_view', View.settings)" class="flex_button">
             <img src="../../assets/settings.svg"/>
             <span>Configurações</span>
         </button>
-        <button class="flex_button">
+        <button v-on:click="emit('change_view', View.viewPlayer)" class="flex_button">
             <img src="../../assets/search.svg"/>
             <span>Ver jogador</span>
         </button>
-        <button class="flex_button">
+        <button v-on:click="emit('change_view', View.about)" class="flex_button">
             <img src="../../assets/favorite.svg"/>
             <span>Sobre</span>
         </button>

@@ -177,3 +177,8 @@ pub fn unix_time_to_date(time: i64) -> String {
         date_time.format("%d/%m/%y às %H:%M").to_string()
     }
 }
+
+#[tauri::command]
+pub fn get_version(app: tauri::AppHandle) -> String {
+    app.package_info().version.to_string()
+}

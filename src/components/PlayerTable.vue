@@ -1,0 +1,150 @@
+<template>
+<div class="table-container">
+  <table>
+    <thead>
+      <tr class="head-tr">
+        <th class="user-th">Top {{ players.length }} jogadores da sala</th>
+        <th>WS</th>
+        <th>WLR</th>
+        <th>FKDR</th>
+        <th>KDR</th>
+        <th>Vitórias</th>
+        <th>Derrotas</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr v-for="player in players">
+        <td class="user-td">
+          <div class="username">
+            <span v-if="player.is_nicked" :style="{ color: nicked_color }"
+              >[nicked]</span
+            >
+            <div
+              v-else
+              :style="{ color: rgb_style(player.stats.Bedwars.level_color) }"
+            >
+              <span class="level">[{{ player.stats.Bedwars.level }}</span>
+              <div class="symbol_div">
+                <span class="symbol">{{
+                  player.stats.Bedwars.level_symbol
+                }}</span>
+              </div>
+              <span>]</span>
+            </div>
+
+            <span :style="{ color: rgb_style(player.username_color) }">{{
+              player.username
+            }}</span>
+            <span
+              v-if="player.clan"
+              :style="{ color: rgb_style(player.clan_color) }"
+              >[{{ player.clan }}]</span
+            >
+          </div>
+        </td>
+
+        <td :style="{color: get_ws_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winstreak >= 100 }">{{ player.stats.Bedwars.winstreak }}</td>
+        <td :style="{color: get_wlr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winrate >= 8 }">{{ player.stats.Bedwars.winrate.toFixed(2) }}</td>
+        <td :style="{color: get_fkdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.final_kill_death_ratio >= 50}">{{ player.stats.Bedwars.final_kill_death_ratio.toFixed(2) }}</td>
+        <td :style="{color: get_kdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.kill_death_ratio >= 4 }">{{ player.stats.Bedwars.kill_death_ratio.toFixed(2) }}</td>
+        <td>{{ player.stats.Bedwars.wins }}</td>
+        <td>{{ player.stats.Bedwars.losses }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</template>
+
+<script setup lang="ts">
+import type { Player, Rgb } from "../types.ts";
+import {get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color} from "../util.ts";
+
+function rgb_style(rgb: Rgb): string {
+  return `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`;
+}
+
+const nicked_color = "rgb(255, 255, 0)";
+
+interface Props {
+  players: Player[];
+}
+defineProps<Props>();
+</script>
+
+<style scoped>
+.table-container {
+    padding-top: 10px;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+table{
+    padding-top: 299px;
+    border-collapse: collapse;
+}
+th{
+    font-size: 13px;
+}
+th, td {
+    text-align: center;
+    padding: 0px 5px;
+
+}
+.user-td, .user-th {
+    text-align: left;
+    width: 300px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.head-tr{
+    margin-bottom: 20px;
+    height: 10px;
+    vertical-align: top;
+}
+
+.username {
+  display: flex;
+  vertical-align: middle;
+}
+.symbol_div {
+  display: inline-block;
+}
+.level {
+  margin-right: 0;
+}
+.symbol {
+  font-size: 15px;
+  position: relative;
+  bottom: 10px;
+}
+
+span {
+  margin-right: 2px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.player_row {
+  display: flex;
+  line-height: 12px;
+}
+
+
+.stat.super {
+  color: cyan;
+  text-shadow: 0 0 10px #07ec53, 0 0 20px #ff0080, 0 0 30px #fbff00;
+  animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    color: cyan;
+    text-shadow: 0 0 10px #07ec53, 0 0 20px #ff0080, 0 0 30px #fbff00;
+}
+  100% {
+    color: #d400ff; /* Orange */
+    text-shadow: 0 0 15px #ff8c00, 0 0 25px #ff8c00, 0 0 35px #ff4500;
+  }
+}
+</style>

@@ -150,7 +150,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![read_logs])
+        .invoke_handler(tauri::generate_handler![read_logs, util::get_version, get_settings])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -170,6 +170,24 @@ async fn read_logs(
             "player",
             player::get_player("JafKC", app.lock().await.settings.stats_type.clone()).await.unwrap())
         .unwrap();
+
+        handle
+        .emit(
+            "player",
+            player::get_player("Garganov", app.lock().await.settings.stats_type.clone()).await.unwrap())
+        .unwrap();
+
+        handle
+        .emit(
+            "player",
+            player::get_player("CupSproKC", app.lock().await.settings.stats_type.clone()).await.unwrap())
+        .unwrap();
+    handle
+    .emit(
+        "player",
+        player::get_player("SigmagetoKC98", app.lock().await.settings.stats_type.clone()).await.unwrap())
+    .unwrap();
+        
 
     let mut client = app.lock().await.settings.client.clone();
     let logs_path = client.get_logs_path();

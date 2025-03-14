@@ -41,3 +41,10 @@ type Bedwars = {
     hours_played: number;
     assists: number;
 }
+
+export enum View{
+    main,
+    about,
+    settings,
+    viewPlayer
+  }
