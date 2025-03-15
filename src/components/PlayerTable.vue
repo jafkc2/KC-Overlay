@@ -17,6 +17,7 @@
       <tr v-for="player in players">
         <td class="user-td">
           <div class="username">
+            <img :src="'https://mc-heads.net/avatar/' + player.skin_hash"/>
             <span v-if="player.is_nicked" :style="{ color: nicked_color }"
               >[nicked]</span
             >
@@ -44,7 +45,7 @@
           </div>
         </td>
 
-        <td :style="{color: get_ws_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winstreak >= 100 }">{{ player.stats.Bedwars.winstreak }}</td>
+        <td :style="{color: get_ws_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winstreak >= 100 }">{{ player.stats.Bedwars.winstreak == 0 ? '-' : player.stats.Bedwars.winstreak }}</td>
         <td :style="{color: get_wlr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winrate >= 8 }">{{ player.stats.Bedwars.winrate.toFixed(2) }}</td>
         <td :style="{color: get_fkdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.final_kill_death_ratio >= 50}">{{ player.stats.Bedwars.final_kill_death_ratio.toFixed(2) }}</td>
         <td :style="{color: get_kdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.kill_death_ratio >= 4 }">{{ player.stats.Bedwars.kill_death_ratio.toFixed(2) }}</td>
@@ -73,6 +74,13 @@ defineProps<Props>();
 </script>
 
 <style scoped>
+img{
+  margin-right: 5px;
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+
+}
 .table-container {
     padding-top: 10px;
     max-height: 380px;

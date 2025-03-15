@@ -27,6 +27,7 @@ pub struct Player {
     pub bans: i64,
     pub is_muted: bool,
     pub is_banned: bool,
+    pub skin_hash: String,
     pub stats: Stats,
 }
 
@@ -44,6 +45,7 @@ impl Player {
         bans: i64,
         is_muted: bool,
         is_banned: bool,
+        skin_hash: String,
         stats: Stats,
     ) -> Self {
         Player {
@@ -59,6 +61,7 @@ impl Player {
             bans,
             is_muted,
             is_banned,
+            skin_hash,
             stats,
         }
     }
@@ -103,6 +106,7 @@ impl Player {
             bans: 0,
             is_muted: false,
             is_banned: false,
+            skin_hash: "a".to_owned(),
             is_connected: true,
         }
     }
@@ -302,6 +306,7 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
     let bans = response["ban_blacklist_count"].as_i64().unwrap_or(0);
     let is_muted = response["muted"].as_bool().unwrap_or(false);
     let is_banned = response["banned"].as_bool().unwrap_or(false);
+    let skin_hash = response["skin"]["hash"].as_str().unwrap_or("a").to_string();
 
     let stats = match stats_type {
         StatsType::BedwarsAll
@@ -486,6 +491,7 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
         bans,
         is_muted,
         is_banned,
+        skin_hash,
         stats,
     )
 }

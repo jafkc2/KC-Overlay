@@ -11,6 +11,7 @@ export type Player = {
     bans: number;
     is_muted: boolean;
     is_banned: boolean;
+    skin_hash: string;
     stats: Stats;
   }
 

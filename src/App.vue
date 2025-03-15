@@ -207,4 +207,8 @@ button {
 .list-leave-active {
   position: absolute;
 }
+
+select{
+  background-color: rgb(0, 255, 64);
+}
 </style>
