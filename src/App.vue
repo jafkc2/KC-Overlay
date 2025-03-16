@@ -1,17 +1,39 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Player, View } from "./types";
+import { Player, View, Settings } from "./types";
 import { onMounted, Ref, ref } from "vue";
 
 import PlayerTable from "./components/PlayerTable.vue";
 import TitleBar from "./components/Titlebar.vue";
 
 import About from "./About.vue";
-import Settings  from "./Settings.vue";
+import SettingsView  from "./Settings.vue";
 import ViewPlayer from "./ViewPlayer.vue";
 
 let players : Ref<Player[]> = ref([]);
+  let settings : Settings = {
+    client: {
+        type: 'Default'
+    },
+    custom_client_path: '',
+    never_minimize: false,
+    seconds_to_minimize: 0,
+    auto_manage_players: false,
+    stats_type: {
+        type: 'BedwarsAll'
+    },
+    window_scale: 0,
+    rgb_buttons: false,
+    show_ws: false,
+    show_wlr: false,
+    show_fkdr: false,
+    show_kdr: false,
+    show_wins: false,
+    show_losses: false,
+    show_bans: false,
+    transparency: 75
+};
 
 let current_view = ref(View.main);
 
@@ -59,9 +81,15 @@ onMounted(async () => {
     current_view.value = view;
     console.log(event);
     console.log("eae " + current_view);
-
   })
+
+  listen('settings_changed', (event) => {
+    const new_settings = event.payload as Settings;
+    settings = new_settings;
+  })
+  settings = await invoke("get_settings");
   await invoke("read_logs");
+
 });
 
 
@@ -70,10 +98,10 @@ onMounted(async () => {
 <template>
   <div v-if="current_view == View.main">
     <TitleBar></TitleBar>
-    <PlayerTable :players="players"></PlayerTable>
+    <PlayerTable :players="players" :settings="settings"></PlayerTable>
   </div>
   <div v-else-if="current_view == View.settings">
-    <Settings></Settings>
+    <SettingsView :settings="settings"></SettingsView>
   </div>
   <div v-else-if="current_view == View.about">
     <About></About>
@@ -209,6 +237,13 @@ button {
 }
 
 select{
-  background-color: rgb(0, 255, 64);
+  background-color: rgb(49, 50, 68);
+  color: white;
+  width: 150px;
+  height: 30px;
+  cursor: pointer;
+  appearance: none;
+  border-radius: 8px;
+  border: 1px solid transparent;
 }
 </style>

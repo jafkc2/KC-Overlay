@@ -7,8 +7,10 @@ use std::{
 };
 
 use serde_json::Value;
+use tauri::Emitter;
+use tokio::sync::Mutex;
 
-use crate::KCOverlay;
+use crate::{KCOverlay, Settings};
 
 pub fn get_config_file_path() -> String {
     format!(
@@ -42,7 +44,7 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
 
     if let Value::Object(map) = &mut conf_json {
         if !map.contains_key("client") {
-            map.insert("client".to_owned(), serde_json::to_value(0).unwrap());
+            map.insert("client".to_owned(), serde_json::to_value(super::minecraft_clients::MineClient::Default).unwrap());
         }
         if !map.contains_key("custom_client_path") {
             map.insert(
@@ -71,7 +73,7 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
         if !map.contains_key("stats_type") {
             map.insert(
                 "stats_type".to_owned(),
-                serde_json::to_value("Bedwars Geral").unwrap(),
+                serde_json::to_value(super::stats::StatsType::BedwarsAll).unwrap(),
             );
         }
         if !map.contains_key("window_scale") {
@@ -115,6 +117,9 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
         if !map.contains_key("show_bans") {
             map.insert("show_bans".to_owned(), serde_json::to_value(true).unwrap());
         }
+        if !map.contains_key("transparency") {
+            map.insert("transparency".to_owned(), serde_json::to_value(75).unwrap());
+        }
     }
 
     let serializedjson = serde_json::to_string_pretty(&conf_json).unwrap();
@@ -126,8 +131,10 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
 
 /// Função para salvar as configurações para o arquivo.
 #[tauri::command]
-pub fn save_settings(app: tauri::State<'_, KCOverlay>) {
-    let settings = app.settings.clone();
+pub async fn save_settings(handle: tauri::AppHandle,
+    app: tauri::State<'_, Mutex<KCOverlay>>, settings: Settings) -> Result<(), ()> {
+    handle.emit("settings_changed", settings.clone()).unwrap();
+    app.lock().await.settings = settings.clone();
     let settings_json = serde_json::json!(settings);
 
     let mut config_file = OpenOptions::new()
@@ -142,4 +149,6 @@ pub fn save_settings(app: tauri::State<'_, KCOverlay>) {
                 .as_bytes(),
         )
         .unwrap();
+
+    Ok(())
 }

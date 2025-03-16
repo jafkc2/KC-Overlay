@@ -4,12 +4,12 @@
     <thead>
       <tr class="head-tr">
         <th class="user-th">Top {{ players.length }} jogadores da sala</th>
-        <th>WS</th>
-        <th>WLR</th>
-        <th>FKDR</th>
-        <th>KDR</th>
-        <th>Vitórias</th>
-        <th>Derrotas</th>
+        <th v-if="settings.show_ws">WS</th>
+        <th v-if="settings.show_wlr">WLR</th>
+        <th v-if="settings.show_fkdr">FKDR</th>
+        <th v-if="settings.show_kdr">KDR</th>
+        <th v-if="settings.show_wins">Vitórias</th>
+        <th v-if="settings.show_losses">Derrotas</th>
       </tr>
     </thead>
 
@@ -45,12 +45,12 @@
           </div>
         </td>
 
-        <td :style="{color: get_ws_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winstreak >= 100 }">{{ player.stats.Bedwars.winstreak == 0 ? '-' : player.stats.Bedwars.winstreak }}</td>
-        <td :style="{color: get_wlr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winrate >= 8 }">{{ player.stats.Bedwars.winrate.toFixed(2) }}</td>
-        <td :style="{color: get_fkdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.final_kill_death_ratio >= 50}">{{ player.stats.Bedwars.final_kill_death_ratio.toFixed(2) }}</td>
-        <td :style="{color: get_kdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.kill_death_ratio >= 4 }">{{ player.stats.Bedwars.kill_death_ratio.toFixed(2) }}</td>
-        <td>{{ player.stats.Bedwars.wins }}</td>
-        <td>{{ player.stats.Bedwars.losses }}</td>
+        <td v-if="settings.show_ws" :style="{color: get_ws_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winstreak >= 100 }">{{ player.stats.Bedwars.winstreak == 0 ? '-' : player.stats.Bedwars.winstreak }}</td>
+        <td v-if="settings.show_wlr" :style="{color: get_wlr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winrate >= 8 }">{{ player.stats.Bedwars.winrate.toFixed(2) }}</td>
+        <td v-if="settings.show_fkdr" :style="{color: get_fkdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.final_kill_death_ratio >= 50}">{{ player.stats.Bedwars.final_kill_death_ratio.toFixed(2) }}</td>
+        <td v-if="settings.show_kdr" :style="{color: get_kdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.kill_death_ratio >= 4 }">{{ player.stats.Bedwars.kill_death_ratio.toFixed(2) }}</td>
+        <td v-if="settings.show_wins">{{ player.stats.Bedwars.wins }}</td>
+        <td v-if="settings.show_losses">{{ player.stats.Bedwars.losses }}</td>
       </tr>
     </tbody>
   </table>
@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Player, Rgb } from "../types.ts";
+import type { Player, Rgb, Settings } from "../types.ts";
 import {get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color} from "../util.ts";
 
 function rgb_style(rgb: Rgb): string {
@@ -69,6 +69,7 @@ const nicked_color = "rgb(255, 255, 0)";
 
 interface Props {
   players: Player[];
+  settings: Settings;
 }
 defineProps<Props>();
 </script>
@@ -147,12 +148,12 @@ span {
 
 @keyframes pulse {
   0% {
-    color: cyan;
-    text-shadow: 0 0 10px #07ec53, 0 0 20px #ff0080, 0 0 30px #fbff00;
+    color: rgb(255, 0, 170);
+    text-shadow: 0 0 10px #00eeff, 0 0 20px #0026ff, 0 0 30px #fbff00;
 }
   100% {
-    color: #d400ff; /* Orange */
-    text-shadow: 0 0 15px #ff8c00, 0 0 25px #ff8c00, 0 0 35px #ff4500;
+    color: #ff0000;
+    text-shadow: 0 0 15px #51ff00, 0 0 25px #ffffff, 0 0 35px #ff4500;
   }
 }
 </style>

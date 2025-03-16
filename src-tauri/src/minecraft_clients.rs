@@ -1,8 +1,9 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone, Debug, PartialEq, Serialize)]
+#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum MineClient {
     #[default]
     Default,

@@ -7,14 +7,12 @@ use std::{
 
 use minecraft_clients::MineClient;
 use player::Player;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::from_value;
 use stats::StatsType;
 use tauri::{Emitter, Manager};
 use tokio::{
-    fs::File,
-    io::{AsyncBufReadExt, AsyncSeekExt, BufReader},
-    sync::Mutex,
-    time::sleep,
+    fs::File, io::{AsyncBufReadExt, AsyncSeekExt, BufReader}, sync::Mutex, time::sleep
 };
 
 mod config;
@@ -58,15 +56,14 @@ struct State {
     searched_player_stats_type: StatsType,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct Settings {
     client: MineClient,
+    custom_client_path: String,
     never_minimize: bool,
     seconds_to_minimize: u64,
-    auto_manage_players: bool,
     stats_type: StatsType,
     window_scale: f64,
-    rgb_buttons: bool,
     show_ws: bool,
     show_wlr: bool,
     show_fkdr: bool,
@@ -74,6 +71,7 @@ struct Settings {
     show_wins: bool,
     show_losses: bool,
     show_bans: bool,
+    transparency: i32
 }
 pub fn run() {
     tauri::Builder::default()
@@ -91,22 +89,11 @@ pub fn run() {
                 .as_str()
                 .unwrap_or("")
                 .to_string();
-            let client = match config["client"].as_i64().unwrap_or(0) {
-                0 => MineClient::Default,
-                1 => MineClient::Badlion,
-                2 => MineClient::Lunar,
-                3 => MineClient::LegacyLauncher,
-                4 => MineClient::Custom(custom_client_path),
-                5 => MineClient::Silent,
-                _ => MineClient::Default,
-            };
+            let client = from_value::<MineClient>(serde_json::Value::Object(config["client"].as_object().unwrap().clone())).unwrap_or(MineClient::Default);
             let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
             let seconds_to_minimize = config["seconds_to_minimize"].as_u64().unwrap_or(10);
-            let auto_manage_players = config["auto_manage_players"].as_bool().unwrap_or(true);
-            let stats_type_str = config["stats_type"].as_str().unwrap_or("Bedwars Geral");
-            let stats_type = StatsType::from_string(stats_type_str);
+            let stats_type = from_value::<StatsType>(serde_json::Value::Object(config["stats_type"].as_object().unwrap().clone())).unwrap_or(StatsType::BedwarsAll);
             let window_scale = config["window_scale"].as_f64().unwrap_or(1.0);
-            let rgb_buttons = config["rgb_buttons"].as_bool().unwrap_or(false);
             let show_ws = config["show_ws"].as_bool().unwrap_or(true);
             let show_wlr = config["show_wlr"].as_bool().unwrap_or(true);
             let show_fkdr = config["show_fkdr"].as_bool().unwrap_or(true);
@@ -114,6 +101,7 @@ pub fn run() {
             let show_wins = config["show_wins"].as_bool().unwrap_or(true);
             let show_losses = config["show_losses"].as_bool().unwrap_or(true);
             let show_bans = config["show_bans"].as_bool().unwrap_or(false);
+            let transparency = config["show_transparency"].as_i64().unwrap_or(75) as i32;
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
@@ -126,12 +114,11 @@ pub fn run() {
                 },
                 settings: Settings {
                     client,
-                    auto_manage_players,
+                    custom_client_path,
                     never_minimize,
                     seconds_to_minimize,
                     stats_type,
                     window_scale,
-                    rgb_buttons,
                     show_ws,
                     show_wlr,
                     show_fkdr,
@@ -139,26 +126,29 @@ pub fn run() {
                     show_wins,
                     show_losses,
                     show_bans,
+                    transparency,
                 },
             }));
-
-            // let window = app.get_webview_window("main").unwrap();
-            // let size = PhysicalSize::new(745. * window_scale, 460. * window_scale);
-            // println!("{:?} {}", window.inner_size().unwrap(), window.scale_factor().unwrap());
-            // window.set_size(size).unwrap();
-            // println!("{:?} {}", window.inner_size().unwrap(), window.scale_factor().unwrap());
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![read_logs, util::get_version, get_settings])
+        .invoke_handler(tauri::generate_handler![read_logs, util::get_version, get_settings, config::save_settings])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 #[tauri::command]
-fn get_settings(app: tauri::State<'_, KCOverlay>) -> Settings {
-    app.settings.clone()
+async fn get_settings(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<Settings, ()> {
+    Ok(app.lock().await.settings.clone())
 }
+
+// #[tauri::command]
+// async fn set_settings(app: tauri::State<'_, Mutex<KCOverlay>>, settings: Settings) -> Result<(), ()> {
+//     app.lock().await.settings = settings.clone();
+//     config::save_settings(app);
+//     Ok(())
+// }
+
 #[tauri::command]
 async fn read_logs(
     handle: tauri::AppHandle,
@@ -267,7 +257,6 @@ async fn handle_log_line(
     app_mutex: &tauri::State<'_, Mutex<KCOverlay>>,
 ) {
     // Checa se algum jogador entrou na partida.
-    if app_mutex.lock().await.settings.auto_manage_players {
         let app = app_mutex.lock().await;
         if line.contains("entrou na sala") {
             // com certeza não é a maneira mais eficiente de fazer isso!
@@ -311,7 +300,7 @@ async fn handle_log_line(
                 }
             }
         }
-    }
+    
 
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
     if line.contains("[CHAT] Jogadores")

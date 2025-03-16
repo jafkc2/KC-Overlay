@@ -43,6 +43,42 @@ type Bedwars = {
     assists: number;
 }
 
+export type Settings = {
+    client: MineClient,
+    custom_client_path: string,
+    never_minimize: boolean,
+    seconds_to_minimize: number,
+    auto_manage_players: boolean,
+    stats_type: StatsType,
+    window_scale: number,
+    rgb_buttons: boolean,
+    show_ws: boolean,
+    show_wlr: boolean,
+    show_fkdr: boolean,
+    show_kdr: boolean,
+    show_wins: boolean,
+    show_losses: boolean,
+    show_bans: boolean,
+    transparency: number
+}
+
+export type MineClient = 
+    | {type : "Default"}
+    | {type : "Badlion"}
+    | {type : "Lunar"}
+    | {type : "Silent"}
+    | {type : "LegacyLauncher"}
+    | {type : "Custom"};
+
+export type StatsType =
+    | {type: "BedwarsAll"}
+    | {type: "BedwarsSolo"}
+    | {type: "BedwarsDoubles"}
+    | {type: "BedwarsTrios"}
+    | {type: "BedwarsQuads"}
+    | {type: "Bedwars1v1"}
+    | {type: "Bedwars2v2"};
+
 export enum View{
     main,
     about,

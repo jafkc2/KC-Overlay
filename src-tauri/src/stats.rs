@@ -2,7 +2,7 @@
 
 use std::fmt::Display;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::util::Rgb;
 
@@ -32,7 +32,8 @@ pub struct Bedwars {
     pub assists: u64,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum StatsType {
     #[default]
     BedwarsAll,
