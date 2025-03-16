@@ -290,7 +290,7 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
         - response["first_login"].as_i64().unwrap_or(0)
         < 7200000;
 
-    let username_color = response["rank_tag"]["color"].as_str().unwrap();
+    let username_color = response["rank_tag"]["color"].as_str().unwrap_or("#aaaaaa");
     let (clan, clan_color) = if response["clan"].is_object() {
         (
             Some(response["clan"]["tag"].as_str().unwrap().to_string()),
@@ -307,6 +307,8 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
     let is_muted = response["muted"].as_bool().unwrap_or(false);
     let is_banned = response["banned"].as_bool().unwrap_or(false);
     let skin_hash = response["skin"]["hash"].as_str().unwrap_or("a").to_string();
+
+    let account_type = response["account"]["type"].as_str().unwrap_or("premium");
 
     let stats = match stats_type {
         StatsType::BedwarsAll
@@ -478,6 +480,15 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
             })
         }
     };
+
+    // Para descobrir nickeds com stats
+    match stats{
+        Stats::Bedwars(ref bedwars) => {
+            if account_type == "premium" && !is_connected && bedwars.final_kill_death_ratio == 0.0{
+                return Player::new_nicked(username, stats_type);
+            }
+        },
+    }
 
     Player::new(
         username,
