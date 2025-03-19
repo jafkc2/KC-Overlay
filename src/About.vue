@@ -23,12 +23,12 @@
         <main>
             <p>Considere entrar no servidor do Discord para saber das novidades, fazer sugestões, reportar bugs e interagir com a comunidade.</p>
             <button v-on:click="open_link('https://discord.gg/SKwZSpPCN5')">
-                <img src="../../assets/discord.svg"/>
+                <img src="/discord.svg"/>
                 <span>Discord</span>
             </button>
             <p>Acompanhe o desenvolvimento no Github!</p>
             <button v-on:click="open_link('https://github.com/jafkc2/KC-Overlay')">
-                <img src="../../assets/github.svg"/>
+                <img src="/github.svg"/>
                 <span>Github</span>
             </button>
 

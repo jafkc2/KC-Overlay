@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "tauri-rewrite" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "tauri-rewrite" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -21,8 +21,10 @@ jobs:
         mkdir .cargo
         echo '[target.x86_64-pc-windows-msvc]' >> .cargo/config.toml
         echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config.toml
+    - name: Install dependencies
+      run: npm install
     - name: Build
-      run: cargo build --release
+      run: npm run tauri build
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
@@ -35,12 +37,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install X11 library
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libx11-dev
+    - name: Install dependencies
+      run: npm install
     - name: Build
-      run: cargo build --release
+      run: npm run tauri build
     - name: Make binary executable
       run: chmod +x target/release/KC-Overlay
     - name: Archive binary

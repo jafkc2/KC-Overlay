@@ -179,7 +179,7 @@ onMounted(async () => {
 
 @font-face {
   font-family: "Minecraftia";
-  src: url("@/../../fonts/Minecraftia-Regular.ttf") format("truetype");
+  src: url("/Minecraftia-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-size: inherit;
@@ -187,7 +187,7 @@ onMounted(async () => {
 
 @font-face {
   font-family: "Symbols";
-  src: url("@/../../fonts/BalsamiqSans-Regular.ttf") format("truetype");
+  src: url("/BalsamiqSans-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-size: inherit;

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { emit } from '@tauri-apps/api/event';
 import { View, StatsType } from '../types'
 
@@ -59,13 +58,13 @@ async function search_player() {
 <template>
     <div class="titlebar"  data-tauri-drag-region>
         <button v-on:click="returnToMainView" class="flex_button">
-            <img src="../../assets/back.svg"/>
+            <img src="/back.svg"/>
             <span>Retornar</span>
         </button>
 
         <input type="text" placeholder="Nome do jogador" v-model="username">
         <button class="flex_button" v-on:click="search_player()">
-            <img src="../../assets/search.svg">
+            <img src="/search.svg">
             <span>Ver</span>
         </button>
 

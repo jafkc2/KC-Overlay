@@ -11,7 +11,7 @@ function returnToMainView() {
 <template>
     <div class="titlebar" data-tauri-drag-region>
         <button v-on:click="returnToMainView" class="flex_button">
-            <img src="../../assets/back.svg"/>
+            <img src="/back.svg"/>
             <span>Retornar</span>
         </button>
     </div>

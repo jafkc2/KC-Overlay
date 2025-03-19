@@ -9,15 +9,15 @@ import { View } from '../types'
 <template>
     <div class="titlebar" data-tauri-drag-region>
         <button v-on:click="emit('change_view', View.settings)" class="flex_button">
-            <img src="../../assets/settings.svg"/>
+            <img src="/settings.svg"/>
             <span>Configurações</span>
         </button>
         <button v-on:click="emit('change_view', View.viewPlayer)" class="flex_button">
-            <img src="../../assets/search.svg"/>
+            <img src="/search.svg"/>
             <span>Ver jogador</span>
         </button>
         <button v-on:click="emit('change_view', View.about)" class="flex_button">
-            <img src="../../assets/favorite.svg"/>
+            <img src="/favorite.svg"/>
             <span>Sobre</span>
         </button>
 
