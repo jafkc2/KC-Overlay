@@ -3,20 +3,22 @@ import { ref } from 'vue';
 import Return from './components/Return.vue';
 import Select from './components/Select.vue';
 import { invoke } from '@tauri-apps/api/core';
-import { Settings} from './types'
+import { Settings} from './types';
+import { format_stats } from './util';
+import { open } from '@tauri-apps/plugin-dialog';
 
 interface Props {
   settings: Settings;
 }
 const props = defineProps<Props>();
 
-let clients = ["Geral", "Lunar", "Badlion", "Silent Client", "Legacy Launcher", "Personalizado"];
+let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "Personalizado"];
 let stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2'];
 
 let settings = ref(props.settings)
 
 let client = ref(format_client());
-let stats_type = ref(format_stats());
+let stats_type = ref(format_stats(settings.value));
 
 console.log(settings.value);
 async function save_settings(){
@@ -28,22 +30,25 @@ function update_client(new_client: string){
     client.value = new_client;
     switch (new_client){
         case "Geral":
-            settings.value.client.type = "Default"
+            settings.value.client = {type: "Default"}
             break;
         case "Lunar":
-            settings.value.client.type = "Lunar"
+            settings.value.client = {type: "Lunar"}
             break;
         case "Badlion":
-            settings.value.client.type = "Badlion"
+            settings.value.client = {type: "Badlion"}
             break;
         case "Silent Client":
-            settings.value.client.type = "Silent"
+            settings.value.client = {type: "Silent"}
             break;
         case "Legacy Launcher":
-            settings.value.client.type = "LegacyLauncher"
+            settings.value.client = {type: "LegacyLauncher"}
+            break;
+        case "CM Client":
+            settings.value.client = {type: "CMClient"}
             break;
         case "Personalizado":
-            settings.value.client.type = "Custom"
+            settings.value.client = { type: "Custom", path: settings.value.custom_client_path };
             break;
     }
 
@@ -94,31 +99,23 @@ function format_client(): string{
             return "Silent Client"
         case "LegacyLauncher":
             return "Legacy Launcher"
+        case "CMClient":
+            return "CM Client"
         case "Custom":
             return "Personalizado"
     }
 }
 
-function format_stats(): string{
-    switch (settings.value.stats_type.type){
-        case "BedwarsAll":
-            return "Bedwars Geral"
-        case "BedwarsSolo":
-            return "Bedwars Solo"
-        case "BedwarsDoubles":
-            return "Bedwars Duplas"
-        case "BedwarsTrios":
-            return "Bedwars Trios"
-        case "BedwarsQuads":
-            return "Bedwars quartetos"
-        case "Bedwars1v1":
-            return "Bedwars 1v1"
-        case "Bedwars2v2":
-            return "Bedwars 2v2"
+async function select_log_file(){
+    const file = await open({
+        multiple: false,
+        directory: false
+    });
+
+    if (file){
+        settings.value.custom_client_path = file;
     }
 }
-
-
 </script>
 
 <template>
@@ -129,6 +126,13 @@ function format_stats(): string{
         <div class="setting">
             <span>Client:</span>
             <Select :value="client" :options="clients" @input="update_client"></Select>
+        </div>
+
+        <div v-if="client === 'Personalizado'" class="setting">
+            <span>Log do client:</span>
+
+            <input type="text" placeholder="Exemplo: .minecraft/logs/latest.log" v-model="settings.custom_client_path" @input="save_settings()">
+            <button v-on:click="select_log_file()">Selecionar arquivo</button>
         </div>
 
         <div class="setting">
@@ -147,17 +151,20 @@ function format_stats(): string{
             </button>
         </div>
         <div class="setting">
-            <span>Tempo para minimizar após ativação({{ settings.seconds_to_minimize }}s):</span>
-            <input type="range" @mouseup="save_settings()" v-model.number="settings.seconds_to_minimize" min="2" max="30"/>
+            <span>Tempo para minimizar após ativação:</span>
+            <input type="range" @input="save_settings()" v-model.number="settings.seconds_to_minimize" min="2" max="30"/>
+            <span>({{ settings.seconds_to_minimize }}s)</span>
 
         </div>
+        <!-- <div class="setting">
+            <span>Tamanho:</span>
+            <input type="range" @input="save_settings()" v-model.number="settings.window_scale" min="0.25" max="1.25" step="0.01"/>
+            <span>({{ (settings.window_scale * 100).toFixed(0) }}%)</span>
+        </div> -->
         <div class="setting">
-            <span>Tamanho({{ settings.window_scale }}):</span>
-            <input type="range" @mouseup="save_settings()" v-model.number="settings.window_scale" min="25" max="125"/>
-        </div>
-        <div class="setting">
-            <span>Nível de transparência({{settings.transparency}}%):</span>
-            <input type="range" @mouseup="save_settings()" v-model.number="settings.transparency" min="25" max="125"/>
+            <span>Nível de transparência:</span>
+            <input type="range" @input="save_settings()" v-model.number="settings.transparency" min="0" max="100"/>
+            <span>({{settings.transparency}}%)</span>
 
         </div>
 
@@ -222,10 +229,32 @@ function format_stats(): string{
     max-height: 380px;
     overflow-y: auto;
 }
+.container::-webkit-scrollbar-track {
+  background: rgb(29, 30, 48);
+  border-radius: 8px;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background: rgb(49, 50, 68);
+  border-radius: 8px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background: rgb(137, 180, 250);
+}
 .setting{
     display: flex;
     align-items: center;
     margin-left: 20px;
     margin-bottom: 10px;
 }
+
+button{
+    margin-left: 10px;
+}
+input[type="text"] {
+    width: 360px;
+    margin-left: 10px;
+}
+
 </style>
