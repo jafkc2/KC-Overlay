@@ -10,7 +10,26 @@
     "core:window:allow-start-dragging",
     "core:window:allow-close",
     "core:window:allow-minimize",
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-unminimize",
+    "core:window:allow-set-ignore-cursor-events",
     "opener:default",
-    "http:default"
+    "http:default",
+    "global-shortcut:allow-is-registered",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "dialog:allow-open",
+    "dialog:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "https://github.com/jafkc2/KC-Overlay"
+        },
+        {
+          "path": "https://discord.gg/SKwZSpPCN5"
+        }
+      ]
+    }
   ]
 }

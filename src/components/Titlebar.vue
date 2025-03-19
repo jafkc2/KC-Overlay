@@ -7,7 +7,7 @@ import { View } from '../types'
 </script>
 
 <template>
-    <div class="titlebar">
+    <div class="titlebar" data-tauri-drag-region>
         <button v-on:click="emit('change_view', View.settings)" class="flex_button">
             <img src="../../assets/settings.svg"/>
             <span>Configurações</span>

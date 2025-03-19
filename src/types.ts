@@ -68,7 +68,8 @@ export type MineClient =
     | {type : "Lunar"}
     | {type : "Silent"}
     | {type : "LegacyLauncher"}
-    | {type : "Custom"};
+    | {type : "CMClient"}
+    | {type : "Custom"; path: string};
 
 export type StatsType =
     | {type: "BedwarsAll"}

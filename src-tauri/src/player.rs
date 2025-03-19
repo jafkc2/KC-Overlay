@@ -145,12 +145,12 @@ pub async fn get_players(
     let mut i = 1;
     for player_name in str_player_list {
         //let http_client = http_client.clone();
-        let http_client = if i % 2 == 0{
+        let http_client = if i % 2 == 0 {
             println!("1");
             i += 1;
 
             http_client.clone()
-        } else{
+        } else {
             println!("2");
             i += 1;
 
@@ -167,7 +167,6 @@ pub async fn get_players(
         let full_rates_instant = full_rates_instant.clone();
 
         futures.push(async move {
-            let start = Instant::now();
             for player in cloned_cached_players{
                 if player.username == player_name{
                     players.lock().await.push(player.clone());
@@ -225,7 +224,6 @@ pub async fn get_players(
                 handle.emit("player", player).unwrap();
 
             }
-            println!("fim {} segundos", start.elapsed().as_secs_f32());
             Some(())
         });
     }
@@ -482,12 +480,12 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
     };
 
     // Para descobrir nickeds com stats
-    match stats{
+    match stats {
         Stats::Bedwars(ref bedwars) => {
-            if account_type == "premium" && !is_connected && bedwars.final_kill_death_ratio == 0.0{
+            if account_type == "premium" && !is_connected && bedwars.final_kill_death_ratio == 0.0 && is_banned {
                 return Player::new_nicked(username, stats_type);
             }
-        },
+        }
     }
 
     Player::new(

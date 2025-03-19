@@ -3,12 +3,12 @@
     <div class="selected-option">
       {{ selectedOption || placeholder }}
     </div>
-    <ul v-if="isOpen" class="options-list">
+    <ul v-if="isOpen" class="options-list .clickable">
       <li
         v-for="(option, index) in options"
         :key="index"
         @click="selectOption(option)"
-        :class="{ 'selected': option === selectedOption }"
+        :class="{ 'selected': option === selectedOption } .clickable"
       >
         {{ option }}
       </li>
@@ -72,17 +72,25 @@ export default {
 .custom-select {
   position: relative;
   width: 200px;
+  line-height: 0px;
   cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   padding: 8px;
   background-color: rgb(49, 50, 68);
+  margin-left: 10px;
+
+  display: flex;
+  align-items: center;
+
 }
 
 .selected-option {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  margin-left: 0 auto;
+  margin-right: 0 auto;
+
 }
 
 .options-list {
@@ -90,7 +98,7 @@ export default {
   top: 100%;
   left: 0;
   right: 0;
-  border: 1px solid #ccc;
+  border: 1px solid transparent;
   border-top: none;
   border-radius: 0 0 4px 4px;
   background-color: rgb(49, 50, 68);

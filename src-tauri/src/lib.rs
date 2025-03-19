@@ -12,7 +12,10 @@ use serde_json::from_value;
 use stats::StatsType;
 use tauri::{Emitter, Manager};
 use tokio::{
-    fs::File, io::{AsyncBufReadExt, AsyncSeekExt, BufReader}, sync::Mutex, time::sleep
+    fs::File,
+    io::{AsyncBufReadExt, AsyncSeekExt, BufReader},
+    sync::Mutex,
+    time::sleep,
 };
 
 mod config;
@@ -53,7 +56,6 @@ struct State {
     loading: bool,
     waiting: i32,
     rates_full_time: Instant,
-    searched_player_stats_type: StatsType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -71,10 +73,12 @@ struct Settings {
     show_wins: bool,
     show_losses: bool,
     show_bans: bool,
-    transparency: i32
+    transparency: i32,
 }
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .setup(move |app| {
             let monitors = app.available_monitors().unwrap();
@@ -89,10 +93,28 @@ pub fn run() {
                 .as_str()
                 .unwrap_or("")
                 .to_string();
-            let client = from_value::<MineClient>(serde_json::Value::Object(config["client"].as_object().unwrap().clone())).unwrap_or(MineClient::Default);
+            let mut client = from_value::<MineClient>(serde_json::Value::Object(
+                config["client"]
+                    .as_object()
+                    .unwrap_or(&serde_json::Map::new())
+                    .clone(),
+            ))
+            .unwrap_or(MineClient::Default);
+
+            match client{
+                MineClient::Custom(_) => client = MineClient::Custom(custom_client_path.clone()),
+               _ => ()
+            }
+            
             let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
             let seconds_to_minimize = config["seconds_to_minimize"].as_u64().unwrap_or(10);
-            let stats_type = from_value::<StatsType>(serde_json::Value::Object(config["stats_type"].as_object().unwrap().clone())).unwrap_or(StatsType::BedwarsAll);
+            let stats_type = from_value::<StatsType>(serde_json::Value::Object(
+                config["stats_type"]
+                    .as_object()
+                    .unwrap_or(&serde_json::Map::new())
+                    .clone(),
+            ))
+            .unwrap_or(StatsType::BedwarsAll);
             let window_scale = config["window_scale"].as_f64().unwrap_or(1.0);
             let show_ws = config["show_ws"].as_bool().unwrap_or(true);
             let show_wlr = config["show_wlr"].as_bool().unwrap_or(true);
@@ -101,7 +123,7 @@ pub fn run() {
             let show_wins = config["show_wins"].as_bool().unwrap_or(true);
             let show_losses = config["show_losses"].as_bool().unwrap_or(true);
             let show_bans = config["show_bans"].as_bool().unwrap_or(false);
-            let transparency = config["show_transparency"].as_i64().unwrap_or(75) as i32;
+            let transparency = config["transparency"].as_i64().unwrap_or(75) as i32;
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
@@ -110,7 +132,6 @@ pub fn run() {
                     loading: false,
                     waiting: 0,
                     rates_full_time: Instant::now(),
-                    searched_player_stats_type: StatsType::BedwarsAll,
                 },
                 settings: Settings {
                     client,
@@ -132,7 +153,13 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![read_logs, util::get_version, get_settings, config::save_settings])
+        .invoke_handler(tauri::generate_handler![
+            read_logs,
+            util::get_version,
+            get_settings,
+            config::save_settings,
+            search_player
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -142,12 +169,16 @@ async fn get_settings(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<Setting
     Ok(app.lock().await.settings.clone())
 }
 
-// #[tauri::command]
-// async fn set_settings(app: tauri::State<'_, Mutex<KCOverlay>>, settings: Settings) -> Result<(), ()> {
-//     app.lock().await.settings = settings.clone();
-//     config::save_settings(app);
-//     Ok(())
-// }
+#[tauri::command]
+async fn search_player(handle: tauri::AppHandle, username: String, stats_type: StatsType){
+    let player = player::get_player(&username, stats_type).await;
+
+    match player{
+        Ok(ok) => handle.emit("player_to_view", ok).unwrap(),
+        Err(_) => handle.emit("player_to_view", "").unwrap(),
+    }
+    
+}
 
 #[tauri::command]
 async fn read_logs(
@@ -158,28 +189,43 @@ async fn read_logs(
     handle
         .emit(
             "player",
-            player::get_player("JafKC", app.lock().await.settings.stats_type.clone()).await.unwrap())
+            player::get_player("JafKC", app.lock().await.settings.stats_type.clone())
+                .await
+                .unwrap(),
+        )
         .unwrap();
 
-        handle
+    handle
         .emit(
             "player",
-            player::get_player("Garganov", app.lock().await.settings.stats_type.clone()).await.unwrap())
+            player::get_player("Garganov", app.lock().await.settings.stats_type.clone())
+                .await
+                .unwrap(),
+        )
         .unwrap();
 
-        handle
+    handle
         .emit(
             "player",
-            player::get_player("CupSproKC", app.lock().await.settings.stats_type.clone()).await.unwrap())
+            player::get_player("CupSproKC", app.lock().await.settings.stats_type.clone())
+                .await
+                .unwrap(),
+        )
         .unwrap();
     handle
-    .emit(
-        "player",
-        player::get_player("SigmagetoKC98", app.lock().await.settings.stats_type.clone()).await.unwrap())
-    .unwrap();
-        
+        .emit(
+            "player",
+            player::get_player(
+                "SigmagetoKC98",
+                app.lock().await.settings.stats_type.clone(),
+            )
+            .await
+            .unwrap(),
+        )
+        .unwrap();
 
     let mut client = app.lock().await.settings.client.clone();
+    println!("{:?}", client.clone());
     let logs_path = client.get_logs_path();
     let mut file = File::open(&logs_path).await;
 
@@ -193,8 +239,9 @@ async fn read_logs(
             file = Ok(ok);
         }
         Err(_) => {
+
             while !Path::new(&app.lock().await.settings.client.get_logs_path()).exists() {
-                println!("Waiting logs");
+                println!("{} não existe", &app.lock().await.settings.client.get_logs_path());
                 sleep(Duration::from_secs(1)).await;
             }
             client = app.lock().await.settings.client.clone();
@@ -232,7 +279,7 @@ async fn read_logs(
             let file = match File::open(&logs_path).await {
                 Ok(ok) => ok,
                 Err(e) => {
-                    println!("{e}");
+                    println!("{e}: {}", &logs_path);
                     continue;
                 }
             };
@@ -257,50 +304,52 @@ async fn handle_log_line(
     app_mutex: &tauri::State<'_, Mutex<KCOverlay>>,
 ) {
     // Checa se algum jogador entrou na partida.
-        let app = app_mutex.lock().await;
-        if line.contains("entrou na sala") {
-            // com certeza não é a maneira mais eficiente de fazer isso!
-            let splitted_line: Vec<&str> = line.split(" ").collect();
-            for (index, part) in splitted_line.clone().into_iter().enumerate() {
-                if part == "entrou" {
-                    let player_name: &str = splitted_line[index - 1];
+    //let app = app_mutex.lock().await;
+    if line.contains("entrou na sala") {
+        // com certeza não é a maneira mais eficiente de fazer isso!
+        let splitted_line: Vec<&str> = line.split(" ").collect();
+        for (index, part) in splitted_line.clone().into_iter().enumerate() {
+            if part == "entrou" {
+                let player_name: &str = splitted_line[index - 1];
 
-                    let player =
-                        player::get_player(player_name, app.settings.stats_type.clone()).await;
+                let player = player::get_player(
+                    player_name,
+                    app_mutex.lock().await.settings.stats_type.clone(),
+                )
+                .await;
 
-                    if let Ok(ok) = player {
-                        handle.emit("player_joined", ok).unwrap();
-                    }
-
-                    break;
+                if let Ok(ok) = player {
+                    handle.emit("player_joined", ok).unwrap();
                 }
+
+                break;
             }
         }
-        // Checa se o jogador saiu da sala
-        else if line.contains("saiu da sala") {
-            let splitted_line: Vec<&str> = line.split(" ").collect();
+    }
+    // Checa se o jogador saiu da sala
+    else if line.contains("saiu da sala") {
+        let splitted_line: Vec<&str> = line.split(" ").collect();
 
-            for (index, part) in splitted_line.clone().into_iter().enumerate() {
-                if part == "saiu" {
-                    let player_name: &str = splitted_line[index - 1];
-                    handle.emit("remove_player", player_name).unwrap();
-                    break;
-                }
+        for (index, part) in splitted_line.clone().into_iter().enumerate() {
+            if part == "saiu" {
+                let player_name: &str = splitted_line[index - 1];
+                handle.emit("remove_player", player_name).unwrap();
+                break;
             }
         }
-        // Checa se algum jogador que está na lista foi eliminado da partida.
-        else if line.contains("KILL FINAL") {
-            let splitted_line: Vec<&str> = line.split(" ").collect();
+    }
+    // Checa se algum jogador que está na lista foi eliminado da partida.
+    else if line.contains("KILL FINAL") {
+        let splitted_line: Vec<&str> = line.split(" ").collect();
 
-            for (index, part) in splitted_line.clone().into_iter().enumerate() {
-                if part == "morreu" {
-                    let player_name: &str = splitted_line[index - 1];
-                    handle.emit("remove_player", player_name).unwrap();
-                    break;
-                }
+        for (index, part) in splitted_line.clone().into_iter().enumerate() {
+            if part == "morreu" {
+                let player_name: &str = splitted_line[index - 1];
+                handle.emit("remove_player", player_name).unwrap();
+                break;
             }
         }
-    
+    }
 
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
     if line.contains("[CHAT] Jogadores")

@@ -44,7 +44,10 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
 
     if let Value::Object(map) = &mut conf_json {
         if !map.contains_key("client") {
-            map.insert("client".to_owned(), serde_json::to_value(super::minecraft_clients::MineClient::Default).unwrap());
+            map.insert(
+                "client".to_owned(),
+                serde_json::to_value(super::minecraft_clients::MineClient::Default).unwrap(),
+            );
         }
         if !map.contains_key("custom_client_path") {
             map.insert(
@@ -131,8 +134,11 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
 
 /// Função para salvar as configurações para o arquivo.
 #[tauri::command]
-pub async fn save_settings(handle: tauri::AppHandle,
-    app: tauri::State<'_, Mutex<KCOverlay>>, settings: Settings) -> Result<(), ()> {
+pub async fn save_settings(
+    handle: tauri::AppHandle,
+    app: tauri::State<'_, Mutex<KCOverlay>>,
+    settings: Settings,
+) -> Result<(), ()> {
     handle.emit("settings_changed", settings.clone()).unwrap();
     app.lock().await.settings = settings.clone();
     let settings_json = serde_json::json!(settings);

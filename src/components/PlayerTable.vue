@@ -1,9 +1,9 @@
 <template>
-<div class="table-container">
+<div class="table-container"  data-tauri-drag-region>
   <table>
     <thead>
       <tr class="head-tr">
-        <th class="user-th">Top {{ players.length }} jogadores da sala</th>
+        <th class="user-th">Top {{ players.length }} jogadores da sala ({{ format_stats(settings) }})</th>
         <th v-if="settings.show_ws">WS</th>
         <th v-if="settings.show_wlr">WLR</th>
         <th v-if="settings.show_fkdr">FKDR</th>
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import type { Player, Rgb, Settings } from "../types.ts";
-import {get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color} from "../util.ts";
+import {get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color, format_stats} from "../util.ts";
 
 function rgb_style(rgb: Rgb): string {
   return `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`;
@@ -86,6 +86,19 @@ img{
     padding-top: 10px;
     max-height: 380px;
     overflow-y: auto;
+}
+.table-container::-webkit-scrollbar-track {
+  background: rgb(29, 30, 48);
+  border-radius: 8px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: rgb(49, 50, 68);
+  border-radius: 8px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: rgb(137, 180, 250);
 }
 
 table{
@@ -139,21 +152,4 @@ span {
   line-height: 12px;
 }
 
-
-.stat.super {
-  color: cyan;
-  text-shadow: 0 0 10px #07ec53, 0 0 20px #ff0080, 0 0 30px #fbff00;
-  animation: pulse 1.5s infinite alternate;
-}
-
-@keyframes pulse {
-  0% {
-    color: rgb(255, 0, 170);
-    text-shadow: 0 0 10px #00eeff, 0 0 20px #0026ff, 0 0 30px #fbff00;
-}
-  100% {
-    color: #ff0000;
-    text-shadow: 0 0 15px #51ff00, 0 0 25px #ffffff, 0 0 35px #ff4500;
-  }
-}
 </style>

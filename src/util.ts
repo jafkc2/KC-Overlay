@@ -1,4 +1,4 @@
-import { Player } from "./types";
+import { Player, Settings } from "./types";
 
 export function get_ws_color(player: Player) : string{
     const ws = player.stats.Bedwars.winstreak;
@@ -61,5 +61,24 @@ export function get_kdr_color(player: Player) : string{
         return "rgb(255, 0, 0)";
     } else{
         return "rgb(200, 0, 200)";
+    }
+}
+
+export function format_stats(settings: Settings): string{
+    switch (settings.stats_type.type){
+        case "BedwarsAll":
+            return "Bedwars Geral"
+        case "BedwarsSolo":
+            return "Bedwars Solo"
+        case "BedwarsDoubles":
+            return "Bedwars Duplas"
+        case "BedwarsTrios":
+            return "Bedwars Trios"
+        case "BedwarsQuads":
+            return "Bedwars quartetos"
+        case "Bedwars1v1":
+            return "Bedwars 1v1"
+        case "Bedwars2v2":
+            return "Bedwars 2v2"
     }
 }

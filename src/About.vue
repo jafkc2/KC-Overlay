@@ -2,12 +2,17 @@
     import { onMounted, ref } from "vue";
     import Return from "./components/Return.vue";
     import { invoke } from "@tauri-apps/api/core";
+    import { openPath } from '@tauri-apps/plugin-opener';
+
     let version = ref("v");
 
     onMounted(async () => {
         version.value = await invoke("get_version");
     })
 
+    async function open_link(url: string){
+        await openPath(url)
+    }
 </script>
 <template>
     <Return></Return>
@@ -17,12 +22,12 @@
         </header>
         <main>
             <p>Considere entrar no servidor do Discord para saber das novidades, fazer sugestões, reportar bugs e interagir com a comunidade.</p>
-            <button>
+            <button v-on:click="open_link('https://discord.gg/SKwZSpPCN5')">
                 <img src="../../assets/discord.svg"/>
                 <span>Discord</span>
             </button>
             <p>Acompanhe o desenvolvimento no Github!</p>
-            <button>
+            <button v-on:click="open_link('https://github.com/jafkc2/KC-Overlay')">
                 <img src="../../assets/github.svg"/>
                 <span>Github</span>
             </button>
