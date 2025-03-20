@@ -29,7 +29,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: KC-Overlay-Windows
-        path: target/release/KC-Overlay.exe
+        path: src-tauri/target/release/KC-Overlay.exe
 
   build_linux:
 
@@ -49,4 +49,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: KC-Overlay-Linux
-        path: target/release/KC-Overlay
+        path: src-tauri/target/release/KC-Overlay
