@@ -49,8 +49,8 @@
         <td v-if="settings.show_wlr" :style="{color: get_wlr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.winrate >= 8 }">{{ player.stats.Bedwars.winrate.toFixed(2) }}</td>
         <td v-if="settings.show_fkdr" :style="{color: get_fkdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.final_kill_death_ratio >= 50}">{{ player.stats.Bedwars.final_kill_death_ratio.toFixed(2) }}</td>
         <td v-if="settings.show_kdr" :style="{color: get_kdr_color(player)}" class="stat" :class="{ 'super': player.stats.Bedwars.kill_death_ratio >= 4 }">{{ player.stats.Bedwars.kill_death_ratio.toFixed(2) }}</td>
-        <td v-if="settings.show_wins">{{ player.stats.Bedwars.wins }}</td>
-        <td v-if="settings.show_losses">{{ player.stats.Bedwars.losses }}</td>
+        <td v-if="settings.show_wins" :style="{color: get_wins_color(player)}">{{ player.stats.Bedwars.wins }}</td>
+        <td v-if="settings.show_losses" :style="{color: get_losses_color()}">{{ player.stats.Bedwars.losses }}</td>
       </tr>
     </tbody>
   </table>
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import type { Player, Rgb, Settings } from "../types.ts";
-import {get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color, format_stats} from "../util.ts";
+import {get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color, format_stats, get_wins_color, get_losses_color} from "../util.ts";
 
 function rgb_style(rgb: Rgb): string {
   return `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`;
