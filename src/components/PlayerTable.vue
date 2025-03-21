@@ -42,6 +42,15 @@
               :style="{ color: rgb_style(player.clan_color) }"
               >[{{ player.clan }}]</span
             >
+
+            <img v-if="player.is_possible_cheater" src="/radioactive.svg" class="player-indicator"/>
+            <img v-if="player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths > 1.5 && player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths < 2" src="/knife.svg"/>
+            <img v-if="player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths > 2" src="/knife2.svg"/>
+
+            <div v-if="player.bans > 0">
+              <span>{{ player.bans }}</span>
+              <img src="/hammer.svg"/>
+            </div>
           </div>
         </td>
 
@@ -119,7 +128,7 @@ th, td {
 
   position: relative;
   top: 40%;
-  transform: translateY(-30%);
+  transform: translateY(-20%);
 }
 
 .symbol_div {
