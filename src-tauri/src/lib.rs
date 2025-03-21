@@ -185,71 +185,14 @@ async fn read_logs(
     handle: tauri::AppHandle,
     app: tauri::State<'_, Mutex<KCOverlay>>,
 ) -> Result<(), ()> {
-    println!("Starting");
-    handle
-        .emit(
-            "player",
-            player::get_player("JafKC", app.lock().await.settings.stats_type.clone())
-                .await
-                .unwrap(),
-        )
-        .unwrap();
-
-    handle
-        .emit(
-            "player",
-            player::get_player("Garganov", app.lock().await.settings.stats_type.clone())
-                .await
-                .unwrap(),
-        )
-        .unwrap();
-
-    handle
-        .emit(
-            "player",
-            player::get_player("CupSproKC", app.lock().await.settings.stats_type.clone())
-                .await
-                .unwrap(),
-        )
-        .unwrap();
-    handle
-        .emit(
-            "player",
-            player::get_player( 
-                "SigmagetoKC98",
-                app.lock().await.settings.stats_type.clone(),
-            )
-            .await
-            .unwrap(),
-        )
-        .unwrap();
-
-    handle.emit("player", player::Player::new_nicked("username".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("userna2".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("user3na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("user4na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("usern5a".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("us6erna".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("user8na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("user0na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("usern99me".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("sern66ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("sern23ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("ern234ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("er556name".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("ue432rname".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("urn456ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("usen2ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("us09rname".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
-    handle.emit("player", player::Player::new_nicked("userme".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    println!("Starting log read");
 
     let mut client = app.lock().await.settings.client.clone();
-    println!("{:?}", client.clone());
     let logs_path = client.get_logs_path();
     let mut file = File::open(&logs_path).await;
 
     /*
-     * Se o arquivo de logs existir, tudo certo. Caso contrário, espera a lógica principal enviar um que exista.
+     * Se o arquivo de logs existir, tudo certo. Caso contrário, espera um client com logs ser selecionado.
      * O usuário pode selecionar um client que ele não tenha instalado ou colocar um custom client que não exista,
      * fazendo o programa procurar por um log inexistente.
      */
