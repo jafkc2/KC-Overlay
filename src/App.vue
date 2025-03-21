@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Player, View, Settings } from "./types";
 import { onMounted, Ref, ref } from "vue";
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWindow, PhysicalPosition } from '@tauri-apps/api/window';
 
 import PlayerTable from "./components/PlayerTable.vue";
 import TitleBar from "./components/Titlebar.vue";
@@ -145,7 +145,8 @@ onMounted(async () => {
 
 
   settings = await invoke("get_settings");
-  document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString())
+  document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString());
+  await getCurrentWindow().setPosition(new PhysicalPosition(10, 10));
   await invoke("read_logs");
 
 });
