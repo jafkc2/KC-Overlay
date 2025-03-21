@@ -54,6 +54,10 @@ document.addEventListener('mousedown', (e) => {
 });
 
 onMounted(async () => {
+  document.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+  });
+  
   listen('player', (event) => {
     const player = event.payload as Player;
     players.value.push(player);
