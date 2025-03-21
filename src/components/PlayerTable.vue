@@ -75,35 +75,16 @@ defineProps<Props>();
 </script>
 
 <style scoped>
-img{
-  margin-right: 5px;
-  width: 18px;
-  height: 18px;
-  image-rendering: pixelated;
-
-}
 .table-container {
     padding-top: 10px;
     max-height: 380px;
     overflow-y: auto;
 }
-.table-container::-webkit-scrollbar-track {
-  background: rgb(29, 30, 48);
-  border-radius: 8px;
-}
-
-.table-container::-webkit-scrollbar-thumb {
-  background: rgb(49, 50, 68);
-  border-radius: 8px;
-}
-
-.table-container::-webkit-scrollbar-thumb:hover {
-  background: rgb(137, 180, 250);
-}
 
 table{
     padding-top: 299px;
     border-collapse: collapse;
+    line-height: 0px;
 }
 th{
     font-size: 13px;
@@ -111,7 +92,6 @@ th{
 th, td {
     text-align: center;
     padding: 0px 5px;
-
 }
 .user-td, .user-th {
     text-align: left;
@@ -123,13 +103,25 @@ th, td {
 .head-tr{
     margin-bottom: 20px;
     height: 10px;
-    vertical-align: top;
 }
 
 .username {
   display: flex;
-  vertical-align: middle;
+  text-align: center;
+  vertical-align: top;
+  align-items: center;
 }
+.username img {
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+  margin-right: 5px;
+
+  position: relative;
+  top: 40%;
+  transform: translateY(-30%);
+}
+
 .symbol_div {
   display: inline-block;
 }
@@ -141,7 +133,6 @@ th, td {
   position: relative;
   bottom: 10px;
 }
-
 span {
   margin-right: 2px;
   font-size: 14px;
@@ -151,5 +142,4 @@ span {
   display: flex;
   line-height: 12px;
 }
-
 </style>

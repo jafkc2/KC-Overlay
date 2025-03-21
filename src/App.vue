@@ -121,13 +121,17 @@ onMounted(async () => {
 
   })
 
-  await register('alt+z', async () => {
+  await register('alt+z', async (event) => {
     const window = getCurrentWindow();
-    if (await window.isMinimized()){
-      await window.unminimize()
-    } else{
-      await window.minimize();
+
+    if (event.state == "Pressed"){
+      if (await window.isMinimized()){
+        await window.unminimize()
+      } else{
+        await window.minimize();
+      }
     }
+
   });
 
 
@@ -164,7 +168,6 @@ onMounted(async () => {
   background-color: rgba(24, 24, 37, var(--bg-alpha, 0.75));
   border-radius: 15px;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
@@ -179,10 +182,7 @@ onMounted(async () => {
 
 @font-face {
   font-family: "Minecraftia";
-  src: url("/Minecraftia-Regular.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-size: inherit;
+  src: url("/Minecraftia-Regular.woff") format("truetype");
 }
 
 @font-face {
@@ -200,24 +200,15 @@ onMounted(async () => {
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
 .row {
   display: flex;
   justify-content: center;
 }
 
-
 input,
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  font-weight: 500;
   font-family: inherit;
   color: #ffffff;
   background-color: rgb(49, 50, 68);
@@ -242,29 +233,10 @@ button {
   outline: none;
 }
 
-#greet-input {
-  margin-right: 5px;
-}
-
-
 .title-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.controls {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.control-btn {
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s;
 }
 
 .control-btn:hover {
@@ -289,9 +261,25 @@ button {
 
 input[type="text"] {
   margin-left: 20px;
-  text-align: left;
-  box-sizing: border-box;
   padding-left: 10px;
+  vertical-align: middle;
+  justify-items: center;
+  align-items: center;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(24, 24, 37);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(49, 50, 68);
+  border-radius: 10px;
 }
 
 </style>

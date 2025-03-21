@@ -11,8 +11,10 @@ function returnToMainView() {
 <template>
     <div class="titlebar" data-tauri-drag-region>
         <button v-on:click="returnToMainView" class="flex_button">
-            <img src="/back.svg"/>
-            <span>Retornar</span>
+            <div>
+                <img src="/back.svg"/>
+                <span>Retornar</span>
+            </div>
         </button>
     </div>
 </template>
@@ -28,10 +30,8 @@ function returnToMainView() {
         margin-right: 10px;
         padding-left: 4px;
         padding-right: 4px;
-        font-size: 0.75rem;
-        align-items: center;
-        text-align: center;
-        justify-content: center;
+        font-size: 10px;
+        line-height: 10px;
     }
     .flex_button{
         display: flex;

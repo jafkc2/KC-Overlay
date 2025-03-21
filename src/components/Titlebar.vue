@@ -9,21 +9,31 @@ import { View } from '../types'
 <template>
     <div class="titlebar" data-tauri-drag-region>
         <button v-on:click="emit('change_view', View.settings)" class="flex_button">
-            <img src="/settings.svg"/>
-            <span>Configurações</span>
+            <div>
+                <img src="/settings.svg"/>
+                <span>Configurações</span>
+            </div>
         </button>
         <button v-on:click="emit('change_view', View.viewPlayer)" class="flex_button">
-            <img src="/search.svg"/>
-            <span>Ver jogador</span>
+            <div>
+                <img src="/search.svg"/>
+                <span>Ver jogador</span>
+            </div>
         </button>
         <button v-on:click="emit('change_view', View.about)" class="flex_button">
-            <img src="/favorite.svg"/>
-            <span>Sobre</span>
+            <div>
+                <img src="/favorite.svg"/>
+                <span>Sobre</span>
+            </div>
         </button>
 
         <div class="window_buttons_div">
             <button class="window_button" v-on:click="getCurrentWindow().minimize()">-</button>
-            <button class="window_button" v-on:click="getCurrentWindow().close()">x</button>
+            <button class="window_button" v-on:click="getCurrentWindow().close()">
+                <div>
+                    <span>x</span>
+                </div>
+            </button>
         </div>
     </div>
 </template>
@@ -35,21 +45,22 @@ import { View } from '../types'
         margin-bottom: 20px;
     }
     .window_buttons_div{
+        display: flex;
         margin-left: auto;
     }
     .window_button{
         padding-left: 12px;
         padding-right: 12px;
+        line-height: 10px;
+        font-size: 12px;
     }
     button{
         padding: 6px;
         margin-right: 10px;
         padding-left: 4px;
         padding-right: 4px;
-        font-size: 0.75rem;
-        align-items: center;
-        text-align: center;
-        justify-content: center;
+        font-size: 10px;
+        line-height: 10px;
     }
     .flex_button{
         display: flex;
