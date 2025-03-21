@@ -57,7 +57,7 @@ onMounted(async () => {
   document.addEventListener('contextmenu', (event) => {
     event.preventDefault();
   });
-  
+
   listen('player', (event) => {
     const player = event.payload as Player;
     players.value.push(player);
@@ -132,6 +132,10 @@ onMounted(async () => {
     if (event.state == "Pressed"){
       if (await window.isMinimized()){
         await window.unminimize()
+        await window.setAlwaysOnTop(true);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await window.setAlwaysOnTop(false);
+
       } else{
         await window.minimize();
       }
