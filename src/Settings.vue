@@ -125,7 +125,7 @@ async function select_log_file(){
 
         <div class="setting">
             <span>Client:</span>
-            <Select :value="client" :options="clients" @input="update_client"></Select>
+            <Select :value="client" :options="clients" @input="update_client" class="select"></Select>
         </div>
 
         <div v-if="client === 'Personalizado'" class="setting">
@@ -137,7 +137,7 @@ async function select_log_file(){
 
         <div class="setting">
             <span>Stats:</span>
-            <Select :value="stats_type" :options="stats" @input="update_stats"></Select>
+            <Select :value="stats_type" :options="stats" @input="update_stats" class="select"></Select>
 
         </div>
 
@@ -224,6 +224,9 @@ async function select_log_file(){
 </template>
 
 <style scoped>
+.select {
+    padding: 13px;
+}
 .container {
     padding-top: 10px;
     max-height: 380px;
@@ -234,6 +237,7 @@ async function select_log_file(){
     align-items: center;
     margin-left: 20px;
     margin-bottom: 10px;
+    line-height: 20px;
 }
 
 button{

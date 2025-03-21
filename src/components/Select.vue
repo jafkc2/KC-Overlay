@@ -1,5 +1,5 @@
 <template>
-  <div class="custom-select" ref="dropdown" @click="toggleDropdown">
+  <div class="custom-select .clickable" ref="dropdown" @click="toggleDropdown">
     <div class="selected-option">
       {{ selectedOption || placeholder }}
     </div>

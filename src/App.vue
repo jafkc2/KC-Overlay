@@ -41,7 +41,8 @@ let current_view = ref(View.main);
 
 document.addEventListener('mousedown', (e) => {
   let target = e.target as HTMLElement;
-  const clickableElement = target.closest("button, a, input, textarea, select, label, [role='button'], [role='link'], .selected-option, .clickable, li");
+  console.log(target)
+  const clickableElement = target.closest("button, a, input, textarea, select, label, [role='button'], [role='link'], .selected-option, .clickable, li, .custom-select");
   console.log(clickableElement)
   console.log(target)
   if (e.buttons === 1 && !clickableElement) {
