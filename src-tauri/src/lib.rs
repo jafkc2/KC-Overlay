@@ -215,7 +215,7 @@ async fn read_logs(
     handle
         .emit(
             "player",
-            player::get_player(
+            player::get_player( 
                 "SigmagetoKC98",
                 app.lock().await.settings.stats_type.clone(),
             )
@@ -223,6 +223,25 @@ async fn read_logs(
             .unwrap(),
         )
         .unwrap();
+
+    handle.emit("player", player::Player::new_nicked("username".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("userna2".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("user3na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("user4na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("usern5a".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("us6erna".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("user8na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("user0na".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("usern99me".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("sern66ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("sern23ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("ern234ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("er556name".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("ue432rname".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("urn456ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("usen2ame".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("us09rname".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
+    handle.emit("player", player::Player::new_nicked("userme".to_string(), app.lock().await.settings.stats_type.clone())).unwrap();
 
     let mut client = app.lock().await.settings.client.clone();
     println!("{:?}", client.clone());

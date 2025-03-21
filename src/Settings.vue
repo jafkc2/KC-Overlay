@@ -229,19 +229,6 @@ async function select_log_file(){
     max-height: 380px;
     overflow-y: auto;
 }
-.container::-webkit-scrollbar-track {
-  background: rgb(29, 30, 48);
-  border-radius: 8px;
-}
-
-.container::-webkit-scrollbar-thumb {
-  background: rgb(49, 50, 68);
-  border-radius: 8px;
-}
-
-.container::-webkit-scrollbar-thumb:hover {
-  background: rgb(137, 180, 250);
-}
 .setting{
     display: flex;
     align-items: center;

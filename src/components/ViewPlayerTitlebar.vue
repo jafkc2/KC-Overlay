@@ -58,14 +58,18 @@ async function search_player() {
 <template>
     <div class="titlebar"  data-tauri-drag-region>
         <button v-on:click="returnToMainView" class="flex_button">
-            <img src="/back.svg"/>
-            <span>Retornar</span>
-        </button>
+            <div>
+                <img src="/back.svg"/>
+                <span>Retornar</span>
+            </div>
 
-        <input type="text" placeholder="Nome do jogador" v-model="username">
+        </button>
+            <input type="text" placeholder="Nome do jogador" v-model="username">
         <button class="flex_button" v-on:click="search_player()">
-            <img src="/search.svg">
-            <span>Ver</span>
+            <div>
+                <img src="/search.svg">
+                <span>Ver</span>
+            </div>
         </button>
 
 
@@ -82,12 +86,11 @@ async function search_player() {
 
     button{
         padding: 6px;
+        margin-right: 10px;
         padding-left: 4px;
         padding-right: 4px;
-        font-size: 0.75rem;
-        align-items: center;
-        text-align: center;
-        justify-content: center;
+        font-size: 10px;
+        line-height: 10px;
     }
     .flex_button{
         display: flex;
@@ -97,10 +100,16 @@ async function search_player() {
         width: 18px;
     }
 
+    .input-container{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     input[type="text"] {
-        text-align: left;
         box-sizing: border-box;
         margin-right: 5px;
+        line-height: 0px;
+        padding-top: 2px;
     }   
 
     .select{
