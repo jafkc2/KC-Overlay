@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ "tauri-rewrite" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "tauri-rewrite" ]
+    branches: [ "master" ]
 
 env:
   CARGO_TERM_COLOR: always
