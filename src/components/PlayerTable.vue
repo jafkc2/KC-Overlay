@@ -100,7 +100,7 @@ th{
 }
 th, td {
     text-align: center;
-    padding: 0px 7px;
+    padding: 0px 6.5px;
 }
 .user-td, .user-th {
     text-align: left;

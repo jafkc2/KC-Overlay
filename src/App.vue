@@ -72,13 +72,14 @@ onMounted(async () => {
     console.log(event.payload);
     if (event.payload) {
       players.value = [];
-
-      if (await window.isMinimized()){
-        await window.unminimize()
-      }
       await window.setAlwaysOnTop(true);
+
+
+
       if (!settings.never_minimize){
-        //await window.setIgnoreCursorEvents(true)
+        await window.minimize()
+        await new Promise(resolve => setTimeout(resolve, 100))
+        await window.unminimize()
       }
 
     } else{
@@ -86,8 +87,13 @@ onMounted(async () => {
 
       if (!settings.never_minimize){
         await window.setAlwaysOnTop(false);
+
         if (!await window.isMinimized()){
           await window.minimize();
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await window.unminimize();
+
+
         }
       }
       //await window.setIgnoreCursorEvents(false);
