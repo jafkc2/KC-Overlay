@@ -239,7 +239,6 @@ pub async fn get_players(
         Some(instant) => app.state.rates_full_time = instant,
         None => (),
     }
-
     handle.emit("loading", false).unwrap();
     app.state.loading = false;
 }

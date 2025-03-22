@@ -14,37 +14,13 @@ import ViewPlayer from "./ViewPlayer.vue";
 import { register } from "@tauri-apps/plugin-global-shortcut";
 
 let players : Ref<Player[]> = ref([]);
-  let settings : Settings = {
-    client: {
-        type: 'Default'
-    },
-    custom_client_path: '',
-    never_minimize: false,
-    seconds_to_minimize: 0,
-    auto_manage_players: false,
-    stats_type: {
-        type: 'BedwarsAll'
-    },
-    window_scale: 100,
-    rgb_buttons: false,
-    show_ws: false,
-    show_wlr: false,
-    show_fkdr: false,
-    show_kdr: false,
-    show_wins: false,
-    show_losses: false,
-    show_bans: false,
-    transparency: 75
-};
+
 
 let current_view = ref(View.main);
 
 document.addEventListener('mousedown', (e) => {
   let target = e.target as HTMLElement;
-  console.log(target)
   const clickableElement = target.closest("button, a, input, textarea, select, label, [role='button'], [role='link'], .selected-option, .clickable, li, .custom-select");
-  console.log(clickableElement)
-  console.log(target)
   if (e.buttons === 1 && !clickableElement) {
     const window = getCurrentWindow()
     e.detail === 2
@@ -52,6 +28,7 @@ document.addEventListener('mousedown', (e) => {
       : window.startDragging();
   }
 });
+let settings = await invoke<Settings>("get_settings");
 
 onMounted(async () => {
   document.addEventListener('contextmenu', (event) => {
@@ -92,14 +69,16 @@ onMounted(async () => {
 
   listen('loading', async (event) => {
     const window = getCurrentWindow();
-
+    console.log(event.payload);
     if (event.payload) {
       players.value = [];
 
+      if (await window.isMinimized()){
+        await window.unminimize()
+      }
       await window.setAlwaysOnTop(true);
-      await window.unminimize()
       if (!settings.never_minimize){
-        await window.setIgnoreCursorEvents(true)
+        //await window.setIgnoreCursorEvents(true)
       }
 
     } else{
@@ -107,9 +86,11 @@ onMounted(async () => {
 
       if (!settings.never_minimize){
         await window.setAlwaysOnTop(false);
-        await window.minimize();
+        if (!await window.isMinimized()){
+          await window.minimize();
+        }
       }
-      await window.setIgnoreCursorEvents(false)
+      //await window.setIgnoreCursorEvents(false);
 
     }
   });
@@ -143,11 +124,9 @@ onMounted(async () => {
 
   });
 
-
-  settings = await invoke("get_settings");
   document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString());
   await getCurrentWindow().setPosition(new PhysicalPosition(10, 10));
-  await invoke("read_logs");
+  invoke("read_logs");
 
 });
 
@@ -155,7 +134,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="current_view == View.main">
+    <div v-if="current_view == View.main">
     <TitleBar></TitleBar>
     <PlayerTable v-if="players.length > 0" :players="players" :settings="settings"></PlayerTable>
     <p v-else>Olá! Digite o comando /jogando no chat do Mush para ver os stats de todos os jogadores da sala.</p>
@@ -272,9 +251,7 @@ button {
 input[type="text"] {
   margin-left: 20px;
   padding-left: 10px;
-  vertical-align: middle;
-  justify-items: center;
-  align-items: center;
+
 }
 
 ::-webkit-scrollbar {

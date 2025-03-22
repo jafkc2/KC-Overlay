@@ -2,8 +2,18 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { emit } from '@tauri-apps/api/event';
 import { View } from '../types'
+import { invoke } from '@tauri-apps/api/core';
+import { ref } from 'vue';
 
+let update_url = ref("");
+await invoke("check_updates").then((url) => {
+    update_url.value = url as string;
+}).catch(() => {console.log("KC Overlay está atualizado.")});
 
+async function update(url: string){
+    invoke("install_update", {url: url});
+    update_url.value = "";
+}
 </script>
 
 <template>
@@ -24,6 +34,12 @@ import { View } from '../types'
             <div>
                 <img src="/favorite.svg"/>
                 <span>Sobre</span>
+            </div>
+        </button>
+        <button v-if="update_url" v-on:click="update(update_url)">
+            <div>
+                <img src="/download.svg"/>
+                <span>Atualizar</span>
             </div>
         </button>
 

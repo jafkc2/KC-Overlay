@@ -1,4 +1,9 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 
-createApp(App).mount('#app')
+const TheApp = {
+    template: `<Suspense><App /></Suspense>`,
+    components: { App },
+  };
+
+createApp(TheApp).mount('#app')

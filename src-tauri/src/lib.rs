@@ -1,8 +1,5 @@
 use std::{
-    collections::VecDeque,
-    io::SeekFrom,
-    path::Path,
-    time::{Duration, Instant},
+    collections::VecDeque, env, fs, io::SeekFrom, path::Path, time::{Duration, Instant}
 };
 
 use minecraft_clients::MineClient;
@@ -23,6 +20,7 @@ mod minecraft_clients;
 mod player;
 mod stats;
 mod util;
+mod update;
 
 struct KCOverlay {
     state: State,
@@ -76,6 +74,15 @@ struct Settings {
     transparency: i32,
 }
 pub fn run() {
+        // Isso é o processo final do update. Remove o executável antigo, caso exista.
+        let old_exec = env::current_exe().unwrap().with_extension("old");
+        if Path::new(&old_exec).exists() {
+            match fs::remove_file(old_exec) {
+                Ok(ok) => ok,
+                Err(e) => println!("Failed to delete old executable: {e}"),
+            }
+        }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -158,7 +165,9 @@ pub fn run() {
             util::get_version,
             get_settings,
             config::save_settings,
-            search_player
+            search_player,
+            update::check_updates,
+            update::install_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
