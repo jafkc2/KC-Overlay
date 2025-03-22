@@ -1,0 +1,52 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "tauri-rewrite" ]
+  pull_request:
+    branches: [ "tauri-rewrite" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_windows:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Enable static CRT linkage
+      run: |
+        mkdir .cargo
+        echo '[target.x86_64-pc-windows-msvc]' >> .cargo/config.toml
+        echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config.toml
+    - name: Install dependencies
+      run: npm install
+    - name: Build
+      run: npm run tauri build
+    - name: Archive binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: KC-Overlay-Windows
+        path: src-tauri/target/release/KC-Overlay.exe
+
+  build_linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install system dependencies
+      run: sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+    - name: Install project dependencies
+      run: npm install
+    - name: Build
+      run: npm run tauri build
+    - name: Make binary executable
+      run: chmod +x src-tauri/target/release/KC-Overlay
+    - name: Archive binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: KC-Overlay-Linux
+        path: src-tauri/target/release/KC-Overlay
