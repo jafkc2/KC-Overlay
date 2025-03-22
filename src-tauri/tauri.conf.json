@@ -1,7 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "KC-Overlay",
-  "version": "0.8.0",
   "identifier": "com.kc-overlay.app",
   "build": {
     "beforeDevCommand": "npm run dev",
