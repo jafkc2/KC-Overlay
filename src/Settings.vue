@@ -20,12 +20,12 @@ let settings = ref(props.settings)
 let client = ref(format_client());
 let stats_type = ref(format_stats(settings.value));
 
-console.log(settings.value);
 async function save_settings(){
-    console.log(settings.value)
+    if (settings.value.client.type == "Custom"){
+        settings.value.client = { type: "Custom", path: settings.value.custom_client_path }
+    }
     await invoke("save_settings", {settings: settings.value})
 }
-
 function update_client(new_client: string){
     client.value = new_client;
     switch (new_client){
@@ -131,7 +131,7 @@ async function select_log_file(){
         <div v-if="client === 'Personalizado'" class="setting">
             <span>Log do client:</span>
 
-            <input type="text" placeholder="Exemplo: .minecraft/logs/latest.log" v-model="settings.custom_client_path" @input="save_settings()">
+            <input type="text" placeholder="Exemplo: .minecraft/logs/latest.log" v-model="settings.custom_client_path" @input="save_settings">
             <button v-on:click="select_log_file()">Selecionar arquivo</button>
         </div>
 

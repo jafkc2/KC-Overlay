@@ -120,16 +120,12 @@ pub async fn get_players(
     app_mutex: &tauri::State<'_, Mutex<crate::KCOverlay>>,
 ) {
     let http_client = Client::builder()
-        .http2_prior_knowledge()
         .pool_max_idle_per_host(30)
-        .https_only(true)
         .build()
         .unwrap();
 
     let http_client2 = Client::builder()
-        .http2_prior_knowledge()
         .pool_max_idle_per_host(30)
-        .https_only(true)
         .build()
         .unwrap();
 

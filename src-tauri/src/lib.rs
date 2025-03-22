@@ -241,10 +241,11 @@ async fn read_logs(
         // Atualiza o arquivo de logs do client, se necessário
         if app.lock().await.settings.client != client
             || time_since_client_refresh.elapsed() > Duration::from_secs(15)
-        {
-            println!("Refreshed client file");
+        { 
             client = app.lock().await.settings.client.clone();
+
             let logs_path = client.get_logs_path();
+            println!("Refreshed client file {}", logs_path.clone());
 
             let file = match File::open(&logs_path).await {
                 Ok(ok) => ok,
@@ -259,11 +260,6 @@ async fn read_logs(
             reader.seek(SeekFrom::End(0)).await.unwrap();
 
             time_since_client_refresh = Instant::now();
-
-            println!(
-                "Cachê de jogadores: {} jogadores",
-                app.lock().await.state.cached_players.len()
-            );
         }
     }
 }
