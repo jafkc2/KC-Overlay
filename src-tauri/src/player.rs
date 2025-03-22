@@ -1,10 +1,10 @@
 //! Módulo de jogadores.
 
+use reqwest::Client;
 use serde::Serialize;
 use serde_json::Value;
 use std::{collections::VecDeque, sync::Arc, time::Instant};
 use tauri::{AppHandle, Emitter};
-use tauri_plugin_http::reqwest::Client;
 use tokio::sync::Mutex;
 
 use crate::{

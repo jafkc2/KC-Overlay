@@ -2,9 +2,10 @@
 
 use std::{env, fs::{self, File}, io::Write};
 
+use futures::StreamExt;
+use reqwest::Client;
 use serde_json::Value;
-use tauri::http::{header::USER_AGENT, HeaderValue};
-use tauri_plugin_http::reqwest;
+use tauri::{http::{header::USER_AGENT, HeaderValue}, Emitter};
 
 #[tauri::command]
 pub async fn check_updates(handle: tauri::AppHandle) -> Result<String, ()> {
@@ -79,8 +80,8 @@ pub async fn check_updates(handle: tauri::AppHandle) -> Result<String, ()> {
 }
 
 #[tauri::command]
-pub async fn install_update(url: String) -> Result<(), String> {
-    match download_update(url).await{
+pub async fn install_update(handle: tauri::AppHandle, url: String) -> Result<(), String> {
+    match download_update(handle, url).await{
         Ok(_) => {
             let exec_path = env::current_exe().unwrap();
 
@@ -109,7 +110,7 @@ pub async fn install_update(url: String) -> Result<(), String> {
     }
 }
 
-async fn download_update(url: String) -> Result<(), String>{
+async fn download_update(handle: tauri::AppHandle, url: String) -> Result<(), String>{
     let exec_path = env::current_exe().unwrap();
     let mut exec_file = File::create(exec_path.with_extension("new")).unwrap();
 
@@ -124,11 +125,31 @@ async fn download_update(url: String) -> Result<(), String>{
     }
 
     println!("{url}");
-    let download = reqwest::get(url).await;
+    let client = Client::new();
+    let download = client.get(url).send().await;
 
     match download {
         Ok(ok) => {
-            exec_file.write_all(&ok.bytes().await.unwrap()).unwrap();
+
+            let total_size = ok
+            .headers()
+            .get("content-length")
+            .and_then(|v| v.to_str().ok()?.parse::<u64>().ok())
+            .unwrap_or(0);
+
+            let mut downloaded = 0;
+
+
+            let mut stream = ok.bytes_stream();
+
+            while let Some(chunk) = stream.next().await {
+                let chunk = chunk.unwrap();
+                exec_file.write_all(&chunk).unwrap();
+                downloaded += chunk.len() as u64;
+
+                handle.emit("update_progress", downloaded * 100 / total_size).unwrap();
+            }
+
             println!("Update baixada com sucesso");
             Ok(())
         }

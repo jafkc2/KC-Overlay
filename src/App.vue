@@ -131,11 +131,17 @@ onMounted(async () => {
 });
 
 
+let update_url = ref("");
+await invoke("check_updates").then((url) => {
+    update_url.value = url as string;
+}).catch(() => {console.log("KC Overlay está atualizado.")});
+
+
 </script>
 
 <template>
     <div v-if="current_view == View.main">
-    <TitleBar></TitleBar>
+    <TitleBar :update_url="update_url"></TitleBar>
     <PlayerTable v-if="players.length > 0" :players="players" :settings="settings"></PlayerTable>
     <p v-else>Olá! Digite o comando /jogando no chat do Mush para ver os stats de todos os jogadores da sala.</p>
   </div>

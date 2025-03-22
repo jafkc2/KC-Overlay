@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { emit } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { View } from '../types'
-import { invoke } from '@tauri-apps/api/core';
-import { ref } from 'vue';
+import {update} from '../main'
+import { onMounted, ref } from 'vue';
 
-let update_url = ref("");
-await invoke("check_updates").then((url) => {
-    update_url.value = url as string;
-}).catch(() => {console.log("KC Overlay está atualizado.")});
-
-async function update(url: string){
-    invoke("install_update", {url: url});
-    update_url.value = "";
+const update_progress = ref(0);
+onMounted(async () => {
+    listen('update_progress', (event) => {
+        update_progress.value = event.payload as number;
+    })
+})
+interface Props {
+  update_url: string;
 }
+defineProps<Props>();
 </script>
 
 <template>
@@ -36,13 +37,17 @@ async function update(url: string){
                 <span>Sobre</span>
             </div>
         </button>
-        <button v-if="update_url" v-on:click="update(update_url)">
+        <button v-if="update_url && update_progress == 0" v-on:click="update(update_url)">
             <div>
                 <img src="/download.svg"/>
                 <span>Atualizar</span>
             </div>
         </button>
-
+        <button v-if="update_progress > 0">
+            <img src="/download.svg"/>
+            <span>{{update_progress}}%</span>
+        </button>
+        
         <div class="window_buttons_div">
             <button class="window_button" v-on:click="getCurrentWindow().minimize()">-</button>
             <button class="window_button" v-on:click="getCurrentWindow().close()">

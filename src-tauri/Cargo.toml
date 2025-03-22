@@ -21,7 +21,7 @@ serde_json = "1"
 chrono = "0.4"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.31"
-tauri-plugin-http = "2"
+reqwest = { version = "0.12.15", features = ["stream"] }
 tauri-plugin-dialog = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
