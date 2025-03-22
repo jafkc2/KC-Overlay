@@ -95,6 +95,7 @@ export default {
 
 .options-list {
   position: absolute;
+  text-align: left;
   top: 100%;
   left: 0;
   right: 0;
