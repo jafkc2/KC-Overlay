@@ -114,6 +114,7 @@ async function select_log_file(){
 
     if (file){
         settings.value.custom_client_path = file;
+        save_settings()
     }
 }
 </script>
