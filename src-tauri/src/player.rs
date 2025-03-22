@@ -119,15 +119,9 @@ pub async fn get_players(
     handle: AppHandle,
     app_mutex: &tauri::State<'_, Mutex<crate::KCOverlay>>,
 ) {
-    let http_client = Client::builder()
-        .pool_max_idle_per_host(30)
-        .build()
-        .unwrap();
+    let http_client = Client::new();
 
-    let http_client2 = Client::builder()
-        .pool_max_idle_per_host(30)
-        .build()
-        .unwrap();
+    let http_client2 = Client::new();
 
     const MUSH_API: &str = "https://mush.com.br/api/player/";
 
@@ -140,14 +134,11 @@ pub async fn get_players(
 
     let mut i = 1;
     for player_name in str_player_list {
-        //let http_client = http_client.clone();
         let http_client = if i % 2 == 0 {
-            println!("1");
             i += 1;
 
             http_client.clone()
         } else {
-            println!("2");
             i += 1;
 
             http_client2.clone()
