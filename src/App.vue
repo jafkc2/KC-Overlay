@@ -45,7 +45,7 @@ onMounted(async () => {
     const player = event.payload as Player;
     let already_in_list = false;
     for (const i of players.value){
-      if (player == i){
+      if (player.username == i.username){
         already_in_list = true;
         break;
       }
