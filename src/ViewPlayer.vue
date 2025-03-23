@@ -39,8 +39,8 @@
         <p v-if="player.is_banned" class="red">Banido</p>
         <p v-if="player.is_muted" class="red">Silenciado</p>
 
-        <p>Primeiro login: {{date_format.format((player.account_creation)) }}</p>
-        <p>Último login: {{date_format.format((player.last_login)) }}</p>
+        <p>Primeiro login: {{ format_date(player.account_creation) }}</p>
+        <p>Último login: {{ format_date(player.last_login) }}</p>
         <p>Horas jogadas: {{ player.stats.Bedwars.hours_played }}</p>
         <p>bans: {{ player.bans }}</p>
         <h2>Stats</h2>
@@ -109,6 +109,12 @@ const date_format = new Intl.DateTimeFormat('pt-BR', {
   minute: '2-digit'
 });
 
+function format_date(date: number) : string{
+  if (date == 0){
+    return "Estatística oculta"
+  }
+  return date_format.format((date))
+}
 const glowColor = ref("#ffffff");
 
 const glowStyle = computed(() => ({
