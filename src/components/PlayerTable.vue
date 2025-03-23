@@ -47,7 +47,7 @@
             <img v-if="player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths > 1.5 && player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths < 2" src="/knife.svg"/>
             <img v-if="player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths > 2" src="/knife2.svg"/>
 
-            <div v-if="player.bans > 0">
+            <div v-if="settings.show_bans && player.bans > 0">
               <span>{{ player.bans }}</span>
               <img src="/hammer.svg"/>
             </div>
