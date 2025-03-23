@@ -132,7 +132,9 @@ onMounted(async () => {
 
   document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString());
   await getCurrentWindow().setPosition(new PhysicalPosition(10, 10));
-  invoke("read_logs");
+  invoke("read_logs").catch(err => {
+    console.error("Leitura de logs falhou:", err);
+  });
 
 });
 
