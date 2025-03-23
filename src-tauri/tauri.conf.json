@@ -3,6 +3,7 @@
   "productName": "KC-Overlay",
   "identifier": "com.kc-overlay.app",
   "build": {
+    "features": [],
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
@@ -22,6 +23,7 @@
     ],
     "security": {
       "csp": null
+
     }
   },
   "bundle": {
