@@ -81,9 +81,10 @@ onMounted(async () => {
 
 
       if (!settings.never_minimize){
-        await window.minimize()
-        await new Promise(resolve => setTimeout(resolve, 100))
-        await window.unminimize()
+        await window.minimize();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await window.unminimize();
+        await window.setIgnoreCursorEvents(true);
       }
 
     } else{
@@ -100,7 +101,9 @@ onMounted(async () => {
 
         }
       }
-      //await window.setIgnoreCursorEvents(false);
+      await window.setIgnoreCursorEvents(false).catch(err => {
+        console.error("Falha ao registrar clicks", err);
+      });;
 
     }
   });
