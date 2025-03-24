@@ -14,12 +14,15 @@
     "core:window:allow-unminimize",
     "core:window:allow-set-ignore-cursor-events",
     "core:window:allow-set-position",
+    "core:window:allow-set-size",
     "opener:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "dialog:allow-open",
     "dialog:default",
+    "core:webview:allow-set-webview-zoom",
+    "core:webview:allow-set-webview-size",
     {
       "identifier": "opener:allow-open-path",
       "allow": [

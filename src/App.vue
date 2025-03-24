@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Player, View, Settings } from "./types";
 import { onMounted, Ref, ref } from "vue";
-import { getCurrentWindow, PhysicalPosition } from '@tauri-apps/api/window';
+import { getCurrentWindow, LogicalSize, PhysicalPosition } from '@tauri-apps/api/window';
 
 import PlayerTable from "./components/PlayerTable.vue";
 import TitleBar from "./components/Titlebar.vue";
@@ -12,6 +12,7 @@ import About from "./About.vue";
 import SettingsView  from "./Settings.vue";
 import ViewPlayer from "./ViewPlayer.vue";
 import { register } from "@tauri-apps/plugin-global-shortcut";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 
 let players : Ref<Player[]> = ref([]);
 
@@ -113,10 +114,13 @@ onMounted(async () => {
     current_view.value = view;
   })
 
-  listen('settings_changed', (event) => {
+  listen('settings_changed', async (event) => {
     const new_settings = event.payload as Settings;
     settings = new_settings;
     document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString())
+    await getCurrentWebview().setZoom(settings.window_scale);
+    await getCurrentWebview().setSize(new LogicalSize(745 * settings.window_scale, 460 * settings.window_scale));
+    await getCurrentWindow().setSize(new LogicalSize(745 * settings.window_scale, 460 * settings.window_scale));
 
   })
 
@@ -140,6 +144,8 @@ onMounted(async () => {
   });
 
   document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString());
+  await getCurrentWebview().setSize(new LogicalSize(745 * settings.window_scale, 460 * settings.window_scale));
+  await getCurrentWindow().setSize(new LogicalSize(745 * settings.window_scale, 460 * settings.window_scale));
   await getCurrentWindow().setPosition(new PhysicalPosition(5, 5));
 
 

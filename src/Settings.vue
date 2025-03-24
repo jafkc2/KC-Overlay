@@ -157,11 +157,11 @@ async function select_log_file(){
             <span>({{ settings.seconds_to_minimize }}s)</span>
 
         </div>
-        <!-- <div class="setting">
+        <div class="setting">
             <span>Tamanho:</span>
-            <input type="range" @input="save_settings()" v-model.number="settings.window_scale" min="0.25" max="1.25" step="0.01"/>
+            <input type="range" @input="save_settings()" v-model.number="settings.window_scale" min="0.70" max="1.25" step="0.01"/>
             <span>({{ (settings.window_scale * 100).toFixed(0) }}%)</span>
-        </div> -->
+        </div>
         <div class="setting">
             <span>Nível de transparência:</span>
             <input type="range" @input="save_settings()" v-model.number="settings.transparency" min="0" max="100"/>
