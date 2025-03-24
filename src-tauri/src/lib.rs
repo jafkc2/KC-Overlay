@@ -193,7 +193,7 @@ async fn read_logs(
     handle: tauri::AppHandle,
     app: tauri::State<'_, Mutex<KCOverlay>>,
 ) -> Result<(), ()> {
-    println!("Starting log read");
+    println!("Iniciando leitura de logs");
 
     let mut client = app.lock().await.settings.client.clone();
     let logs_path = client.get_logs_path();

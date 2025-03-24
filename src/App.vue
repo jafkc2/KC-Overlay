@@ -31,6 +31,10 @@ document.addEventListener('mousedown', (e) => {
 let settings = await invoke<Settings>("get_settings");
 
 onMounted(async () => {
+  invoke("read_logs").catch(err => {
+    console.error("Leitura de logs falhou:", err);
+  });
+
   document.addEventListener('contextmenu', (event) => {
     event.preventDefault();
   });
@@ -113,7 +117,7 @@ onMounted(async () => {
 
   })
 
-  await register('alt+z', async (event) => {
+  await register('shift+alt+z', async (event) => {
     const window = getCurrentWindow();
 
     if (event.state == "Pressed"){
@@ -128,13 +132,13 @@ onMounted(async () => {
       }
     }
 
+  }).catch(err => {
+    console.error("Falha ao registrar hotkey:", err);
   });
 
   document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString());
-  await getCurrentWindow().setPosition(new PhysicalPosition(10, 10));
-  invoke("read_logs").catch(err => {
-    console.error("Leitura de logs falhou:", err);
-  });
+  await getCurrentWindow().setPosition(new PhysicalPosition(5, 5));
+
 
 });
 
