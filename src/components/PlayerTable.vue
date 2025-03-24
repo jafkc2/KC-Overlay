@@ -46,6 +46,7 @@
             <img v-if="player.is_possible_cheater" src="/radioactive.svg" class="player-indicator"/>
             <img v-if="player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths > 1.5 && player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths < 2" src="/knife.svg"/>
             <img v-if="player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths > 2" src="/knife2.svg"/>
+            <img v-if="player.is_muted" src="/mute.svg" />
 
             <div v-if="settings.show_bans && player.bans > 0">
               <span>{{ player.bans }}</span>
