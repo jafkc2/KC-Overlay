@@ -144,6 +144,7 @@ onMounted(async () => {
   });
 
   document.documentElement.style.setProperty('--bg-alpha', (settings.transparency / 100).toString());
+  await getCurrentWebview().setZoom(settings.window_scale);
   await getCurrentWebview().setSize(new LogicalSize(745 * settings.window_scale, 460 * settings.window_scale));
   await getCurrentWindow().setSize(new LogicalSize(745 * settings.window_scale, 460 * settings.window_scale));
   await getCurrentWindow().setPosition(new PhysicalPosition(5, 5));
