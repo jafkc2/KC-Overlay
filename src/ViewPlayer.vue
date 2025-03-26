@@ -123,9 +123,6 @@ const glowStyle = computed(() => ({
 </script>
 
 <style scoped>
-.centered-image-div{
-
-}
 .green {
   color: green;
 }

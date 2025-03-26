@@ -50,3 +50,22 @@ jobs:
       with:
         name: KC-Overlay-Linux
         path: src-tauri/target/release/KC-Overlay
+
+
+  build_macos:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install project dependencies
+      run: npm install
+    - name: Build
+      run: npm run tauri build
+    - name: Make binary executable
+      run: chmod +x src-tauri/target/release/KC-Overlay
+    - name: Archive binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: KC-Overlay-MacOS
+        path: src-tauri/target/release/KC-Overlay

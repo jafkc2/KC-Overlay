@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
+use crate::util::get_home_dir;
+
 #[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", content = "path")]
 pub enum MineClient {
@@ -46,6 +48,7 @@ impl MineClient {
                                 "{}/.lunarclient",
                                 std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                             ),
+                            "macos" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
                             _ => panic!("System not supported."),
                         };
 
@@ -60,6 +63,10 @@ impl MineClient {
                             "{}/AppData/Roaming/.tlauncher/legacy/Minecraft/game/logs/latest.log",
                             std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                         ),
+                        "macos" => format!(
+                            "{}/.tlauncher/legacy/Minecraft/game/logs/latest.log",
+                            get_home_dir()
+                        ),
                         _ => panic!("System not supported."),
                     },
             MineClient::Custom(path) => path.to_string(),
@@ -73,6 +80,7 @@ impl MineClient {
                         "{}/AppData/Local/Programs/cmlauncher",
                         std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                     ),
+                    "macos" => minecraft_dir,
                     _ => panic!("System not supported."),
                 };
 

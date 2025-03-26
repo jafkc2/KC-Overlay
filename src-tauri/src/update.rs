@@ -58,13 +58,19 @@ pub async fn check_updates(handle: tauri::AppHandle) -> Result<String, ()> {
             for i in release_assets {
                 match env::consts::OS {
                     "windows" => {
-                        if i["name"].as_str().unwrap().contains("Windows") {
+                        if i["name"].as_str().unwrap().to_lowercase().contains("windows") {
                             url = i["browser_download_url"].as_str().unwrap().to_string();
                             break;
                         }
                     }
                     "linux" => {
-                        if i["name"].as_str().unwrap().contains("Linux") {
+                        if i["name"].as_str().unwrap().to_lowercase().contains("linux") {
+                            url = i["browser_download_url"].as_str().unwrap().to_string();
+                            break;
+                        }
+                    }
+                    "macos" => {
+                        if i["name"].as_str().unwrap().to_lowercase().contains("macos") {
                             url = i["browser_download_url"].as_str().unwrap().to_string();
                             break;
                         }
@@ -114,7 +120,7 @@ async fn download_update(handle: tauri::AppHandle, url: String) -> Result<(), St
     let exec_path = env::current_exe().unwrap();
     let mut exec_file = File::create(exec_path.with_extension("new")).unwrap();
 
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         let mut permission = std::fs::metadata(exec_path.with_extension("new"))

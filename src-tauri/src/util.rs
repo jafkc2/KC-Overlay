@@ -14,11 +14,16 @@ pub fn get_home_dir() -> String {
             "{}/AppData/Roaming",
             std::env::var("USERPROFILE").unwrap().replace('\\', "/")
         ),
+        "macos" => format!("{}/Library/Application Support", std::env::var("HOME").unwrap()),
         _ => panic!("System not supported."),
     }
 }
 pub fn get_minecraft_dir() -> String {
-    format!("{}/.minecraft", get_home_dir())
+    let minecraft_name = match std::env::consts::OS{
+        "macos" => "minecraft",
+        _ => ".minecraft"
+    };
+    format!("{}/{}", get_home_dir(), minecraft_name)
 }
 
 pub async fn wait(time: Duration) {
