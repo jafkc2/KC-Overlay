@@ -49,11 +49,11 @@ impl KCOverlay {
 }
 
 struct State {
-    screen_size: (u32, u32),
     cached_players: VecDeque<Player>,
     loading: bool,
     waiting: i32,
     rates_full_time: Instant,
+    is_first_use : bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -133,11 +133,11 @@ pub fn run() {
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
-                    screen_size,
                     cached_players: VecDeque::new(),
                     loading: false,
                     waiting: 0,
                     rates_full_time: Instant::now(),
+                    is_first_use
                 },
                 settings: Settings {
                     client,
@@ -166,10 +166,16 @@ pub fn run() {
             config::save_settings,
             search_player,
             update::check_updates,
-            update::install_update
+            update::install_update,
+            is_first_use
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+async fn is_first_use(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<bool, ()>{
+    Ok(app.lock().await.state.is_first_use)
 }
 
 #[tauri::command]

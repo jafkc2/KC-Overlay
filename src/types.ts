@@ -84,5 +84,6 @@ export enum View{
     main,
     about,
     settings,
-    viewPlayer
+    viewPlayer,
+    welcome
   }

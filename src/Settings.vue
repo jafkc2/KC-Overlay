@@ -86,8 +86,6 @@ function update_stats(new_stats: string){
 }
 
 function format_client(): string{
-    console.log(settings.value)
-    console.log(settings.value.client.type)
     switch (settings.value.client.type){
         case "Default":
             return "Geral"
