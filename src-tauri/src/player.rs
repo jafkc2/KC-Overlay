@@ -167,13 +167,11 @@ pub async fn get_players(
                     let rate_limit = response.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap().parse().unwrap_or(0);
 
                     if (55..=60).contains(&rate_limit){
-                        handle.emit("rate_limit_full", true).unwrap();
                         *full_rates_instant.lock().await = Some(Instant::now());
                     }
                     if rate_limit < 1{
                         let mut rate_limited = rate_limited.lock().await;
                         *rate_limited = true;
-                        handle.emit("wait", true).unwrap();
                         println!("Esperar até podermos consultar a API novamente.");
                         return None;
                     }
@@ -217,8 +215,9 @@ pub async fn get_players(
 
     futures::future::join_all(futures).await;
 
-    let mut app = app_mutex.lock().await;
     let players = players_arc.lock().await;
+    let mut app = app_mutex.lock().await;
+
 
     app.add_players_to_cache(players.to_vec());
 
@@ -227,6 +226,10 @@ pub async fn get_players(
         None => (),
     }
     handle.emit("loading", false).unwrap();
+    if *rate_limited_arc.lock().await{
+        let wait_time = 60 - app.state.rates_full_time.elapsed().as_secs();
+        handle.emit("wait", wait_time).unwrap();
+    }
     app.state.loading = false;
 }
 

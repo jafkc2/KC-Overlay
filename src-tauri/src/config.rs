@@ -123,6 +123,9 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
         if !map.contains_key("transparency") {
             map.insert("transparency".to_owned(), serde_json::to_value(75).unwrap());
         }
+        if !map.contains_key("automatic") {
+            map.insert("automatic".to_owned(), serde_json::to_value(true).unwrap());
+        }
     }
 
     let serializedjson = serde_json::to_string_pretty(&conf_json).unwrap();

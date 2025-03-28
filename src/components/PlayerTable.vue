@@ -3,7 +3,11 @@
   <table>
     <thead>
       <tr class="head-tr">
-        <th class="user-th">Top {{ players.length }} jogadores da sala ({{ format_stats(settings) }})</th>
+        <th v-if="loading" class="user-th">Carregando jogadores...</th>
+        <th v-else-if="wait_time > 0" class="user-th">Espere {{ wait_time }} segundos para usar novamente.</th>
+        <th v-else class="user-th">Top {{ players.length }} jogadores da sala ({{ format_stats(settings) }})</th>
+
+
         <th v-if="settings.show_ws">WS</th>
         <th v-if="settings.show_wlr">WLR</th>
         <th v-if="settings.show_fkdr">FKDR</th>
@@ -68,17 +72,29 @@
 </template>
 
 <script setup lang="ts">
+import { listen } from "@tauri-apps/api/event";
 import type { Player, Rgb, Settings } from "../types.ts";
 import {get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color, format_stats, get_wins_color, get_losses_color} from "../util.ts";
+import { ref } from "vue";
 
 function rgb_style(rgb: Rgb): string {
   return `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`;
 }
 
 const nicked_color = "rgb(255, 255, 0)";
+let wait_time = ref(0);
+
+listen("wait", async (event) => {
+  wait_time.value = event.payload as number;
+  while (wait_time.value > 0){
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    wait_time.value -= 1;
+  }
+});
 
 interface Props {
   players: Player[];
+  loading: boolean;
   settings: Settings;
 }
 defineProps<Props>();

@@ -51,7 +51,7 @@ impl KCOverlay {
 struct State {
     cached_players: VecDeque<Player>,
     loading: bool,
-    waiting: i32,
+    //waiting: i32,
     rates_full_time: Instant,
     is_first_use : bool,
 }
@@ -72,6 +72,7 @@ struct Settings {
     show_losses: bool,
     show_bans: bool,
     transparency: i32,
+    automatic: bool
 }
 pub fn run() {
         // Isso é o processo final do update. Remove o executável antigo, caso exista.
@@ -130,12 +131,12 @@ pub fn run() {
             let show_losses = config["show_losses"].as_bool().unwrap_or(true);
             let show_bans = config["show_bans"].as_bool().unwrap_or(false);
             let transparency = config["transparency"].as_i64().unwrap_or(75) as i32;
+            let automatic = config["automatic"].as_bool().unwrap_or(true);
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
                     cached_players: VecDeque::new(),
                     loading: false,
-                    waiting: 0,
                     rates_full_time: Instant::now(),
                     is_first_use
                 },
@@ -154,6 +155,7 @@ pub fn run() {
                     show_losses,
                     show_bans,
                     transparency,
+                    automatic
                 },
             }));
             Ok(())
@@ -277,7 +279,7 @@ async fn handle_log_line(
 ) {
     // Checa se algum jogador entrou na partida.
     //let app = app_mutex.lock().await;
-    if line.contains("entrou na sala") {
+    if line.contains("entrou na sala") && app_mutex.lock().await.settings.automatic {
         // com certeza não é a maneira mais eficiente de fazer isso!
         let splitted_line: Vec<&str> = line.split(" ").collect();
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
@@ -299,7 +301,7 @@ async fn handle_log_line(
         }
     }
     // Checa se o jogador saiu da sala
-    else if line.contains("saiu da sala") {
+    else if line.contains("saiu da sala") && app_mutex.lock().await.settings.automatic{
         let splitted_line: Vec<&str> = line.split(" ").collect();
 
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
@@ -311,7 +313,7 @@ async fn handle_log_line(
         }
     }
     // Checa se algum jogador que está na lista foi eliminado da partida.
-    else if line.contains("KILL FINAL") {
+    else if line.contains("KILL FINAL") && app_mutex.lock().await.settings.automatic{
         let splitted_line: Vec<&str> = line.split(" ").collect();
 
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
@@ -325,7 +327,6 @@ async fn handle_log_line(
 
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
     if line.contains("[CHAT] Jogadores")
-        && app_mutex.lock().await.state.waiting < 1
         && !app_mutex.lock().await.state.loading
     {
         println!("Jogador digitou /jogando");

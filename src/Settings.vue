@@ -137,7 +137,13 @@ async function select_log_file(){
         <div class="setting">
             <span>Stats:</span>
             <Select :value="stats_type" :options="stats" @input="update_stats" class="select"></Select>
-
+        </div>
+        <div class="setting">
+            <span>Carregar/remover jogadores automaticamente quando possível:</span>
+            <button @click="settings.automatic = !settings.automatic; save_settings()" :class="{ active: settings.automatic }">
+                <span v-if="settings.automatic">Sim</span>
+                <span v-else>Não</span>
+            </button>
         </div>
 
         <p>Janela</p>

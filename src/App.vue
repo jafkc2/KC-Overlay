@@ -21,6 +21,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 
 let players: Ref<Player[]> = ref([]);
 let current_view = ref(View.main);
+let loading = ref(false);
 
 document.addEventListener("mousedown", (e) => {
     let target = e.target as HTMLElement;
@@ -87,6 +88,8 @@ onMounted(async () => {
         const window = getCurrentWindow();
         console.log(event.payload);
         if (event.payload) {
+            loading.value = true;
+
             players.value = [];
             await window.setAlwaysOnTop(true);
 
@@ -96,7 +99,11 @@ onMounted(async () => {
                 await window.unminimize();
                 await window.setIgnoreCursorEvents(true);
             }
+            await window.unminimize();
+
         } else {
+            loading.value = false;
+            
             await new Promise((resolve) =>
                 setTimeout(resolve, settings.seconds_to_minimize * 1000),
             );
@@ -197,6 +204,7 @@ await invoke("check_updates")
             v-if="players.length > 0"
             :players="players"
             :settings="settings"
+            :loading="loading"
         ></PlayerTable>
         <p v-else>
             Olá! Digite o comando /jogando no chat do Mush para ver os stats de
