@@ -4,9 +4,8 @@
     <thead>
       <tr class="head-tr">
         <th v-if="loading" class="user-th">Carregando jogadores...</th>
-        <th v-else-if="wait_time > 0" class="user-th">Espere {{ wait_time }} segundos para usar novamente.</th>
-        <th v-else class="user-th">Top {{ players.length }} jogadores da sala ({{ format_stats(settings) }})</th>
-
+        <th v-else-if="wait_time > 0" class="user-th">Espere {{ wait_time }} segundos.</th>
+        <th v-else class="user-th">{{ players.length }} jogadores ({{ format_stats(settings) }})</th>
 
         <th v-if="settings.show_ws">WS</th>
         <th v-if="settings.show_wlr">WLR</th>
@@ -52,10 +51,8 @@
             <img v-if="player.stats.Bedwars.losses / player.stats.Bedwars.final_deaths > 2" src="/knife2.svg"/>
             <img v-if="player.is_muted" src="/mute.svg" />
 
-            <div v-if="settings.show_bans && player.bans > 0">
-              <span>{{ player.bans }}</span>
-              <img src="/hammer.svg"/>
-            </div>
+            <span v-if="settings.show_bans && player.bans > 0">{{ player.bans }}</span>
+            <img v-if="settings.show_bans && player.bans > 0" src="/hammer.svg"/>
           </div>
         </td>
 

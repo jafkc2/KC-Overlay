@@ -51,7 +51,6 @@ impl KCOverlay {
 struct State {
     cached_players: VecDeque<Player>,
     loading: bool,
-    //waiting: i32,
     rates_full_time: Instant,
     is_first_use : bool,
 }
@@ -113,6 +112,9 @@ pub fn run() {
                _ => ()
             }
             
+            let ctrl_n_shortcut = tauri_plugin_global_shortcut::Shortcut::new(Some(tauri_plugin_global_shortcut::Modifiers::CONTROL), tauri_plugin_global_shortcut::Code::KeyN);
+
+
             let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
             let seconds_to_minimize = config["seconds_to_minimize"].as_u64().unwrap_or(10);
             let stats_type = from_value::<StatsType>(serde_json::Value::Object(
