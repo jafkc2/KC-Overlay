@@ -6,6 +6,7 @@ import {update} from '../main'
 import { onMounted, ref } from 'vue';
 
 const update_progress = ref(0);
+const updating = ref(false);
 onMounted(async () => {
     listen('update_progress', (event) => {
         update_progress.value = event.payload as number;
@@ -37,13 +38,13 @@ defineProps<Props>();
                 <span>Sobre</span>
             </div>
         </button>
-        <button v-if="update_url && update_progress == 0" v-on:click="update(update_url)">
+        <button v-if="update_url && updating == false" v-on:click="update(update_url); updating = true;" style="background-color: #40a02b;">
             <div>
                 <img src="/download.svg"/>
                 <span>Atualizar</span>
             </div>
         </button>
-        <button v-if="update_progress > 0">
+        <button v-if="update_progress > 0" style="background-color: #40a02b;">
             <img src="/download.svg"/>
             <span>{{update_progress}}%</span>
         </button>
