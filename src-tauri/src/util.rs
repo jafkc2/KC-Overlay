@@ -1,11 +1,9 @@
 //! Módulo para funções de utilidade geral.
 
-use std::{fs::File, io::Read, path::Path, time::Duration};
+use std::{fs::File, io::Read, path::Path};
 
-use chrono::DateTime;
 use serde::Serialize;
 use serde_json::Value;
-use tokio::time::sleep;
 
 pub fn get_home_dir() -> String {
     match std::env::consts::OS {
@@ -26,9 +24,6 @@ pub fn get_minecraft_dir() -> String {
     format!("{}/{}", get_home_dir(), minecraft_name)
 }
 
-pub async fn wait(time: Duration) {
-    sleep(time).await;
-}
 
 pub fn get_json(jpathstring: String) -> Value {
     let jsonpath = Path::new(&jpathstring);
@@ -37,23 +32,6 @@ pub fn get_json(jpathstring: String) -> Value {
     let mut fcontent = String::new();
     file.read_to_string(&mut fcontent).unwrap();
     serde_json::from_str(&fcontent).unwrap()
-}
-
-pub fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
-    let c = v * s;
-    let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
-    let m = v - c;
-
-    let (r, g, b) = match (h * 6.0).floor() as i32 {
-        0 => (c, x, 0.0),
-        1 => (x, c, 0.0),
-        2 => (0.0, c, x),
-        3 => (0.0, x, c),
-        4 => (x, 0.0, c),
-        _ => (c, 0.0, x),
-    };
-
-    (r + m, g + m, b + m)
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -169,17 +147,6 @@ impl Rgb {
                 blue: 255,
             },
         }
-    }
-}
-
-pub fn unix_time_to_date(time: i64) -> String {
-    if time == 0 {
-        "?".to_owned()
-    } else {
-        let date_time = DateTime::from_timestamp(time / 1000, 0)
-            .unwrap()
-            .with_timezone(&chrono::FixedOffset::east_opt(-3 * 3600).unwrap());
-        date_time.format("%d/%m/%y às %H:%M").to_string()
     }
 }
 

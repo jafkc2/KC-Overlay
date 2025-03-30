@@ -111,9 +111,6 @@ pub fn run() {
                 MineClient::Custom(_) => client = MineClient::Custom(custom_client_path.clone()),
                _ => ()
             }
-            
-            let ctrl_n_shortcut = tauri_plugin_global_shortcut::Shortcut::new(Some(tauri_plugin_global_shortcut::Modifiers::CONTROL), tauri_plugin_global_shortcut::Code::KeyN);
-
 
             let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
             let seconds_to_minimize = config["seconds_to_minimize"].as_u64().unwrap_or(10);
@@ -287,10 +284,11 @@ async fn handle_log_line(
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
             if part == "entrou" {
                 let player_name: &str = splitted_line[index - 1];
+                let stats_type = app_mutex.lock().await.settings.stats_type.clone();
 
                 let player = player::get_player(
                     player_name,
-                    app_mutex.lock().await.settings.stats_type.clone(),
+                    stats_type,
                 )
                 .await;
 
