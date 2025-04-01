@@ -234,7 +234,12 @@ pub async fn get_players(
 
 /// Função para coletar os stats de apenas um jogador.
 #[tauri::command]
-pub async fn get_player(username: &str, stats_type: StatsType) -> Result<Player, ()> {
+pub async fn get_player(username: &str, stats_type: StatsType, cached_players: VecDeque<Player>) -> Result<Player, ()> {
+    for player in cached_players{
+        if player.username == username{
+            return Ok(player);
+        }
+    }
     let client = Client::new();
     let url = "https://mush.com.br/api/player/".to_string() + username;
 

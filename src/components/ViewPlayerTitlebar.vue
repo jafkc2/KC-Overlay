@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { emit } from '@tauri-apps/api/event';
-import { View, StatsType } from '../types'
+import { StatsType } from '../types'
 
 import Select from './Select.vue'
 import { ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 function returnToMainView() {
-    emit('change_view', View.main);
+    router.push('/');
 }
 
 const stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2'];

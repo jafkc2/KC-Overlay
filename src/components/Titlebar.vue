@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { emit, listen } from '@tauri-apps/api/event';
-import { View } from '../types'
 import {update} from '../main'
 import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const update_progress = ref(0);
 const updating = ref(false);
@@ -20,19 +22,19 @@ defineProps<Props>();
 
 <template>
     <div class="titlebar" data-tauri-drag-region>
-        <button v-on:click="emit('change_view', View.settings)" class="flex_button">
+        <button v-on:click="router.push('/settings')" class="flex_button">
             <div>
                 <img src="/settings.svg"/>
                 <span>Configurações</span>
             </div>
         </button>
-        <button v-on:click="emit('change_view', View.viewPlayer)" class="flex_button">
+        <button v-on:click="router.push('view_player')" class="flex_button">
             <div>
                 <img src="/search.svg"/>
                 <span>Ver jogador</span>
             </div>
         </button>
-        <button v-on:click="emit('change_view', View.about)" class="flex_button">
+        <button v-on:click="router.push('/about')" class="flex_button">
             <div>
                 <img src="/favorite.svg"/>
                 <span>Sobre</span>

@@ -186,7 +186,7 @@ async fn get_settings(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<Setting
 
 #[tauri::command]
 async fn search_player(handle: tauri::AppHandle, username: String, stats_type: StatsType){
-    let player = player::get_player(&username, stats_type).await;
+    let player = player::get_player(&username, stats_type, VecDeque::new()).await;
 
     match player{
         Ok(ok) => handle.emit("player_to_view", ok).unwrap(),
@@ -285,14 +285,15 @@ async fn handle_log_line(
             if part == "entrou" {
                 let player_name: &str = splitted_line[index - 1];
                 let stats_type = app_mutex.lock().await.settings.stats_type.clone();
-
+                let cached_players = app_mutex.lock().await.state.cached_players.clone();
                 let player = player::get_player(
                     player_name,
                     stats_type,
+                    cached_players
                 )
                 .await;
-
                 if let Ok(ok) = player {
+                    app_mutex.lock().await.add_players_to_cache(vec![ok.clone()]);
                     handle.emit("player_joined", ok).unwrap();
                 }
 

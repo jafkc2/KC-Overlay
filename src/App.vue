@@ -1,27 +1,21 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Player, View, Settings } from "./types";
-import { onMounted, Ref, ref } from "vue";
+import { Player, Settings } from "./types";
+import { onMounted } from "vue";
 import {
     getCurrentWindow,
     LogicalSize,
     PhysicalPosition,
 } from "@tauri-apps/api/window";
 
-import PlayerTable from "./components/PlayerTable.vue";
-import TitleBar from "./components/Titlebar.vue";
-
-import About from "./About.vue";
-import SettingsView from "./Settings.vue";
-import ViewPlayer from "./ViewPlayer.vue";
-import Welcome from "./Welcome.vue";
 import { register } from "@tauri-apps/plugin-global-shortcut";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { useStore } from "./stores/store";
+import { useRouter } from "vue-router";
 
-let players: Ref<Player[]> = ref([]);
-let current_view = ref(View.main);
-let loading = ref(false);
+
+const store = useStore()
 
 document.addEventListener("mousedown", (e) => {
     let target = e.target as HTMLElement;
@@ -33,25 +27,29 @@ document.addEventListener("mousedown", (e) => {
         e.detail === 2 ? window.minimize() : window.startDragging();
     }
 });
-let settings = await invoke<Settings>("get_settings");
 
-if (await invoke<boolean>("is_first_use")){
-    current_view.value = View.welcome;
-}
+
 
 onMounted(async () => {
+    await store.get_settings();
+
+
     invoke("read_logs").catch((err) => {
         console.error("Leitura de logs falhou:", err);
     });
 
+    if (await invoke<boolean>("is_first_use")){
+        const router = useRouter();
+        router.push('/welcome');
+    }
     document.addEventListener("contextmenu", (event) => {
         event.preventDefault();
     });
 
     listen("player", (event) => {
         const player = event.payload as Player;
-        players.value.push(player);
-        players.value.sort(
+        store.players.push(player);
+        store.players.sort(
             (a, b) => b.stats.Bedwars.level - a.stats.Bedwars.level,
         );
     });
@@ -59,7 +57,7 @@ onMounted(async () => {
     listen("player_joined", (event) => {
         const player = event.payload as Player;
         let already_in_list = false;
-        for (const i of players.value) {
+        for (const i of store.players) {
             if (player.username == i.username) {
                 already_in_list = true;
                 break;
@@ -67,8 +65,8 @@ onMounted(async () => {
         }
 
         if (!already_in_list) {
-            players.value.push(player);
-            players.value.sort(
+            store.players.push(player);
+            store.players.sort(
                 (a, b) => b.stats.Bedwars.level - a.stats.Bedwars.level,
             );
         }
@@ -77,9 +75,9 @@ onMounted(async () => {
     listen("remove_player", (event) => {
         const player_name = event.payload as string;
 
-        players.value.forEach((player, index) => {
+        store.players.forEach((player, index) => {
             if (player.username == player_name) {
-                players.value.splice(index, 1);
+                store.players.splice(index, 1);
             }
         });
     });
@@ -88,12 +86,12 @@ onMounted(async () => {
         const window = getCurrentWindow();
         console.log(event.payload);
         if (event.payload) {
-            loading.value = true;
+            store.loading = true;
 
-            players.value = [];
+            store.players = [];
             await window.setAlwaysOnTop(true);
 
-            if (!settings.never_minimize) {
+            if (!store.settings.never_minimize) {
                 await window.minimize();
                 await new Promise((resolve) => setTimeout(resolve, 100));
                 await window.unminimize();
@@ -102,13 +100,13 @@ onMounted(async () => {
             await window.unminimize();
 
         } else {
-            loading.value = false;
+            store.loading = false;
             
             await new Promise((resolve) =>
-                setTimeout(resolve, settings.seconds_to_minimize * 1000),
+                setTimeout(resolve, store.settings.seconds_to_minimize * 1000),
             );
 
-            if (!settings.never_minimize) {
+            if (!store.settings.never_minimize) {
                 await window.setAlwaysOnTop(false);
 
                 if (!(await window.isMinimized())) {
@@ -123,29 +121,24 @@ onMounted(async () => {
         }
     });
 
-    listen("change_view", (event) => {
-        const view = event.payload as View;
-        current_view.value = view;
-    });
-
     listen("settings_changed", async (event) => {
         const new_settings = event.payload as Settings;
-        settings = new_settings;
+        store.settings = new_settings;
         document.documentElement.style.setProperty(
             "--bg-alpha",
-            (settings.transparency / 100).toString(),
+            (store.settings.transparency / 100).toString(),
         );
-        await getCurrentWebview().setZoom(settings.window_scale);
+        await getCurrentWebview().setZoom(store.settings.window_scale);
         await getCurrentWebview().setSize(
             new LogicalSize(
-                745 * settings.window_scale,
-                460 * settings.window_scale,
+                745 * store.settings.window_scale,
+                460 * store.settings.window_scale,
             ),
         );
         await getCurrentWindow().setSize(
             new LogicalSize(
-                745 * settings.window_scale,
-                460 * settings.window_scale,
+                745 * store.settings.window_scale,
+                460 * store.settings.window_scale,
             ),
         );
     });
@@ -169,60 +162,37 @@ onMounted(async () => {
 
     document.documentElement.style.setProperty(
         "--bg-alpha",
-        (settings.transparency / 100).toString(),
+        (store.settings.transparency / 100).toString(),
     );
-    await getCurrentWebview().setZoom(settings.window_scale);
+    await getCurrentWebview().setZoom(store.settings.window_scale);
     await getCurrentWebview().setSize(
         new LogicalSize(
-            745 * settings.window_scale,
-            460 * settings.window_scale,
+            745 * store.settings.window_scale,
+            460 * store.settings.window_scale,
         ),
     );
     await getCurrentWindow().setSize(
         new LogicalSize(
-            745 * settings.window_scale,
-            460 * settings.window_scale,
+            745 * store.settings.window_scale,
+            460 * store.settings.window_scale,
         ),
     );
     await getCurrentWindow().setPosition(new PhysicalPosition(5, 5));
-});
 
-let update_url = ref("");
-await invoke("check_updates")
+    await invoke("check_updates")
     .then((url) => {
-        update_url.value = url as string;
+        store.update_url = url as string;
     })
     .catch(() => {
         console.log("KC Overlay está atualizado.");
     });
+});
+
+
 </script>
 
 <template>
-    <div v-if="current_view == View.main">
-        <TitleBar :update_url="update_url"></TitleBar>
-        <PlayerTable
-            v-if="players.length > 0"
-            :players="players"
-            :settings="settings"
-            :loading="loading"
-        ></PlayerTable>
-        <p v-else>
-            Olá! Digite o comando /jogando no chat do Mush para ver os stats de
-            todos os jogadores da sala.
-        </p>
-    </div>
-    <div v-else-if="current_view == View.settings">
-        <SettingsView :settings="settings"></SettingsView>
-    </div>
-    <div v-else-if="current_view == View.about">
-        <About></About>
-    </div>
-    <div v-else-if="current_view == View.viewPlayer">
-        <ViewPlayer></ViewPlayer>
-    </div>
-    <div v-else-if="current_view == View.welcome">
-        <Welcome :settings="settings"></Welcome>
-    </div>
+   <router-view></router-view>
 </template>
 
 <style>

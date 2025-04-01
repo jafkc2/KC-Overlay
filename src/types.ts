@@ -81,10 +81,3 @@ export type StatsType =
     | {type: "Bedwars1v1"}
     | {type: "Bedwars2v2"};
 
-export enum View{
-    main,
-    about,
-    settings,
-    viewPlayer,
-    welcome
-  }

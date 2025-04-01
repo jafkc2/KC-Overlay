@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { emit } from '@tauri-apps/api/event';
-import { View } from '../types'
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 
 function returnToMainView() {
-    emit('change_view', View.main);
+    router.push('/');
 }
 </script>
 

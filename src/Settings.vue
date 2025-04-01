@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, toRef } from 'vue';
 import Return from './components/Return.vue';
 import Select from './components/Select.vue';
 import { invoke } from '@tauri-apps/api/core';
 import { Settings} from './types';
 import { format_stats } from './util';
 import { open } from '@tauri-apps/plugin-dialog';
+import { useStore } from './stores/store';
 
-interface Props {
-  settings: Settings;
-}
-const props = defineProps<Props>();
+
 
 let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "Personalizado"];
 let stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2'];
 
-let settings = ref(props.settings)
+
+let store = useStore();
+const settings = toRef(store, 'settings');
 
 let client = ref(format_client());
 let stats_type = ref(format_stats(settings.value));

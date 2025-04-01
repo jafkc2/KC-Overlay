@@ -3,50 +3,53 @@ import { ref } from "vue";
 import { Settings } from "./types";
 import { invoke } from '@tauri-apps/api/core';
 import Select from './components/Select.vue';
-import { emit } from '@tauri-apps/api/event';
-import { View } from './types'
+import { useRouter } from "vue-router";
+import { useStore } from "./stores/store";
 
 
-interface Props {
-  settings: Settings;
-}
-const props = defineProps<Props>();
+const store = useStore();
 
 let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher"];
-let settings = ref(props.settings)
 
 let client = ref(format_client());
 
 
 async function save_settings(){
-    if (settings.value.client.type == "Custom"){
-        settings.value.client = { type: "Custom", path: settings.value.custom_client_path }
+    if (store.settings.client.type == "Custom"){
+        store.settings.client = { type: "Custom", path: store.settings.custom_client_path }
     }
-    await invoke("save_settings", {settings: settings.value})
+    await invoke("save_settings", {settings: store.settings})
 }
+
+const router = useRouter();
+
+function go_to_main_route(){
+    router.push('/');
+}
+
 function update_client(new_client: string){
     client.value = new_client;
     switch (new_client){
         case "Geral":
-            settings.value.client = {type: "Default"}
+            store.settings.client = {type: "Default"}
             break;
         case "Lunar":
-            settings.value.client = {type: "Lunar"}
+            store.settings.client = {type: "Lunar"}
             break;
         case "Badlion":
-            settings.value.client = {type: "Badlion"}
+            store.settings.client = {type: "Badlion"}
             break;
         case "Silent Client":
-            settings.value.client = {type: "Silent"}
+            store.settings.client = {type: "Silent"}
             break;
         case "Legacy Launcher":
-            settings.value.client = {type: "LegacyLauncher"}
+            store.settings.client = {type: "LegacyLauncher"}
             break;
         case "CM Client":
-            settings.value.client = {type: "CMClient"}
+            store.settings.client = {type: "CMClient"}
             break;
         case "Personalizado":
-            settings.value.client = { type: "Custom", path: settings.value.custom_client_path };
+            store.settings.client = { type: "Custom", path: store.settings.custom_client_path };
             break;
     }
 
@@ -54,7 +57,7 @@ function update_client(new_client: string){
 }
 
 function format_client(): string{
-    switch (settings.value.client.type){
+    switch (store.settings.client.type){
         case "Default":
             return "Geral"
         case "Badlion":
@@ -87,7 +90,7 @@ function format_client(): string{
             </div>
             <p style="color: #aaaaaa;">Caso use um client além dos disponíveis, poderá adicioná-lo manualmente nas configurações.</p>
 
-            <button v-on:click="emit('change_view', View.main)">Continuar</button>
+            <button v-on:click="go_to_main_route">Continuar</button>
         </main>
     </div>
 </template>
