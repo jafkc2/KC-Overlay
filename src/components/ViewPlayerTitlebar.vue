@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { emit } from '@tauri-apps/api/event';
 import { StatsType } from '../types'
 
 import Select from './Select.vue'

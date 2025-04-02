@@ -3,7 +3,6 @@ import { ref, toRef } from 'vue';
 import Return from './components/Return.vue';
 import Select from './components/Select.vue';
 import { invoke } from '@tauri-apps/api/core';
-import { Settings} from './types';
 import { format_stats } from './util';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useStore } from './stores/store';

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Settings } from "./types";
 import { invoke } from '@tauri-apps/api/core';
 import Select from './components/Select.vue';
 import { useRouter } from "vue-router";
