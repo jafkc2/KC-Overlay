@@ -4,7 +4,7 @@
 
 Este programa é um simples overlay para visualizar os stats dos jogadores no Mush. Ele mostra o level, winstreak, taxa de vitória e o fkdr de todos os jogadores presentes na sala. Além disso, também avisa se há jogadores usando /nick ou possíveis cheaters.
 
-![image](https://github.com/user-attachments/assets/9a5a20c3-332c-47aa-b442-bd2219d71863)
+![image](https://github.com/user-attachments/assets/5c1a5283-8f50-4f0c-a5b4-022b66772d0e)
 
 # Como usar
 
