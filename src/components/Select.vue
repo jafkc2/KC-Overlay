@@ -115,10 +115,10 @@ export default {
 }
 
 .options-list li:hover {
-  background-color: #f0f0f0;
+  background-color: rgb(69, 71, 90);
 }
 
 .options-list li.selected {
-  background-color: #e0e0e0;
+  background-color: rgb(69, 71, 90);
 }
 </style>
