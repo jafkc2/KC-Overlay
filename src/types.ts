@@ -24,8 +24,8 @@ export type Rgb = {
 type Stats = 
     | {type: "Bedwars", content: Bedwars}
     | {type: "TheBridge", content: TheBridge}
-    | {type: "FireballFight", content: FireballFight};
-
+    | {type: "Duels", content: Duels}
+    | {type: "Skywars", content: Duels}
 
 type Bedwars = {
     level: number;
@@ -60,7 +60,7 @@ type TheBridge = {
     points: number,
 }
 
-type FireballFight = {
+type Duels = {
     level: number,
     level_symbol: string,
     winstreak: number,
@@ -113,4 +113,11 @@ export type StatsType =
     | {type: "Bedwars2v2"}
     | {type: "TheBridge"}
     | {type: "FireballFight"}
+    | {type: "BedFight"}
+    | {type: "Uhc"}
+    | {type: "Skywars"}
+
+
+
+
 

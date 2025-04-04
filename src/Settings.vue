@@ -3,14 +3,14 @@ import { ref, toRef } from 'vue';
 import Return from './components/Return.vue';
 import Select from './components/Select.vue';
 import { invoke } from '@tauri-apps/api/core';
-import { format_stats } from './util';
+import { format_stats, get_stat_types } from './util';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useStore } from './stores/store';
 
 
 
 let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "Personalizado"];
-let stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2', "The Bridge", "Fireball Fight"];
+let stats = get_stat_types()
 
 
 let store = useStore();
@@ -84,6 +84,15 @@ function update_stats(new_stats: string){
         case "Fireball Fight":
             settings.value.stats_type.type = "FireballFight"
             break;
+        case "Bed Fight":
+            settings.value.stats_type.type = "BedFight"
+            break;
+        case "UHC":
+            settings.value.stats_type.type = "Uhc"
+            break;
+        case "Skywars":
+            settings.value.stats_type.type = "Skywars"
+            break
     }
 
     save_settings()

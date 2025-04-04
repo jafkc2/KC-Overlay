@@ -29,6 +29,7 @@ document.addEventListener("mousedown", (e) => {
 });
 
 
+const router = useRouter();
 
 onMounted(async () => {
     await store.get_settings();
@@ -39,7 +40,6 @@ onMounted(async () => {
     });
 
     if (await invoke<boolean>("is_first_use")){
-        const router = useRouter();
         router.push('/welcome');
     }
     document.addEventListener("contextmenu", (event) => {
@@ -86,6 +86,8 @@ onMounted(async () => {
         const window = getCurrentWindow();
         console.log(event.payload);
         if (event.payload) {
+            router.push("/");
+            
             store.loading = true;
 
             store.players = [];

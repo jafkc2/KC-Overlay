@@ -9,7 +9,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use crate::{
-    stats::{Bedwars, FireballFight, Stats, StatsType, TheBridge},
+    stats::{Bedwars, Duels, Stats, StatsType, TheBridge},
     util::Rgb,
 };
 
@@ -107,7 +107,7 @@ impl Player {
                 hours_played: 0,
                 points: 0,
             }),
-            StatsType::FireballFight => Stats::FireballFight(crate::stats::FireballFight {
+            StatsType::FireballFight | StatsType::BedFight | StatsType::Skywars | StatsType::Uhc => Stats::Duels(crate::stats::Duels {
                 level: 999,
                 level_symbol: "?".to_string(),
                 winstreak: 0,
@@ -568,12 +568,55 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 points,
             })
         }
-        StatsType::FireballFight => {
+        StatsType::FireballFight | StatsType::BedFight | StatsType::Uhc => {
             let duels_stats = response["stats"]["duels"].clone();
 
-            let level = duels_stats["fireball_fight_level"].as_i64().unwrap_or(0) as i32;
+            let (
+                lvl_entry,
+                lvl_symbol,
+                ws_entry,
+                wins_entry,
+                losses_entry,
+                kills_entry,
+                deaths_entry,
+                hours_played_entry,
+            ) = match stats_type {
+                StatsType::FireballFight => (
+                    "fireball_fight_level",
+                    "fireball_fight_level_badge",
+                    "fireball_fight_winstreak",
+                    "fireball_fight_wins",
+                    "fireball_fight_losses",
+                    "fireball_fight_kills",
+                    "fireball_fight_deaths",
+                    "duels_fireball_fight",
+                ),
+                StatsType::BedFight => (
+                    "bed_fight_level",
+                    "bed_fight_level_badge",
+                    "bed_fight_winstreak",
+                    "bed_fight_wins",
+                    "bed_fight_losses",
+                    "bed_fight_kills",
+                    "bed_fight_deaths",
+                    "duels_bed_fight",
+                ),
+                StatsType::Uhc => (
+                    "uhc_level",
+                    "uhc_level_badge",
+                    "uhc_winstreak",
+                    "uhc_wins",
+                    "uhc_losses",
+                    "uhc_kills",
+                    "uhc_deaths",
+                    "duels_uhc",
+                ),
+                _ => panic!("Erro impossível :O"),
+            };
 
-            let level_symbol_raw: String = duels_stats["fireball_fight_level_badge"]["format"]
+            let level = duels_stats[lvl_entry].as_i64().unwrap_or(0) as i32;
+
+            let level_symbol_raw: String = duels_stats[lvl_symbol]["format"]
                 .as_str()
                 .unwrap()
                 .to_string();
@@ -590,13 +633,11 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
 
             let level_color = level_symbol_raw.chars().nth(1).unwrap();
 
-            let winstreak = duels_stats["fireball_fight_winstreak"]
-                .as_i64()
-                .unwrap_or(0) as i32;
-            let wins = duels_stats["fireball_fight_wins"].as_u64().unwrap_or(0);
-            let losses = duels_stats["fireball_fight_losses"].as_u64().unwrap_or(0);
-            let kills = duels_stats["fireball_fight_kills"].as_u64().unwrap_or(0);
-            let deaths = duels_stats["fireball_fight_deaths"].as_u64().unwrap_or(0);
+            let winstreak = duels_stats[ws_entry].as_i64().unwrap_or(0) as i32;
+            let wins = duels_stats[wins_entry].as_u64().unwrap_or(0);
+            let losses = duels_stats[losses_entry].as_u64().unwrap_or(0);
+            let kills = duels_stats[kills_entry].as_u64().unwrap_or(0);
+            let deaths = duels_stats[deaths_entry].as_u64().unwrap_or(0);
             let mut winrate = wins as f32 / losses as f32;
             let mut kill_death_ratio = kills as f32 / deaths as f32;
 
@@ -607,12 +648,12 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 kill_death_ratio = 0.0;
             }
 
-            let hours_played = response["stats"]["play_time"]["duels_fireball_fight"]
+            let hours_played = response["stats"]["play_time"][hours_played_entry]
                 .as_u64()
                 .unwrap_or(1)
                 / 3600;
 
-            Stats::FireballFight(FireballFight {
+            Stats::Duels(Duels {
                 level,
                 level_symbol,
                 winstreak,
@@ -626,6 +667,62 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 hours_played,
             })
         }
+        StatsType::Skywars => {
+            let skywars_stats = response["stats"]["skywars_r1"].clone();
+
+            let level = skywars_stats["level"].as_i64().unwrap_or(0) as i32;
+
+            let level_symbol_raw: String = skywars_stats["level_badge"]["format"]
+                .as_str()
+                .unwrap()
+                .to_string();
+
+            let level_symbol = level_symbol_raw
+                .chars()
+                .find(|c| {
+                    !c.is_ascii_alphanumeric()
+                        && !c.is_ascii_whitespace()
+                        && !c.is_ascii_punctuation()
+                })
+                .unwrap()
+                .to_string();
+
+            let level_color = level_symbol_raw.chars().nth(1).unwrap();
+
+            let winstreak = skywars_stats["winstreak"].as_i64().unwrap_or(0) as i32;
+            let wins = skywars_stats["wins"].as_u64().unwrap_or(0);
+            let losses = skywars_stats["losses"].as_u64().unwrap_or(0);
+            let kills = skywars_stats["kills"].as_u64().unwrap_or(0);
+            let deaths = skywars_stats["deaths"].as_u64().unwrap_or(0);
+            let mut winrate = wins as f32 / losses as f32;
+            let mut kill_death_ratio = kills as f32 / deaths as f32;
+
+            if winrate.is_nan() || winrate.is_infinite() {
+                winrate = 0.0;
+            }
+            if kill_death_ratio.is_nan() || kill_death_ratio.is_infinite() {
+                kill_death_ratio = 0.0;
+            }
+
+            let hours_played = response["stats"]["play_time"]["skywars"]
+                .as_u64()
+                .unwrap_or(1)
+                / 3600;
+
+            Stats::Skywars(Duels {
+                level,
+                level_symbol,
+                winstreak,
+                winrate,
+                kill_death_ratio,
+                level_color: Rgb::from_minecraft_color(&level_color),
+                wins,
+                losses,
+                kills,
+                deaths,
+                hours_played,
+            })
+        },
     };
 
     // Para descobrir nickeds com stats

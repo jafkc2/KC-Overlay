@@ -5,6 +5,7 @@ import Select from './Select.vue'
 import { ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { useRouter } from 'vue-router';
+import { get_stat_types } from '../util';
 
 const router = useRouter();
 
@@ -12,7 +13,7 @@ function returnToMainView() {
     router.push('/');
 }
 
-const stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2', "The Bridge", "Fireball Fight"];
+const stats = get_stat_types();
 
 let username = ref("")
 let stats_type_str = ref("Bedwars Geral")

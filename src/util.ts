@@ -107,5 +107,16 @@ export function format_stats(settings: Settings): string{
             return "The Bridge"
         case "FireballFight":
             return "Fireball Fight"
+        case "BedFight":
+            return "Bed Fight"
+        case "Uhc":
+            return "UHC"
+        case "Skywars":
+            return "Skywars"
+            
     }
+}
+
+export function get_stat_types(): string[]{
+    return ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2', "The Bridge", "Fireball Fight", "Bed Fight", "UHC", "Skywars"];
 }
