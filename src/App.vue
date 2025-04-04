@@ -50,7 +50,7 @@ onMounted(async () => {
         const player = event.payload as Player;
         store.players.push(player);
         store.players.sort(
-            (a, b) => b.stats.Bedwars.level - a.stats.Bedwars.level,
+            (a, b) => b.stats.content.level - a.stats.content.level,
         );
     });
 
@@ -67,7 +67,7 @@ onMounted(async () => {
         if (!already_in_list) {
             store.players.push(player);
             store.players.sort(
-                (a, b) => b.stats.Bedwars.level - a.stats.Bedwars.level,
+                (a, b) => b.stats.content.level - a.stats.content.level,
             );
         }
     });

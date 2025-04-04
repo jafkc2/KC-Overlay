@@ -1,7 +1,7 @@
 import { Player, Settings } from "./types";
 
 export function get_ws_color(player: Player) : string{
-    const ws = player.stats.Bedwars.winstreak;
+    const ws = player.stats.content.winstreak;
 
     if (ws < 5){
         return "#aaaaaa";
@@ -17,7 +17,7 @@ export function get_ws_color(player: Player) : string{
 }
 
 export function get_wlr_color(player: Player) : string{
-    const wlr = player.stats.Bedwars.winrate;
+    const wlr = player.stats.content.winrate;
 
     if (wlr < 1){
         return "#aaaaaa";
@@ -33,7 +33,10 @@ export function get_wlr_color(player: Player) : string{
 }
 
 export function get_fkdr_color(player: Player) : string{
-    const fkdr = player.stats.Bedwars.final_kill_death_ratio;
+    if (player.stats.type != "Bedwars"){
+        return "#aaaaaa"
+    }
+    const fkdr = player.stats.content.final_kill_death_ratio;
 
     if (fkdr < 2){
         return "#aaaaaa";
@@ -49,7 +52,7 @@ export function get_fkdr_color(player: Player) : string{
 }
 
 export function get_kdr_color(player: Player) : string{
-    const kdr = player.stats.Bedwars.kill_death_ratio;
+    const kdr = player.stats.content.kill_death_ratio;
 
     if (kdr < 1){
         return "#aaaaaa";
@@ -65,7 +68,7 @@ export function get_kdr_color(player: Player) : string{
 }
 
 export function get_wins_color(player: Player) : string{
-    const wins = player.stats.Bedwars.wins;
+    const wins = player.stats.content.wins;
 
     if (wins < 1000){
         return "#aaaaaa";
@@ -100,5 +103,7 @@ export function format_stats(settings: Settings): string{
             return "Bedwars 1v1"
         case "Bedwars2v2":
             return "Bedwars 2v2"
+        case "TheBridge":
+            return "The Bridge"
     }
 }

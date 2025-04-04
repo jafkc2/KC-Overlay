@@ -21,9 +21,10 @@ export type Rgb = {
     blue: number;
 }
 
-type Stats = {
-    Bedwars: Bedwars;
-}
+type Stats = 
+    | {type: "Bedwars", content: Bedwars}
+    | {type: "TheBridge", content: TheBridge};
+
 
 type Bedwars = {
     level: number;
@@ -41,6 +42,21 @@ type Bedwars = {
     final_deaths: number;
     hours_played: number;
     assists: number;
+}
+
+type TheBridge = {
+    level: number,
+    level_symbol: string,
+    winstreak: number,
+    winrate: number,
+    kill_death_ratio: number,
+    level_color: Rgb,
+    wins: number,
+    losses: number,
+    kills: number,
+    deaths: number,
+    hours_played: number,
+    points: number,
 }
 
 export type Settings = {
@@ -79,5 +95,6 @@ export type StatsType =
     | {type: "BedwarsTrios"}
     | {type: "BedwarsQuads"}
     | {type: "Bedwars1v1"}
-    | {type: "Bedwars2v2"};
+    | {type: "Bedwars2v2"}
+    | {type: "TheBridge"};
 

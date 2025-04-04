@@ -10,7 +10,7 @@ import { useStore } from './stores/store';
 
 
 let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "Personalizado"];
-let stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2'];
+let stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2', "The Bridge"];
 
 
 let store = useStore();
@@ -77,6 +77,9 @@ function update_stats(new_stats: string){
             break;
         case "Bedwars 2v2":
             settings.value.stats_type.type = "Bedwars2v2"
+            break;
+        case "The Bridge":
+            settings.value.stats_type.type = "TheBridge"
             break;
     }
 
