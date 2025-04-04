@@ -12,18 +12,20 @@ pub fn get_home_dir() -> String {
             "{}/AppData/Roaming",
             std::env::var("USERPROFILE").unwrap().replace('\\', "/")
         ),
-        "macos" => format!("{}/Library/Application Support", std::env::var("HOME").unwrap()),
+        "macos" => format!(
+            "{}/Library/Application Support",
+            std::env::var("HOME").unwrap()
+        ),
         _ => panic!("System not supported."),
     }
 }
 pub fn get_minecraft_dir() -> String {
-    let minecraft_name = match std::env::consts::OS{
+    let minecraft_name = match std::env::consts::OS {
         "macos" => "minecraft",
-        _ => ".minecraft"
+        _ => ".minecraft",
     };
     format!("{}/{}", get_home_dir(), minecraft_name)
 }
-
 
 pub fn get_json(jpathstring: String) -> Value {
     let jsonpath = Path::new(&jpathstring);

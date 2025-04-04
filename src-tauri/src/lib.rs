@@ -1,5 +1,9 @@
 use std::{
-    collections::VecDeque, env, fs, io::SeekFrom, path::Path, time::{Duration, Instant}
+    collections::VecDeque,
+    env, fs,
+    io::SeekFrom,
+    path::Path,
+    time::{Duration, Instant},
 };
 
 use minecraft_clients::MineClient;
@@ -19,8 +23,8 @@ mod config;
 mod minecraft_clients;
 mod player;
 mod stats;
-mod util;
 mod update;
+mod util;
 
 struct KCOverlay {
     state: State,
@@ -52,7 +56,7 @@ struct State {
     cached_players: VecDeque<Player>,
     loading: bool,
     rates_full_time: Instant,
-    is_first_use : bool,
+    is_first_use: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -71,17 +75,17 @@ struct Settings {
     show_losses: bool,
     show_bans: bool,
     transparency: i32,
-    automatic: bool
+    automatic: bool,
 }
 pub fn run() {
-        // Isso é o processo final do update. Remove o executável antigo, caso exista.
-        let old_exec = env::current_exe().unwrap().with_extension("old");
-        if Path::new(&old_exec).exists() {
-            match fs::remove_file(old_exec) {
-                Ok(ok) => ok,
-                Err(e) => println!("Failed to delete old executable: {e}"),
-            }
+    // Isso é o processo final do update. Remove o executável antigo, caso exista.
+    let old_exec = env::current_exe().unwrap().with_extension("old");
+    if Path::new(&old_exec).exists() {
+        match fs::remove_file(old_exec) {
+            Ok(ok) => ok,
+            Err(e) => println!("Failed to delete old executable: {e}"),
         }
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -107,9 +111,9 @@ pub fn run() {
             ))
             .unwrap_or(MineClient::Default);
 
-            match client{
+            match client {
                 MineClient::Custom(_) => client = MineClient::Custom(custom_client_path.clone()),
-               _ => ()
+                _ => (),
             }
 
             let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
@@ -137,7 +141,7 @@ pub fn run() {
                     cached_players: VecDeque::new(),
                     loading: false,
                     rates_full_time: Instant::now(),
-                    is_first_use
+                    is_first_use,
                 },
                 settings: Settings {
                     client,
@@ -154,7 +158,7 @@ pub fn run() {
                     show_losses,
                     show_bans,
                     transparency,
-                    automatic
+                    automatic,
                 },
             }));
             Ok(())
@@ -175,7 +179,7 @@ pub fn run() {
 }
 
 #[tauri::command]
-async fn is_first_use(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<bool, ()>{
+async fn is_first_use(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<bool, ()> {
     Ok(app.lock().await.state.is_first_use)
 }
 
@@ -185,14 +189,13 @@ async fn get_settings(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<Setting
 }
 
 #[tauri::command]
-async fn search_player(handle: tauri::AppHandle, username: String, stats_type: StatsType){
+async fn search_player(handle: tauri::AppHandle, username: String, stats_type: StatsType) {
     let player = player::get_player(&username, stats_type, VecDeque::new()).await;
 
-    match player{
+    match player {
         Ok(ok) => handle.emit("player_to_view", ok).unwrap(),
         Err(_) => handle.emit("player_to_view", "").unwrap(),
     }
-    
 }
 
 #[tauri::command]
@@ -216,9 +219,11 @@ async fn read_logs(
             file = Ok(ok);
         }
         Err(_) => {
-
             while !Path::new(&app.lock().await.settings.client.get_logs_path()).exists() {
-                println!("{} não existe", &app.lock().await.settings.client.get_logs_path());
+                println!(
+                    "{} não existe",
+                    &app.lock().await.settings.client.get_logs_path()
+                );
                 sleep(Duration::from_secs(1)).await;
             }
             client = app.lock().await.settings.client.clone();
@@ -248,7 +253,7 @@ async fn read_logs(
         // Atualiza o arquivo de logs do client, se necessário
         if app.lock().await.settings.client != client
             || time_since_client_refresh.elapsed() > Duration::from_secs(15)
-        { 
+        {
             client = app.lock().await.settings.client.clone();
 
             let logs_path = client.get_logs_path();
@@ -286,14 +291,12 @@ async fn handle_log_line(
                 let player_name: &str = splitted_line[index - 1];
                 let stats_type = app_mutex.lock().await.settings.stats_type.clone();
                 let cached_players = app_mutex.lock().await.state.cached_players.clone();
-                let player = player::get_player(
-                    player_name,
-                    stats_type,
-                    cached_players
-                )
-                .await;
+                let player = player::get_player(player_name, stats_type, cached_players).await;
                 if let Ok(ok) = player {
-                    app_mutex.lock().await.add_players_to_cache(vec![ok.clone()]);
+                    app_mutex
+                        .lock()
+                        .await
+                        .add_players_to_cache(vec![ok.clone()]);
                     handle.emit("player_joined", ok).unwrap();
                 }
 
@@ -302,7 +305,7 @@ async fn handle_log_line(
         }
     }
     // Checa se o jogador saiu da sala
-    else if line.contains("saiu da sala") && app_mutex.lock().await.settings.automatic{
+    else if line.contains("saiu da sala") && app_mutex.lock().await.settings.automatic {
         let splitted_line: Vec<&str> = line.split(" ").collect();
 
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
@@ -314,7 +317,7 @@ async fn handle_log_line(
         }
     }
     // Checa se algum jogador que está na lista foi eliminado da partida.
-    else if line.contains("KILL FINAL") && app_mutex.lock().await.settings.automatic{
+    else if line.contains("KILL FINAL") && app_mutex.lock().await.settings.automatic {
         let splitted_line: Vec<&str> = line.split(" ").collect();
 
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
@@ -327,9 +330,7 @@ async fn handle_log_line(
     }
 
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
-    if line.contains("[CHAT] Jogadores")
-        && !app_mutex.lock().await.state.loading
-    {
+    if line.contains("[CHAT] Jogadores") && !app_mutex.lock().await.state.loading {
         println!("Jogador digitou /jogando");
         let split = line.split("):").map(|x| x.to_string());
         let split_vector: Vec<String> = split.clone().collect();

@@ -144,6 +144,8 @@ pub async fn save_settings(
 ) -> Result<(), ()> {
     handle.emit("settings_changed", settings.clone()).unwrap();
     app.lock().await.settings = settings.clone();
+    app.lock().await.state.cached_players.clear();
+    
     let settings_json = serde_json::json!(settings);
 
     let mut config_file = OpenOptions::new()

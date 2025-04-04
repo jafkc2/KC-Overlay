@@ -14,7 +14,7 @@ pub enum MineClient {
     LegacyLauncher,
     Custom(String),
     Silent,
-    CMClient
+    CMClient,
 }
 
 // Clients em string.
@@ -39,43 +39,45 @@ impl MineClient {
         match self {
             MineClient::Default => format!("{}/logs/latest.log", minecraft_dir),
             MineClient::Badlion => {
-                        format!("{}/logs/blclient/minecraft/latest.log", minecraft_dir)
-                    }
+                format!("{}/logs/blclient/minecraft/latest.log", minecraft_dir)
+            }
             MineClient::Lunar => {
-                        let lunar_directory = match std::env::consts::OS {
-                            "linux" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
-                            "windows" => format!(
-                                "{}/.lunarclient",
-                                std::env::var("USERPROFILE").unwrap().replace('\\', "/")
-                            ),
-                            "macos" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
-                            _ => panic!("System not supported."),
-                        };
+                let lunar_directory = match std::env::consts::OS {
+                    "linux" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
+                    "windows" => format!(
+                        "{}/.lunarclient",
+                        std::env::var("USERPROFILE").unwrap().replace('\\', "/")
+                    ),
+                    "macos" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
+                    _ => panic!("System not supported."),
+                };
 
-                        format!("{}/offline/multiver/logs/latest.log", lunar_directory)
-                    }
+                format!("{}/offline/multiver/logs/latest.log", lunar_directory)
+            }
             MineClient::LegacyLauncher => match std::env::consts::OS {
-                        "linux" => format!(
-                            "{}/.tlauncher/legacy/Minecraft/game/logs/latest.log",
-                            std::env::var("HOME").unwrap()
-                        ),
-                        "windows" => format!(
-                            "{}/AppData/Roaming/.tlauncher/legacy/Minecraft/game/logs/latest.log",
-                            std::env::var("USERPROFILE").unwrap().replace('\\', "/")
-                        ),
-                        "macos" => format!(
-                            "{}/.tlauncher/legacy/Minecraft/game/logs/latest.log",
-                            get_home_dir()
-                        ),
-                        _ => panic!("System not supported."),
-                    },
+                "linux" => format!(
+                    "{}/.tlauncher/legacy/Minecraft/game/logs/latest.log",
+                    std::env::var("HOME").unwrap()
+                ),
+                "windows" => format!(
+                    "{}/AppData/Roaming/.tlauncher/legacy/Minecraft/game/logs/latest.log",
+                    std::env::var("USERPROFILE").unwrap().replace('\\', "/")
+                ),
+                "macos" => format!(
+                    "{}/.tlauncher/legacy/Minecraft/game/logs/latest.log",
+                    get_home_dir()
+                ),
+                _ => panic!("System not supported."),
+            },
             MineClient::Custom(path) => path.to_string(),
             MineClient::Silent => {
-                        format!("{}/silentclient/logs/main.log", crate::util::get_home_dir())
-                    }
+                format!("{}/silentclient/logs/main.log", crate::util::get_home_dir())
+            }
             MineClient::CMClient => {
                 let cm_directory = match std::env::consts::OS {
-                    "linux" => format!("{}/.local/share/.minecraft", std::env::var("HOME").unwrap()),
+                    "linux" => {
+                        format!("{}/.local/share/.minecraft", std::env::var("HOME").unwrap())
+                    }
                     "windows" => format!(
                         "{}/AppData/Local/Programs/cmlauncher",
                         std::env::var("USERPROFILE").unwrap().replace('\\', "/")
@@ -85,7 +87,7 @@ impl MineClient {
                 };
 
                 format!("{}/logs/latest.log", cm_directory)
-            },
+            }
         }
     }
 }

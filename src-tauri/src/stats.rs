@@ -8,8 +8,10 @@ use crate::util::Rgb;
 
 // Todos os stats
 #[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", content = "content")]
 pub enum Stats {
     Bedwars(Bedwars),
+    TheBridge(TheBridge),
 }
 
 // Stats de Bedwars
@@ -32,6 +34,23 @@ pub struct Bedwars {
     pub assists: u64,
 }
 
+// Stats de TheBridge
+#[derive(Debug, Clone, Serialize)]
+pub struct TheBridge {
+    pub level: i32,
+    pub level_symbol: String,
+    pub winstreak: i32,
+    pub winrate: f32,
+    pub kill_death_ratio: f32,
+    pub level_color: Rgb,
+    pub wins: u64,
+    pub losses: u64,
+    pub kills: u64,
+    pub deaths: u64,
+    pub hours_played: u64,
+    pub points: u64,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StatsType {
@@ -43,6 +62,7 @@ pub enum StatsType {
     BedwarsQuads,
     Bedwars1v1,
     Bedwars2v2,
+    TheBridge,
 }
 
 impl Display for StatsType {
@@ -55,6 +75,7 @@ impl Display for StatsType {
             StatsType::BedwarsQuads => write!(f, "Bedwars Quartetos"),
             StatsType::Bedwars1v1 => write!(f, "Bedwars 1v1"),
             StatsType::Bedwars2v2 => write!(f, "Bedwars 2v2"),
+            StatsType::TheBridge => write!(f, "The Bridge"),
         }
     }
 }

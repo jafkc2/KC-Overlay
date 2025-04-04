@@ -1,5 +1,6 @@
 //! Módulo de jogadores.
 
+use core::f32;
 use reqwest::Client;
 use serde::Serialize;
 use serde_json::Value;
@@ -8,7 +9,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use crate::{
-    stats::{Bedwars, Stats, StatsType},
+    stats::{Bedwars, Stats, StatsType, TheBridge},
     util::Rgb,
 };
 
@@ -91,6 +92,20 @@ impl Player {
                 final_deaths: 0,
                 hours_played: 0,
                 assists: 0,
+            }),
+            StatsType::TheBridge => Stats::TheBridge(crate::stats::TheBridge {
+                level: 999,
+                level_symbol: "?".to_string(),
+                winstreak: 0,
+                winrate: 0.,
+                kill_death_ratio: 0.,
+                level_color: Rgb::new(0, 255, 255),
+                wins: 0,
+                losses: 0,
+                kills: 0,
+                deaths: 0,
+                hours_played: 0,
+                points: 0,
             }),
         };
         Player {
@@ -217,7 +232,6 @@ pub async fn get_players(
     let players = players_arc.lock().await;
     let mut app = app_mutex.lock().await;
 
-
     app.add_players_to_cache(players.to_vec());
 
     match *full_rates_instant.lock().await {
@@ -225,7 +239,7 @@ pub async fn get_players(
         None => (),
     }
     handle.emit("loading", false).unwrap();
-    if *rate_limited_arc.lock().await{
+    if *rate_limited_arc.lock().await {
         let wait_time = 60 - app.state.rates_full_time.elapsed().as_secs();
         handle.emit("wait", wait_time).unwrap();
     }
@@ -234,9 +248,13 @@ pub async fn get_players(
 
 /// Função para coletar os stats de apenas um jogador.
 #[tauri::command]
-pub async fn get_player(username: &str, stats_type: StatsType, cached_players: VecDeque<Player>) -> Result<Player, ()> {
-    for player in cached_players{
-        if player.username == username{
+pub async fn get_player(
+    username: &str,
+    stats_type: StatsType,
+    cached_players: VecDeque<Player>,
+) -> Result<Player, ()> {
+    for player in cached_players {
+        if player.username == username {
             return Ok(player);
         }
     }
@@ -417,6 +435,7 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                     "2v2_assists",
                     "bedwars_2v2",
                 ),
+                _ => panic!("Erro impossível :O"),
             };
 
             let winstreak = bedwars_stats[ws_entry].as_i64().unwrap_or(0) as i32;
@@ -445,11 +464,13 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
             let kills = bedwars_stats[kills_entry].as_u64().unwrap_or(0);
             let deaths = bedwars_stats[deaths_entry].as_u64().unwrap_or(0);
             let final_kills = bedwars_stats[final_kills_entry].as_u64().unwrap_or(0);
-            let final_deaths = match to_hex(&username).as_str(){
-                "53726665696f6f5f6f" | "66616e64616e646164616e" |
-                "56696c6c61696e64756f" | "44656d6f696e526569" |
-                "616c69656e6a6972656e" => losses,
-                _ => bedwars_stats[final_deaths_entry].as_u64().unwrap_or(0)
+            let final_deaths = match to_hex(&username).as_str() {
+                "53726665696f6f5f6f"
+                | "66616e64616e646164616e"
+                | "56696c6c61696e64756f"
+                | "44656d6f696e526569"
+                | "616c69656e6a6972656e" => losses,
+                _ => bedwars_stats[final_deaths_entry].as_u64().unwrap_or(0),
             };
 
             let assists = bedwars_stats[assists_entry].as_u64().unwrap_or(0);
@@ -476,15 +497,69 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 assists,
             })
         }
+        StatsType::TheBridge => {
+            let duels_stats = response["stats"]["duels"].clone();
+
+            let level = duels_stats["bridge_level"].as_i64().unwrap_or(0) as i32;
+
+            let level_symbol_raw: String = duels_stats["bridge_level_badge"]["format"]
+                .as_str()
+                .unwrap()
+                .to_string();
+
+            let level_symbol = level_symbol_raw
+                .chars()
+                .find(|c| {
+                    !c.is_ascii_alphanumeric()
+                        && !c.is_ascii_whitespace()
+                        && !c.is_ascii_punctuation()
+                })
+                .unwrap()
+                .to_string();
+
+            let level_color = level_symbol_raw.chars().nth(1).unwrap();
+
+            let winstreak = duels_stats["bridge_winstreak"].as_i64().unwrap_or(0) as i32;
+            let wins = duels_stats["bridge_wins"].as_u64().unwrap_or(0);
+            let losses = duels_stats["bridge_losses"].as_u64().unwrap_or(0);
+            let points = duels_stats["bridge_points"].as_u64().unwrap_or(0);
+            let kills = duels_stats["bridge_kills"].as_u64().unwrap_or(0);
+            let deaths = duels_stats["bridge_deaths"].as_u64().unwrap_or(0);
+            let mut winrate = wins as f32 / losses as f32;
+            let mut kill_death_ratio = kills as f32 / deaths as f32;
+
+            if winrate.is_nan() || winrate.is_infinite() {
+                winrate = 0.0;
+            }
+            if kill_death_ratio.is_nan() || kill_death_ratio.is_infinite() {
+                kill_death_ratio = 0.0;
+            }
+
+            let hours_played = response["stats"]["play_time"]["duels_bridge"]
+                .as_u64()
+                .unwrap_or(1)
+                / 3600;
+
+            Stats::TheBridge(TheBridge {
+                level,
+                level_symbol,
+                winstreak,
+                winrate,
+                kill_death_ratio,
+                level_color: Rgb::from_minecraft_color(&level_color),
+                wins,
+                losses,
+                kills,
+                deaths,
+                hours_played,
+                points,
+            })
+        }
     };
 
     // Para descobrir nickeds com stats
-    match stats {
-        Stats::Bedwars(ref bedwars) => {
-            if account_type == "premium" && !is_connected && bedwars.final_kill_death_ratio == 0.0 && is_banned {
-                return Player::new_nicked(username, stats_type);
-            }
-        }
+    if account_type == "premium" && !is_connected && is_banned {
+        return Player::new_nicked(username, stats_type);
     }
 
     Player::new(
