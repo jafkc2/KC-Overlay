@@ -76,6 +76,7 @@ struct Settings {
     show_bans: bool,
     transparency: i32,
     automatic: bool,
+    remove_players: bool
 }
 pub fn run() {
     // Isso é o processo final do update. Remove o executável antigo, caso exista.
@@ -135,6 +136,8 @@ pub fn run() {
             let show_bans = config["show_bans"].as_bool().unwrap_or(false);
             let transparency = config["transparency"].as_i64().unwrap_or(75) as i32;
             let automatic = config["automatic"].as_bool().unwrap_or(true);
+            let remove_players = config["remove_players"].as_bool().unwrap_or(true);
+
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
@@ -159,6 +162,7 @@ pub fn run() {
                     show_bans,
                     transparency,
                     automatic,
+                    remove_players
                 },
             }));
             Ok(())
@@ -351,5 +355,8 @@ async fn handle_log_line(
         let stats_type = app_mutex.lock().await.settings.stats_type.clone();
 
         player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
+    }
+    else if line.contains("[CHAT] Enviando para"){
+        handle.emit("remove_players", true).unwrap();
     }
 }

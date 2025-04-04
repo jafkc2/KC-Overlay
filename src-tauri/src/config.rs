@@ -126,6 +126,9 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
         if !map.contains_key("automatic") {
             map.insert("automatic".to_owned(), serde_json::to_value(true).unwrap());
         }
+        if !map.contains_key("remove_players") {
+            map.insert("remove_players".to_owned(), serde_json::to_value(true).unwrap());
+        }
     }
 
     let serializedjson = serde_json::to_string_pretty(&conf_json).unwrap();
@@ -142,9 +145,10 @@ pub async fn save_settings(
     app: tauri::State<'_, Mutex<KCOverlay>>,
     settings: Settings,
 ) -> Result<(), ()> {
-    handle.emit("settings_changed", settings.clone()).unwrap();
     app.lock().await.settings = settings.clone();
     app.lock().await.state.cached_players.clear();
+    handle.emit("settings_changed", settings.clone()).unwrap();
+
 
     let settings_json = serde_json::json!(settings);
 

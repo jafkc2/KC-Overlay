@@ -57,6 +57,9 @@ onMounted(async () => {
     listen("player_joined", (event) => {
         const player = event.payload as Player;
         let already_in_list = false;
+        if (player.username == "opponent"){
+            return;
+        }
         for (const i of store.players) {
             if (player.username == i.username) {
                 already_in_list = true;
@@ -80,6 +83,12 @@ onMounted(async () => {
                 store.players.splice(index, 1);
             }
         });
+    });
+
+    listen("remove_players", () => {
+        if (store.settings.remove_players){
+            store.players = [];
+        }
     });
 
     listen("loading", async (event) => {

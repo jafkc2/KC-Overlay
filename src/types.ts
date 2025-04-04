@@ -91,7 +91,8 @@ export type Settings = {
     show_losses: boolean,
     show_bans: boolean,
     transparency: number,
-    automatic: boolean
+    automatic: boolean,
+    remove_players: boolean
 }
 
 export type MineClient = 

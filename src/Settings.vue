@@ -55,6 +55,7 @@ function update_client(new_client: string){
 }
 
 function update_stats(new_stats: string){
+    store.players = [];
     stats_type.value = new_stats;
     switch (new_stats){
         case "Bedwars Geral":
@@ -156,6 +157,13 @@ async function select_log_file(){
             <span>Carregar/remover jogadores automaticamente quando possível:</span>
             <button @click="settings.automatic = !settings.automatic; save_settings()" :class="{ active: settings.automatic }">
                 <span v-if="settings.automatic">Sim</span>
+                <span v-else>Não</span>
+            </button>
+        </div>
+        <div class="setting">
+            <span>Esvaziar lista de jogadores ao entrar numa partida:</span>
+            <button @click="settings.remove_players = !settings.remove_players; save_settings()" :class="{ active: settings.remove_players }">
+                <span v-if="settings.remove_players">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
