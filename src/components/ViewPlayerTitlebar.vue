@@ -12,7 +12,7 @@ function returnToMainView() {
     router.push('/');
 }
 
-const stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2'];
+const stats = ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2', "The Bridge", "Fireball Fight"];
 
 let username = ref("")
 let stats_type_str = ref("Bedwars Geral")
@@ -44,6 +44,12 @@ function get_stats() : StatsType{
             break;
         case "Bedwars 2v2":
             stats_type = {type: "Bedwars2v2"}
+            break;
+        case "The Bridge":
+            stats_type = {type: "TheBridge"}
+            break;
+        case "Fireball Fight":
+            stats_type = {type: "FireballFight"}
             break;
     }
     return stats_type;

@@ -12,6 +12,7 @@ use crate::util::Rgb;
 pub enum Stats {
     Bedwars(Bedwars),
     TheBridge(TheBridge),
+    FireballFight(FireballFight),
 }
 
 // Stats de Bedwars
@@ -51,6 +52,22 @@ pub struct TheBridge {
     pub points: u64,
 }
 
+// Stats de FireballFight
+#[derive(Debug, Clone, Serialize)]
+pub struct FireballFight {
+    pub level: i32,
+    pub level_symbol: String,
+    pub winstreak: i32,
+    pub winrate: f32,
+    pub kill_death_ratio: f32,
+    pub level_color: Rgb,
+    pub wins: u64,
+    pub losses: u64,
+    pub kills: u64,
+    pub deaths: u64,
+    pub hours_played: u64,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StatsType {
@@ -63,6 +80,7 @@ pub enum StatsType {
     Bedwars1v1,
     Bedwars2v2,
     TheBridge,
+    FireballFight,
 }
 
 impl Display for StatsType {
@@ -76,6 +94,7 @@ impl Display for StatsType {
             StatsType::Bedwars1v1 => write!(f, "Bedwars 1v1"),
             StatsType::Bedwars2v2 => write!(f, "Bedwars 2v2"),
             StatsType::TheBridge => write!(f, "The Bridge"),
+            StatsType::FireballFight => write!(f, "Fireball Fight"),
         }
     }
 }

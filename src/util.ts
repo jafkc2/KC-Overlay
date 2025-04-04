@@ -105,5 +105,7 @@ export function format_stats(settings: Settings): string{
             return "Bedwars 2v2"
         case "TheBridge":
             return "The Bridge"
+        case "FireballFight":
+            return "Fireball Fight"
     }
 }

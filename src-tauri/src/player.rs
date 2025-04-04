@@ -9,7 +9,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use crate::{
-    stats::{Bedwars, Stats, StatsType, TheBridge},
+    stats::{Bedwars, FireballFight, Stats, StatsType, TheBridge},
     util::Rgb,
 };
 
@@ -106,6 +106,19 @@ impl Player {
                 deaths: 0,
                 hours_played: 0,
                 points: 0,
+            }),
+            StatsType::FireballFight => Stats::FireballFight(crate::stats::FireballFight {
+                level: 999,
+                level_symbol: "?".to_string(),
+                winstreak: 0,
+                winrate: 0.,
+                kill_death_ratio: 0.,
+                level_color: Rgb::new(0, 255, 255),
+                wins: 0,
+                losses: 0,
+                kills: 0,
+                deaths: 0,
+                hours_played: 0,
             }),
         };
         Player {
@@ -553,6 +566,64 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 deaths,
                 hours_played,
                 points,
+            })
+        }
+        StatsType::FireballFight => {
+            let duels_stats = response["stats"]["duels"].clone();
+
+            let level = duels_stats["fireball_fight_level"].as_i64().unwrap_or(0) as i32;
+
+            let level_symbol_raw: String = duels_stats["fireball_fight_level_badge"]["format"]
+                .as_str()
+                .unwrap()
+                .to_string();
+
+            let level_symbol = level_symbol_raw
+                .chars()
+                .find(|c| {
+                    !c.is_ascii_alphanumeric()
+                        && !c.is_ascii_whitespace()
+                        && !c.is_ascii_punctuation()
+                })
+                .unwrap()
+                .to_string();
+
+            let level_color = level_symbol_raw.chars().nth(1).unwrap();
+
+            let winstreak = duels_stats["fireball_fight_winstreak"]
+                .as_i64()
+                .unwrap_or(0) as i32;
+            let wins = duels_stats["fireball_fight_wins"].as_u64().unwrap_or(0);
+            let losses = duels_stats["fireball_fight_losses"].as_u64().unwrap_or(0);
+            let kills = duels_stats["fireball_fight_kills"].as_u64().unwrap_or(0);
+            let deaths = duels_stats["fireball_fight_deaths"].as_u64().unwrap_or(0);
+            let mut winrate = wins as f32 / losses as f32;
+            let mut kill_death_ratio = kills as f32 / deaths as f32;
+
+            if winrate.is_nan() || winrate.is_infinite() {
+                winrate = 0.0;
+            }
+            if kill_death_ratio.is_nan() || kill_death_ratio.is_infinite() {
+                kill_death_ratio = 0.0;
+            }
+
+            let hours_played = response["stats"]["play_time"]["duels_fireball_fight"]
+                .as_u64()
+                .unwrap_or(1)
+                / 3600;
+
+            Stats::FireballFight(FireballFight {
+                level,
+                level_symbol,
+                winstreak,
+                winrate,
+                kill_death_ratio,
+                level_color: Rgb::from_minecraft_color(&level_color),
+                wins,
+                losses,
+                kills,
+                deaths,
+                hours_played,
             })
         }
     };

@@ -23,7 +23,8 @@ export type Rgb = {
 
 type Stats = 
     | {type: "Bedwars", content: Bedwars}
-    | {type: "TheBridge", content: TheBridge};
+    | {type: "TheBridge", content: TheBridge}
+    | {type: "FireballFight", content: FireballFight};
 
 
 type Bedwars = {
@@ -57,6 +58,20 @@ type TheBridge = {
     deaths: number,
     hours_played: number,
     points: number,
+}
+
+type FireballFight = {
+    level: number,
+    level_symbol: string,
+    winstreak: number,
+    winrate: number,
+    kill_death_ratio: number,
+    level_color: Rgb,
+    wins: number,
+    losses: number,
+    kills: number,
+    deaths: number,
+    hours_played: number,
 }
 
 export type Settings = {
@@ -96,5 +111,6 @@ export type StatsType =
     | {type: "BedwarsQuads"}
     | {type: "Bedwars1v1"}
     | {type: "Bedwars2v2"}
-    | {type: "TheBridge"};
+    | {type: "TheBridge"}
+    | {type: "FireballFight"}
 

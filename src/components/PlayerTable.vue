@@ -29,14 +29,14 @@
                 <div class="symbol_div">
                   <span class="symbol">{{
                     player.stats.content.level_symbol
-                  }}</span>
+                    }}</span>
                 </div>
                 <span>]</span>
               </div>
 
               <span :style="{ color: rgb_style(player.username_color) }">{{
                 player.username
-              }}</span>
+                }}</span>
               <span v-if="player.clan" :style="{ color: rgb_style(player.clan_color) }">[{{ player.clan }}]</span>
 
               <img v-if="player.is_possible_cheater" src="/radioactive.svg" class="player-indicator" />
@@ -47,10 +47,10 @@
               <img
                 v-if="player.stats.type == 'Bedwars' && player.stats.content.losses / player.stats.content.final_deaths > 2"
                 src="/knife2.svg" />
-                <img v-if="player.is_muted" src="/mute.svg" />
+              <img v-if="player.is_muted" src="/mute.svg" />
 
-<span v-if="settings.show_bans && player.bans > 0">{{ player.bans }}</span>
-<img v-if="settings.show_bans && player.bans > 0" src="/hammer.svg" />
+              <span v-if="settings.show_bans && player.bans > 0">{{ player.bans }}</span>
+              <img v-if="settings.show_bans && player.bans > 0" src="/hammer.svg" />
             </div>
 
 
@@ -61,7 +61,7 @@
               player.stats.content.winstreak }}</td>
           <td v-if="settings.show_wlr" :style="{ color: get_wlr_color(player) }" class="stat"
             :class="{ 'super': player.stats.content.winrate >= 8 }">{{ player.stats.content.winrate.toFixed(2) }}</td>
-          <td v-if="player.stats.type == 'TheBridge'" ckass="stat">{{ player.stats.content.points }}</td>
+          <td v-if="player.stats.type == 'TheBridge'" class="stat">{{ player.stats.content.points }}</td>
           <td v-if="player.stats.type == 'Bedwars' && settings.show_fkdr" :style="{ color: get_fkdr_color(player) }"
             class="stat" :class="{ 'super': player.stats.content.final_kill_death_ratio >= 50 }">{{
               player.stats.content.final_kill_death_ratio.toFixed(2) }}</td>
