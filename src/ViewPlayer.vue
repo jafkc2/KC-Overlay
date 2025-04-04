@@ -8,11 +8,11 @@
     <div v-else class="player">
       <div>
         <div class="username">
-          <div :style="{ color: rgb_style(player.stats.Bedwars.level_color) }">
-            <span class="level">[{{ player.stats.Bedwars.level }}</span>
+          <div :style="{ color: rgb_style(player.stats.content.level_color) }">
+            <span class="level">[{{ player.stats.content.level }}</span>
             <div class="symbol_div">
               <span class="level_symbol">{{
-                player.stats.Bedwars.level_symbol
+                player.stats.content.level_symbol
               }}</span>
             </div>
             <span>]</span>
@@ -41,25 +41,26 @@
 
         <p>Primeiro login: {{ format_date(player.account_creation) }}</p>
         <p>Último login: {{ format_date(player.last_login) }}</p>
-        <p>Horas jogadas: {{ player.stats.Bedwars.hours_played }}</p>
+        <p>Horas jogadas: {{ player.stats.content.hours_played }}</p>
         <p>bans: {{ player.bans }}</p>
         <h2>Stats</h2>
 
         <div class="flex">
           <div style="margin-right: 30px;">
-            <p>Winstreak: {{ player.stats.Bedwars.winstreak }}</p>
-            <p>WLR: {{ player.stats.Bedwars.winrate.toFixed(2) }}</p>
-            <p>FKDR: {{ player.stats.Bedwars.final_kill_death_ratio.toFixed(2) }}</p>
-            <p>KDR: {{ player.stats.Bedwars.kill_death_ratio.toFixed(2) }}</p>
-            <p>Vitórias: {{ player.stats.Bedwars.wins }}</p>
-            <p>Derrotas: {{ player.stats.Bedwars.losses }}</p>
+            <p>Winstreak: {{ player.stats.content.winstreak }}</p>
+            <p>WLR: {{ player.stats.content.winrate.toFixed(2) }}</p>
+            <p v-if="player.stats.type == 'Bedwars'">FKDR: {{ player.stats.content.final_kill_death_ratio.toFixed(2) }}</p>
+            <p>KDR: {{ player.stats.content.kill_death_ratio.toFixed(2) }}</p>
+            <p>Vitórias: {{ player.stats.content.wins }}</p>
+            <p>Derrotas: {{ player.stats.content.losses }}</p>
           </div>
           <div>
-            <p>Final kills: {{ player.stats.Bedwars.final_kills }}</p>
-            <p>Final deaths: {{ player.stats.Bedwars.final_deaths }}</p>
-            <p>Kills: {{ player.stats.Bedwars.kills }}</p>
-            <p>Mortes: {{ player.stats.Bedwars.deaths }}</p>
-            <p>Assistências: {{ player.stats.Bedwars.assists }}</p>
+            <p v-if="player.stats.type == 'TheBridge'">Pontos: {{ player.stats.content.points }}</p>
+            <p v-if="player.stats.type == 'Bedwars'">Final kills: {{ player.stats.content.final_kills }}</p>
+            <p v-if="player.stats.type == 'Bedwars'">Final deaths: {{ player.stats.content.final_deaths }}</p>
+            <p>Kills: {{ player.stats.content.kills }}</p>
+            <p>Mortes: {{ player.stats.content.deaths }}</p>
+            <p v-if="player.stats.type == 'Bedwars'">Assistências: {{ player.stats.content.assists }}</p>
           </div>
         </div>
 
@@ -94,7 +95,7 @@ listen("player_to_view", (event) => {
   if (payload.hasOwnProperty("username")) {
     player.value = payload as Player;
     error.value = false;
-    glowColor.value = rgb_style(player.value.stats.Bedwars.level_color)
+    glowColor.value = rgb_style(player.value.stats.content.level_color)
   } else {
     player.value = null;
     error.value = true;
