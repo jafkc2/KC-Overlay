@@ -252,7 +252,7 @@ pub async fn get_players(
         None => (),
     }
     handle.emit("loading", false).unwrap();
-    if *rate_limited_arc.lock().await {
+    if *rate_limited_arc.lock().await && app.state.rates_full_time.elapsed().as_secs() < 60 {
         let wait_time = 60 - app.state.rates_full_time.elapsed().as_secs();
         handle.emit("wait", wait_time).unwrap();
     }
