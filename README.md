@@ -33,5 +33,9 @@ Simplesmente acesse https://github.com/jafkc2/KC-Overlay/releases/latest e selec
 
 ![image](https://github.com/user-attachments/assets/1866f393-b8f3-472c-9c0c-903307dfe700)
 
+# Agradecimentos especiais ❤️
+**Aos apoiadores incríveis do KC Overlay**
+- Blade88
 
-### Obs: este programa ainda está em estágio inicial de desenvolvimento, então será comum encontrar bugs. Por favor relate-os no servidor do Discord ou no Github Issues, caso encontrar algum.
+-----------------------------------------
+Este programa ainda está em estágio inicial de desenvolvimento, então será comum encontrar bugs. Por favor relate-os no servidor do Discord ou no Github Issues, caso encontrar algum.
