@@ -16,12 +16,13 @@
 </script>
 <template>
     <Return></Return>
+
     <div class="about">
         <header>
             <h1>Muito obrigado por usar o KC Overlay!</h1>
         </header>
         <main>
-            <p>Considere entrar no servidor do Discord para saber das novidades, fazer sugestões, reportar bugs e interagir com a comunidade.</p>
+                <p>Considere entrar no servidor do Discord para saber das novidades, fazer sugestões, reportar bugs e interagir com a comunidade.</p>
             <button v-on:click="open_link('https://discord.gg/SKwZSpPCN5')">
                 <img src="/discord.svg"/>
                 <span>Discord</span>
@@ -32,15 +33,28 @@
                 <span>Github</span>
             </button>
 
+            <h3>Agradecimentos especiais</h3>
+            <p>Muito obrigado por apoiarem o KC Overlay!</p>
+            <p class="apoiador">* Blade88</p>
+
+
         </main>
         <footer>KC Overlay {{ version }} - Desenvolvido por JafKC com a ajuda de oRvdy</footer>
     </div>
 </template>
 
 <style scoped>
+.apoiador{
+    color: #f85d7c
+}
+main{
+    margin-bottom: 40px;
+}
 .about{
     display: grid;
     line-height: 15px;
+    max-height: 380px;
+    overflow-y: auto;
 }
 
 img{
