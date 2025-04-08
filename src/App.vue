@@ -154,7 +154,7 @@ onMounted(async () => {
         );
     });
 
-    await register("shift+alt+z", async (event) => {
+    await register(store.settings.hotkey, async (event) => {
         const window = getCurrentWindow();
 
         if (event.state == "Pressed") {

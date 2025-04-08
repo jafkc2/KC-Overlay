@@ -92,7 +92,8 @@ export type Settings = {
     show_bans: boolean,
     transparency: number,
     automatic: boolean,
-    remove_players: boolean
+    remove_players: boolean,
+    hotkey: string
 }
 
 export type MineClient = 

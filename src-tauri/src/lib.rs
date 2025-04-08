@@ -76,7 +76,8 @@ struct Settings {
     show_bans: bool,
     transparency: i32,
     automatic: bool,
-    remove_players: bool
+    remove_players: bool,
+    hotkey: String
 }
 pub fn run() {
     // Isso é o processo final do update. Remove o executável antigo, caso exista.
@@ -137,7 +138,7 @@ pub fn run() {
             let transparency = config["transparency"].as_i64().unwrap_or(75) as i32;
             let automatic = config["automatic"].as_bool().unwrap_or(true);
             let remove_players = config["remove_players"].as_bool().unwrap_or(true);
-
+            let hotkey = config["hotkey"].as_str().unwrap_or("Shift+Alt+Z").to_string();
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
@@ -162,7 +163,8 @@ pub fn run() {
                     show_bans,
                     transparency,
                     automatic,
-                    remove_players
+                    remove_players,
+                    hotkey
                 },
             }));
             Ok(())

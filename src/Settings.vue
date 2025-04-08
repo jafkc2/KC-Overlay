@@ -6,6 +6,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { format_stats, get_stat_types } from './util';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useStore } from './stores/store';
+import Hotkey from './components/Hotkey.vue';
+import { register, unregisterAll } from '@tauri-apps/plugin-global-shortcut';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 
 
@@ -130,6 +133,29 @@ async function select_log_file(){
         save_settings()
     }
 }
+
+async function update_hotkey(hotkey: string){
+    await unregisterAll()
+    await register(hotkey, async (event) => {
+        const window = getCurrentWindow();
+
+        if (event.state == "Pressed") {
+            if (await window.isMinimized()) {
+                await window.unminimize();
+                await window.setAlwaysOnTop(true);
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                await window.setAlwaysOnTop(false);
+            } else {
+                await window.minimize();
+            }
+        }
+    }).catch((err) => {
+        console.error("Falha ao registrar hotkey:", err);
+    });
+
+    settings.value.hotkey = hotkey;
+    save_settings()
+}
 </script>
 
 <template>
@@ -193,6 +219,11 @@ async function select_log_file(){
             <input type="range" @input="save_settings()" v-model.number="settings.transparency" min="0" max="100"/>
             <span>({{settings.transparency}}%)</span>
 
+        </div>
+
+        <div class="setting">
+            <span>Hotkey para minimizar/desminimizar:</span>
+            <Hotkey :hotkey="settings.hotkey" @hotkeyChange="update_hotkey"></Hotkey>
         </div>
 
         <p>Stats</p>
@@ -271,7 +302,6 @@ button{
     margin-left: 10px;
 }
 input[type="text"] {
-    width: 360px;
     margin-left: 10px;
 }
 
