@@ -287,7 +287,7 @@ async fn handle_log_line(
 ) {
     // Checa se algum jogador entrou na partida.
     //let app = app_mutex.lock().await;
-    if line.contains("entrou na sala") && app_mutex.lock().await.settings.automatic {
+    if line.contains("entrou na sala") && app_mutex.lock().await.settings.automatic && !app_mutex.lock().await.state.loading {
         // com certeza não é a maneira mais eficiente de fazer isso!
         let splitted_line: Vec<&str> = line.split(" ").collect();
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
