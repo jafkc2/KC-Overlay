@@ -33,7 +33,7 @@ pub fn get_json(jpathstring: String) -> Value {
     let mut file = File::open(jsonpath).unwrap();
     let mut fcontent = String::new();
     file.read_to_string(&mut fcontent).unwrap();
-    serde_json::from_str(&fcontent).unwrap()
+    serde_json::from_str(&fcontent).unwrap_or(serde_json::json!({}))
 }
 
 #[derive(Debug, Clone, Serialize)]
