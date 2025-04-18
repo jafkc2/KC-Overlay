@@ -99,6 +99,7 @@ listen("wait", async (event) => {
 });
 
 interface Props {
+  party_players: Player[];
   players: Player[];
   loading: boolean;
   settings: Settings;

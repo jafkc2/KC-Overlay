@@ -77,7 +77,7 @@ struct Settings {
     transparency: i32,
     automatic: bool,
     remove_players: bool,
-    hotkey: String
+    hotkey: String,
 }
 pub fn run() {
     // Isso é o processo final do update. Remove o executável antigo, caso exista.
@@ -138,7 +138,10 @@ pub fn run() {
             let transparency = config["transparency"].as_i64().unwrap_or(75) as i32;
             let automatic = config["automatic"].as_bool().unwrap_or(true);
             let remove_players = config["remove_players"].as_bool().unwrap_or(true);
-            let hotkey = config["hotkey"].as_str().unwrap_or("Shift+Alt+Z").to_string();
+            let hotkey = config["hotkey"]
+                .as_str()
+                .unwrap_or("Shift+Alt+Z")
+                .to_string();
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
@@ -164,7 +167,7 @@ pub fn run() {
                     transparency,
                     automatic,
                     remove_players,
-                    hotkey
+                    hotkey,
                 },
             }));
             Ok(())
@@ -253,7 +256,7 @@ async fn read_logs(
                 handle_log_line(line, handle.clone(), &app).await;
                 buffer.clear();
             }
-            Err(e) => println!("Error at reading logs: {e}"),
+            Err(e) => println!("Erro ao ler logs: {e}"),
         }
 
         // Atualiza o arquivo de logs do client, se necessário
@@ -263,7 +266,7 @@ async fn read_logs(
             client = app.lock().await.settings.client.clone();
 
             let logs_path = client.get_logs_path();
-            println!("Refreshed client file {}", logs_path.clone());
+            println!("Arquivo de logs atualizado: {}", logs_path.clone());
 
             let file = match File::open(&logs_path).await {
                 Ok(ok) => ok,
@@ -287,9 +290,34 @@ async fn handle_log_line(
     handle: tauri::AppHandle,
     app_mutex: &tauri::State<'_, Mutex<KCOverlay>>,
 ) {
+    // Checa se algum jogador entrou na party
+    if line.contains("entrou na party") {
+        // com certeza não é a maneira mais eficiente de fazer isso!
+        let splitted_line: Vec<&str> = line.split(" ").collect();
+        for (index, part) in splitted_line.clone().into_iter().enumerate() {
+            if part == "entrou" {
+                let player_name: &str = splitted_line[index - 1];
+                let stats_type = app_mutex.lock().await.settings.stats_type.clone();
+                let cached_players = app_mutex.lock().await.state.cached_players.clone();
+                let player = player::get_player(player_name, stats_type, cached_players).await;
+                if let Ok(ok) = player {
+                    app_mutex
+                        .lock()
+                        .await
+                        .add_players_to_cache(vec![ok.clone()]);
+                    handle.emit("party_player_joined", ok).unwrap();
+                }
+
+                break;
+            }
+        }
+    }
+
     // Checa se algum jogador entrou na partida.
-    //let app = app_mutex.lock().await;
-    if line.contains("entrou na sala") && app_mutex.lock().await.settings.automatic && !app_mutex.lock().await.state.loading {
+    if line.contains("entrou na sala")
+        && app_mutex.lock().await.settings.automatic
+        && !app_mutex.lock().await.state.loading
+    {
         // com certeza não é a maneira mais eficiente de fazer isso!
         let splitted_line: Vec<&str> = line.split(" ").collect();
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
@@ -357,8 +385,7 @@ async fn handle_log_line(
         let stats_type = app_mutex.lock().await.settings.stats_type.clone();
 
         player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
-    }
-    else if line.contains("[CHAT] Enviando para"){
+    } else if line.contains("[CHAT] Enviando para") {
         handle.emit("remove_players", true).unwrap();
     }
 }

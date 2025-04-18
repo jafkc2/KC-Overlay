@@ -7,6 +7,7 @@ export const useStore = defineStore('app', {
     settings: {} as Settings,
     loading: false,
     players: [] as Player[],
+    party_players: [] as Player[],
     update_url: ""
   }),
 

@@ -278,17 +278,17 @@ pub async fn get_player(
         Ok(response) => match response.text().await {
             Ok(ok) => ok,
             Err(e) => {
-                println!("Failed to get text of {username}'s API response: {e}\n Skipping.");
+                println!("Falha ao obter texto da API do jogador {username}: {e}\n Ignorado.");
                 return Err(());
             }
         },
         Err(e) => {
-            println!("Failed to get {username} response: {e}\n Skipping.");
+            println!("Falha ao conseguir os stats da API do jogador {username}: {e}\n Ignorado.");
             return Err(());
         }
     };
 
-    println!("Getting {username} stats...");
+    println!("Obtendo stats de {username}...");
 
     let json: Value = match serde_json::from_str(&request) {
         Ok(ok) => ok,
