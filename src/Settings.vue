@@ -135,23 +135,28 @@ async function select_log_file(){
 }
 
 async function update_hotkey(hotkey: string){
-    await unregisterAll()
-    await register(hotkey, async (event) => {
-        const window = getCurrentWindow();
+    // console.log("Mudando hotkey")
+    // await unregisterAll()
+    // await register(hotkey, async (event) => {
+    //     console.log("Hotkey acionada");
 
-        if (event.state == "Pressed") {
-            if (await window.isMinimized()) {
-                await window.unminimize();
-                await window.setAlwaysOnTop(true);
-                await new Promise((resolve) => setTimeout(resolve, 500));
-                await window.setAlwaysOnTop(false);
-            } else {
-                await window.minimize();
-            }
-        }
-    }).catch((err) => {
-        console.error("Falha ao registrar hotkey:", err);
-    });
+    //     const window = getCurrentWindow();
+
+    //     if (event.state == "Pressed") {
+    //         console.log("Hotkey acionada");
+    //         if (await window.isMinimized()) {
+    //             await window.unminimize();
+    //             await window.setAlwaysOnTop(true);
+    //             await new Promise((resolve) => setTimeout(resolve, 500));
+    //             await window.setAlwaysOnTop(false);
+    //         } else {
+    //             await window.minimize();
+    //         }
+    //     }
+    // }).catch((err) => {
+    //     console.error("Falha ao registrar hotkey:", err);
+    // });
+    await invoke("change_shortcut", {shortcut: hotkey});
 
     settings.value.hotkey = hotkey;
     save_settings()

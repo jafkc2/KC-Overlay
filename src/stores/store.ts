@@ -14,6 +14,7 @@ export const useStore = defineStore('app', {
   actions: {
     async get_settings(){
         const fetched_settings = await invoke<Settings>("get_settings");
+        console.log(fetched_settings);
         this.$patch({
             settings: fetched_settings,
         })

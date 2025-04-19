@@ -15,7 +15,7 @@ import { useStore } from "./stores/store";
 import { useRouter } from "vue-router";
 
 
-const store = useStore()
+//const store = useStore()
 
 document.addEventListener("mousedown", (e) => {
     let target = e.target as HTMLElement;
@@ -32,14 +32,18 @@ document.addEventListener("mousedown", (e) => {
 const router = useRouter();
 
 onMounted(async () => {
+    //await store.get_settings();
+    const store = useStore();
     await store.get_settings();
+    console.log(store.settings)
+
 
 
     invoke("read_logs").catch((err) => {
         console.error("Leitura de logs falhou:", err);
     });
 
-    if (await invoke<boolean>("is_first_use")){
+    if (await invoke<boolean>("is_first_use")) {
         router.push('/welcome');
     }
     document.addEventListener("contextmenu", (event) => {
@@ -57,7 +61,7 @@ onMounted(async () => {
     listen("player_joined", (event) => {
         const player = event.payload as Player;
         let already_in_list = false;
-        if (player.username == "opponent"){
+        if (player.username == "opponent") {
             return;
         }
         for (const i of store.players) {
@@ -86,7 +90,7 @@ onMounted(async () => {
     });
 
     listen("remove_players", () => {
-        if (store.settings.remove_players){
+        if (store.settings.remove_players) {
             store.players = [];
         }
     });
@@ -96,7 +100,7 @@ onMounted(async () => {
         console.log(event.payload);
         if (event.payload) {
             router.push("/");
-            
+
             store.loading = true;
 
             store.players = [];
@@ -112,7 +116,7 @@ onMounted(async () => {
 
         } else {
             store.loading = false;
-            
+
             await new Promise((resolve) =>
                 setTimeout(resolve, store.settings.seconds_to_minimize * 1000),
             );
@@ -153,23 +157,38 @@ onMounted(async () => {
             ),
         );
     });
-
-    await register(store.settings.hotkey, async (event) => {
+    listen("hotkey", async () => {
         const window = getCurrentWindow();
 
-        if (event.state == "Pressed") {
-            if (await window.isMinimized()) {
-                await window.unminimize();
-                await window.setAlwaysOnTop(true);
-                await new Promise((resolve) => setTimeout(resolve, 500));
-                await window.setAlwaysOnTop(false);
-            } else {
-                await window.minimize();
-            }
+        if (await window.isMinimized()) {
+            await window.unminimize();
+            await window.setAlwaysOnTop(true);
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            await window.setAlwaysOnTop(false);
+        } else {
+            await window.minimize();
         }
-    }).catch((err) => {
-        console.error("Falha ao registrar hotkey:", err);
-    });
+    })
+    // console.log("Hotkey: " + store.settings.hotkey);
+    // await register("Shift+Alt+Z", async (event) => {
+    //     console.log("Hotkey acionada");
+
+    //     const window = getCurrentWindow();
+
+    //     if (event.state == "Pressed") {
+    //         console.log("Hotkey acionada");
+    //         if (await window.isMinimized()) {
+    //             await window.unminimize();
+    //             await window.setAlwaysOnTop(true);
+    //             await new Promise((resolve) => setTimeout(resolve, 500));
+    //             await window.setAlwaysOnTop(false);
+    //         } else {
+    //             await window.minimize();
+    //         }
+    //     }
+    // }).catch((err) => {
+    //     console.error("Falha ao registrar hotkey:", err);
+    // });
 
     document.documentElement.style.setProperty(
         "--bg-alpha",
@@ -191,19 +210,19 @@ onMounted(async () => {
     await getCurrentWindow().setPosition(new PhysicalPosition(5, 5));
 
     await invoke("check_updates")
-    .then((url) => {
-        store.update_url = url as string;
-    })
-    .catch(() => {
-        console.log("KC Overlay está atualizado.");
-    });
+        .then((url) => {
+            store.update_url = url as string;
+        })
+        .catch(() => {
+            console.log("KC Overlay está atualizado.");
+        });
 });
 
 
 </script>
 
 <template>
-   <router-view></router-view>
+    <router-view></router-view>
 </template>
 
 <style>
@@ -267,6 +286,7 @@ button {
 button:hover {
     border-color: #396cd8;
 }
+
 button:active {
     border-color: #396cd8;
     background-color: #e8e8e8;
@@ -286,6 +306,7 @@ button {
 .control-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
+
 .list-move,
 .list-enter-active,
 .list-leave-active {

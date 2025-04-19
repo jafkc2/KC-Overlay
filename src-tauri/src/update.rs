@@ -48,7 +48,7 @@ pub async fn check_updates(handle: tauri::AppHandle) -> Result<String, ()> {
     };
 
     let current_version = handle.package_info().version.to_string();
-    let latest_version = j["tag_name"].as_str().unwrap();
+    let latest_version = j["tag_name"].as_str().unwrap_or(&current_version);
 
     let numeric_c_version = current_version.replace(".", "").parse::<i32>().unwrap();
     let numeric_l_version = match latest_version

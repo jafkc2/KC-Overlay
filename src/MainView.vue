@@ -11,6 +11,7 @@ let players = toRef(store, 'players');
 let party_players = toRef(store, 'party_players');
 
 let loading = toRef(store, 'loading');
+
 let settings = toRef(store, 'settings');
 
 
@@ -23,5 +24,5 @@ let settings = toRef(store, 'settings');
         Olá! Digite o comando /jogando no chat do Mush para ver os stats de
         todos os jogadores da sala.
     </p>
-    <p v-if="settings.client.type == 'CMClient'">Caso você estiver no CMClient e a overlay não estiver funcionando, mude para o client "Geral" nas configurações do KC Overlay.</p>
+    <p v-if="settings.client && settings.client.type == 'CMClient'">Caso você estiver no CMClient e a overlay não estiver funcionando, mude para o client "Geral" nas configurações do KC Overlay.</p>
 </template>
