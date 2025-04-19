@@ -7,8 +7,7 @@ import { format_stats, get_stat_types } from './util';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useStore } from './stores/store';
 import Hotkey from './components/Hotkey.vue';
-import { register, unregisterAll } from '@tauri-apps/plugin-global-shortcut';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+
 
 
 

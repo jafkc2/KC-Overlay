@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::from_value;
 use stats::StatsType;
 use tauri::{Emitter, Manager};
-use tauri_plugin_global_shortcut::{Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::ShortcutState;
 use tokio::{
     fs::File,
     io::{AsyncBufReadExt, AsyncSeekExt, BufReader},

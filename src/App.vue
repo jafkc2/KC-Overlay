@@ -9,7 +9,6 @@ import {
     PhysicalPosition,
 } from "@tauri-apps/api/window";
 
-import { register } from "@tauri-apps/plugin-global-shortcut";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useStore } from "./stores/store";
 import { useRouter } from "vue-router";
