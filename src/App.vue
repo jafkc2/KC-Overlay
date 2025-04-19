@@ -197,6 +197,27 @@ onMounted(async () => {
     .catch(() => {
         console.log("KC Overlay está atualizado.");
     });
+
+    listen("party_player_joined", (event) => {
+        const player = event.payload as Player;
+        store.party_players.push(player);
+    });
+
+    listen("auto_jogando", () => {
+        console.log("Detectada nova partida! Buscando jogadores automaticamente...");
+        
+        const notification = document.createElement('div');
+        notification.className = 'auto-jogando-notification';
+        notification.textContent = 'Nova partida detectada!';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('fadeout');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 500);
+        }, 3000);
+    });
 });
 
 
@@ -321,5 +342,98 @@ input[type="text"] {
 ::-webkit-scrollbar-thumb {
     background-color: rgb(49, 50, 68);
     border-radius: 10px;
+}
+
+body {
+  font-family: "PBold";
+  margin: 0;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, var(--bg-alpha, 0.7));
+  border-radius: 10px;
+  color: white;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  border-radius: 10px;
+}
+
+@font-face {
+  font-family: "PBold";
+  font-style: normal;
+  font-weight: 400;
+  src: local(""),
+    url("/fonts/PBold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Pmedium";
+  font-style: normal;
+  font-weight: 400;
+  src: local(""),
+    url("/fonts/Pmedium.ttf") format("truetype");
+}
+
+a,
+button:not(.nostyle) {
+  cursor: pointer;
+  padding: 0.25em 0.5em;
+  border-radius: 3px;
+  border: 1px solid #5a47d4;
+  color: white;
+  transition: 0.25s;
+  margin: 5px;
+  margin-left: 0;
+  line-height: 0;
+  height: 25px;
+  background-color: #2A2F44;
+}
+
+a:hover,
+button:not(.nostyle):hover {
+  background-color: #5a47d4;
+}
+
+button.nostyle {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.auto-jogando-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(90, 71, 212, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 1000;
+  font-size: 14px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  animation: slidein 0.3s ease-out;
+  transition: opacity 0.5s ease-out;
+}
+
+@keyframes slidein {
+  from {
+    top: -50px;
+    opacity: 0;
+  }
+  to {
+    top: 20px;
+    opacity: 1;
+  }
+}
+
+.auto-jogando-notification.fadeout {
+  opacity: 0;
 }
 </style>

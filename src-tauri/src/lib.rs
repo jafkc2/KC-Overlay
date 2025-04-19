@@ -228,13 +228,15 @@ async fn read_logs(
             file = Ok(ok);
         }
         Err(_) => {
+            println!("Aguardando o arquivo de logs existir: {}", &app.lock().await.settings.client.get_logs_path());
             while !Path::new(&app.lock().await.settings.client.get_logs_path()).exists() {
                 println!(
-                    "{} não existe",
+                    "{} não existe, tentando novamente...",
                     &app.lock().await.settings.client.get_logs_path()
                 );
                 sleep(Duration::from_secs(1)).await;
             }
+            println!("Arquivo de logs encontrado!");
             client = app.lock().await.settings.client.clone();
             file = Ok(File::open(client.get_logs_path()).await.unwrap())
         }
@@ -242,6 +244,7 @@ async fn read_logs(
 
     let mut reader = BufReader::new(file.unwrap());
     let mut buffer = String::new();
+    // Inicia a leitura a partir do final do arquivo para pegar apenas novas entradas
     reader.seek(SeekFrom::End(0)).await.unwrap();
 
     let mut time_since_client_refresh = Instant::now();
@@ -249,11 +252,21 @@ async fn read_logs(
     loop {
         match reader.read_line(&mut buffer).await {
             Ok(0) => {
-                sleep(Duration::from_millis(500)).await;
+                // Não há novas linhas, aguarda um pouco antes de tentar novamente
+                sleep(Duration::from_millis(200)).await;
             }
             Ok(_) => {
                 let line = buffer.trim_end().to_string();
-                handle_log_line(line, handle.clone(), &app).await;
+                // Otimização: Filtrar linhas irrelevantes antes de processar
+                if line.contains("entrou na party") || 
+                   line.contains("entrou na sala") || 
+                   line.contains("saiu da sala") || 
+                   line.contains("KILL FINAL") || 
+                   line.contains("[CHAT] Jogadores") || 
+                   line.contains("[CHAT] Enviando para") {
+                    
+                    handle_log_line(line, handle.clone(), &app).await;
+                }
                 buffer.clear();
             }
             Err(e) => println!("Erro ao ler logs: {e}"),
@@ -268,17 +281,18 @@ async fn read_logs(
             let logs_path = client.get_logs_path();
             println!("Arquivo de logs atualizado: {}", logs_path.clone());
 
-            let file = match File::open(&logs_path).await {
-                Ok(ok) => ok,
+            match File::open(&logs_path).await {
+                Ok(file) => {
+                    reader = BufReader::new(file);
+                    buffer = String::new();
+                    reader.seek(SeekFrom::End(0)).await.unwrap();
+                },
                 Err(e) => {
-                    println!("{e}: {}", &logs_path);
+                    println!("Erro ao abrir o arquivo de logs: {e}: {}", &logs_path);
+                    sleep(Duration::from_secs(1)).await;
                     continue;
                 }
             };
-
-            reader = BufReader::new(file);
-            buffer = String::new();
-            reader.seek(SeekFrom::End(0)).await.unwrap();
 
             time_since_client_refresh = Instant::now();
         }
@@ -290,102 +304,122 @@ async fn handle_log_line(
     handle: tauri::AppHandle,
     app_mutex: &tauri::State<'_, Mutex<KCOverlay>>,
 ) {
-    // Checa se algum jogador entrou na party
+    // Já sabemos que a linha contém um dos padrões relevantes (verificado na função read_logs)
+    
     if line.contains("entrou na party") {
-        // com certeza não é a maneira mais eficiente de fazer isso!
-        let splitted_line: Vec<&str> = line.split(" ").collect();
-        for (index, part) in splitted_line.clone().into_iter().enumerate() {
-            if part == "entrou" {
-                let player_name: &str = splitted_line[index - 1];
-                let stats_type = app_mutex.lock().await.settings.stats_type.clone();
-                let cached_players = app_mutex.lock().await.state.cached_players.clone();
-                let player = player::get_player(player_name, stats_type, cached_players).await;
-                if let Ok(ok) = player {
-                    app_mutex
-                        .lock()
-                        .await
-                        .add_players_to_cache(vec![ok.clone()]);
-                    handle.emit("party_player_joined", ok).unwrap();
+        // Otimização: Usar a função find_player_name para extrair de forma mais eficiente
+        if let Some(player_name) = find_player_name(&line, "entrou") {
+            let stats_type = app_mutex.lock().await.settings.stats_type.clone();
+            let cached_players = app_mutex.lock().await.state.cached_players.clone();
+            match player::get_player(player_name, stats_type, cached_players).await {
+                Ok(player) => {
+                    app_mutex.lock().await.add_players_to_cache(vec![player.clone()]);
+                    handle.emit("party_player_joined", player).unwrap();
                 }
-
-                break;
+                Err(_) => println!("Não foi possível obter os stats de {}", player_name),
             }
         }
-    }
-
-    // Checa se algum jogador entrou na partida.
-    if line.contains("entrou na sala")
-        && app_mutex.lock().await.settings.automatic
-        && !app_mutex.lock().await.state.loading
-    {
-        // com certeza não é a maneira mais eficiente de fazer isso!
-        let splitted_line: Vec<&str> = line.split(" ").collect();
-        for (index, part) in splitted_line.clone().into_iter().enumerate() {
-            if part == "entrou" {
-                let player_name: &str = splitted_line[index - 1];
-                let stats_type = app_mutex.lock().await.settings.stats_type.clone();
-                let cached_players = app_mutex.lock().await.state.cached_players.clone();
-                let player = player::get_player(player_name, stats_type, cached_players).await;
-                if let Ok(ok) = player {
-                    app_mutex
-                        .lock()
-                        .await
-                        .add_players_to_cache(vec![ok.clone()]);
-                    handle.emit("player_joined", ok).unwrap();
+    } else if line.contains("entrou na sala") && app_mutex.lock().await.settings.automatic && !app_mutex.lock().await.state.loading {
+        if let Some(player_name) = find_player_name(&line, "entrou") {
+            let stats_type = app_mutex.lock().await.settings.stats_type.clone();
+            let cached_players = app_mutex.lock().await.state.cached_players.clone();
+            match player::get_player(player_name, stats_type, cached_players).await {
+                Ok(player) => {
+                    app_mutex.lock().await.add_players_to_cache(vec![player.clone()]);
+                    handle.emit("player_joined", player).unwrap();
                 }
-
-                break;
+                Err(_) => println!("Não foi possível obter os stats de {}", player_name),
             }
         }
-    }
-    // Checa se o jogador saiu da sala
-    else if line.contains("saiu da sala") && app_mutex.lock().await.settings.automatic {
-        let splitted_line: Vec<&str> = line.split(" ").collect();
-
-        for (index, part) in splitted_line.clone().into_iter().enumerate() {
-            if part == "saiu" {
-                let player_name: &str = splitted_line[index - 1];
-                handle.emit("remove_player", player_name).unwrap();
-                break;
-            }
+    } else if line.contains("saiu da sala") && app_mutex.lock().await.settings.automatic {
+        if let Some(player_name) = find_player_name(&line, "saiu") {
+            handle.emit("remove_player", player_name).unwrap();
         }
-    }
-    // Checa se algum jogador que está na lista foi eliminado da partida.
-    else if line.contains("KILL FINAL") && app_mutex.lock().await.settings.automatic {
-        let splitted_line: Vec<&str> = line.split(" ").collect();
-
-        for (index, part) in splitted_line.clone().into_iter().enumerate() {
-            if part == "morreu" {
-                let player_name: &str = splitted_line[index - 1];
-                handle.emit("remove_player", player_name).unwrap();
-                break;
-            }
+    } else if line.contains("KILL FINAL") && app_mutex.lock().await.settings.automatic {
+        if let Some(player_name) = find_player_name(&line, "morreu") {
+            handle.emit("remove_player", player_name).unwrap();
         }
-    }
-
-    // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
-    if line.contains("[CHAT] Jogadores") && !app_mutex.lock().await.state.loading {
+    } else if line.contains("[CHAT] Jogadores") && !app_mutex.lock().await.state.loading {
         println!("Jogador digitou /jogando");
-        let split = line.split("):").map(|x| x.to_string());
-        let split_vector: Vec<String> = split.clone().collect();
+        
+        // Otimização: Extrair jogadores mais diretamente
+        if let Some(players_segment) = line.split("):").nth(1) {
+            let str_players: Vec<String> = players_segment
+                .trim()
+                .replace(" ", "")
+                .replace("+", "")
+                .split(',')
+                .map(|x| x.to_string())
+                .collect();
 
-        let str_players: Vec<String> = split_vector[1]
-            .trim()
-            .replace(" ", "")
-            .replace("+", "")
-            .split(',')
-            .map(|x| x.to_string())
-            .collect();
+            app_mutex.lock().await.state.loading = true;
+            handle.emit("loading", true).unwrap();
 
-        app_mutex.lock().await.state.loading = true;
+            let cached_players = app_mutex.lock().await.state.cached_players.clone();
+            let stats_type = app_mutex.lock().await.settings.stats_type.clone();
 
-        handle.emit("loading", true).unwrap();
-
-        let cached_players = app_mutex.lock().await.state.cached_players.clone();
-        let stats_type = app_mutex.lock().await.settings.stats_type.clone();
-
-        player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
+            player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
+        }
     } else if line.contains("[CHAT] Enviando para") {
         handle.emit("remove_players", true).unwrap();
+    } else if (line.contains("SALA") && line.contains("INICIANDO")) || line.contains("O jogo iniciou!") {
+        // Detecta quando uma partida começa e tenta buscar automaticamente os jogadores
+        // Aguarda um segundo para garantir que todos os jogadores foram atualizados
+        let handle_clone = handle.clone();
+        let app_mutex_clone = app_mutex.clone();
+        
+        tokio::spawn(async move {
+            sleep(Duration::from_secs(1)).await;
+            
+            // Verifica se já não está carregando
+            if app_mutex_clone.lock().await.state.loading {
+                return;
+            }
+            
+            // Envia comando para o chat do jogo simulando o comando "/jogando"
+            println!("Partida iniciada! Buscando jogadores automaticamente...");
+            handle_clone.emit("auto_jogando", true).unwrap();
+            
+            // Esperamos 2 segundos para o comando ser processado
+            sleep(Duration::from_secs(2)).await;
+            
+            // Se ainda não estiver carregando (não detectou o comando), forçamos o carregamento com os jogadores detectados até agora
+            if !app_mutex_clone.lock().await.state.loading {
+                let mut player_names = Vec::new();
+                
+                // Coleta todos os nomes de jogadores detectados até agora
+                {
+                    let app = app_mutex_clone.lock().await;
+                    for player in app.state.cached_players.iter() {
+                        if player.is_connected {
+                            player_names.push(player.username.clone());
+                        }
+                    }
+                }
+                
+                // Se encontrou jogadores, carrega seus status
+                if !player_names.is_empty() {
+                    println!("Carregando {} jogadores detectados", player_names.len());
+                    app_mutex_clone.lock().await.state.loading = true;
+                    handle_clone.emit("loading", true).unwrap();
+                    
+                    let cached_players = app_mutex_clone.lock().await.state.cached_players.clone();
+                    let stats_type = app_mutex_clone.lock().await.settings.stats_type.clone();
+                    
+                    player::get_players(player_names, stats_type, cached_players, handle_clone, &app_mutex_clone).await;
+                }
+            }
+        });
     }
+}
+
+// Função auxiliar para extrair nomes de jogadores de forma mais eficiente
+fn find_player_name<'a>(line: &'a str, keyword: &str) -> Option<&'a str> {
+    let parts: Vec<&str> = line.split(' ').collect();
+    for (i, part) in parts.iter().enumerate() {
+        if *part == keyword && i > 0 {
+            return Some(parts[i - 1]);
+        }
+    }
+    None
 }

@@ -7,6 +7,7 @@ use serde_json::Value;
 use std::{collections::VecDeque, sync::Arc, time::Instant};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
+use tokio::time::sleep;
 
 use crate::{
     stats::{Bedwars, Duels, Stats, StatsType, TheBridge},
@@ -147,115 +148,181 @@ pub async fn get_players(
     handle: AppHandle,
     app_mutex: &tauri::State<'_, Mutex<crate::KCOverlay>>,
 ) {
-    let http_client = Client::new();
-
-    let http_client2 = Client::new();
+    // Cria um pool de conexões HTTP para reutilização
+    let client_pool = reqwest::ClientBuilder::new()
+        .pool_max_idle_per_host(10)
+        .build()
+        .unwrap_or_else(|_| Client::new());
 
     const MUSH_API: &str = "https://mush.com.br/api/player/";
+    const BATCH_SIZE: usize = 10; // Processar jogadores em lotes para evitar sobrecarga
 
     let rate_limited_arc = Arc::new(Mutex::new(false));
-
-    let mut futures = vec![];
-
     let players_arc = Arc::new(Mutex::new(vec![]));
     let full_rates_instant = Arc::new(Mutex::new(None));
-
-    let mut i = 1;
+    
+    // Verificar cache antes de fazer solicitações à API
+    let mut players_to_fetch = Vec::new();
+    let mut cached_count = 0;
+    let total_players = str_player_list.len();
+    
+    // Emitir estatísticas iniciais de cache
+    handle.emit("cache_stats", serde_json::json!({
+        "cached": 0,
+        "total": total_players
+    })).unwrap();
+    
+    // Primeiro passo: Verificar o cache local e enviar jogadores em cache imediatamente
     for player_name in str_player_list {
-        let http_client = if i % 2 == 0 {
-            i += 1;
-
-            http_client.clone()
-        } else {
-            i += 1;
-
-            http_client2.clone()
-        };
-        let stats_type = stats_type.clone();
-        let url = format!("{}{}", MUSH_API, player_name);
-
-        let rate_limited = Arc::clone(&rate_limited_arc);
-        let players = players_arc.clone();
-
-        let cloned_cached_players = cached_players.clone();
-        let handle = handle.clone();
-        let full_rates_instant = full_rates_instant.clone();
-
-        futures.push(async move {
-            for player in cloned_cached_players{
-                if player.username == player_name{
-                    players.lock().await.push(player.clone());
-                    handle.emit("player", player).unwrap();
+        let mut found_in_cache = false;
+        for cached_player in cached_players.iter() {
+            if cached_player.username == player_name {
+                let player_clone = cached_player.clone();
+                players_arc.lock().await.push(player_clone.clone());
+                handle.emit("player", player_clone).unwrap();
+                found_in_cache = true;
+                cached_count += 1;
+                
+                // Emitir estatísticas atualizadas de cache
+                handle.emit("cache_stats", serde_json::json!({
+                    "cached": cached_count,
+                    "total": total_players
+                })).unwrap();
+                
+                break;
+            }
+        }
+        
+        if !found_in_cache {
+            players_to_fetch.push(player_name);
+        }
+    }
+    
+    // Log de estatísticas de cache
+    println!("Cache hit: {}/{}", cached_count, total_players);
+    
+    // Se todos os jogadores estiverem em cache, podemos retornar mais cedo
+    if players_to_fetch.is_empty() {
+        let players = players_arc.lock().await;
+        let mut app = app_mutex.lock().await;
+        app.add_players_to_cache(players.to_vec());
+        handle.emit("loading", false).unwrap();
+        app.state.loading = false;
+        return;
+    }
+    
+    // Processar em lotes para não sobrecarregar a API
+    for chunk in players_to_fetch.chunks(BATCH_SIZE) {
+        let mut futures = vec![];
+        
+        for player_name in chunk {
+            let client = client_pool.clone();
+            let stats_type = stats_type.clone();
+            let url = format!("{}{}", MUSH_API, player_name);
+            let player_name = player_name.clone();
+            
+            let rate_limited = Arc::clone(&rate_limited_arc);
+            let players = players_arc.clone();
+            let full_rates_instant = full_rates_instant.clone();
+            let handle = handle.clone();
+            
+            futures.push(async move {
+                // Se a API estiver com rate limit, não continuar
+                if *rate_limited.lock().await {
                     return None;
                 }
-            }
-            let request = match http_client.get(url).send().await {
-                Ok(response) => {
-                    let rate_limit = response.headers().get("x-ratelimit-remaining").unwrap().to_str().unwrap().parse().unwrap_or(0);
-
-                    if (55..=60).contains(&rate_limit){
-                        *full_rates_instant.lock().await = Some(Instant::now());
-                    }
-                    if rate_limit < 1{
-                        let mut rate_limited = rate_limited.lock().await;
-                        *rate_limited = true;
-                        println!("Esperar até podermos consultar a API novamente.");
+                
+                let request = match client.get(url).send().await {
+                    Ok(response) => {
+                        // Verificar o rate limit da API
+                        if let Some(rate_limit_header) = response.headers().get("x-ratelimit-remaining") {
+                            if let Ok(rate_limit) = rate_limit_header.to_str().unwrap_or("0").parse::<u32>() {
+                                if (55..=60).contains(&rate_limit) {
+                                    *full_rates_instant.lock().await = Some(Instant::now());
+                                }
+                                if rate_limit < 1 {
+                                    let mut rate_limited = rate_limited.lock().await;
+                                    *rate_limited = true;
+                                    println!("Limite de taxa da API atingido. Aguardando...");
+                                    return None;
+                                }
+                            }
+                        }
+                        
+                        match response.text().await {
+                            Ok(ok) => ok,
+                            Err(e) => {
+                                println!("Falha ao obter texto da resposta da API para {player_name}: {e}\n Pulando.");
+                                return None;
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        println!("Falha ao obter resposta para {player_name}: {e}\n Pulando.");
                         return None;
                     }
-                    match response.text().await {
+                };
+
+                let json: Value = match serde_json::from_str(&request) {
                     Ok(ok) => ok,
                     Err(e) => {
-                        println!("Falha ao obter texto da resposta da API para {player_name}: {e}\n Pulando.");
+                        println!("{player_name}: {e}");
                         return None;
                     }
-                }
-            },
-                Err(e) => {
-                    println!("Falha ao obter resposta para {player_name}: {e}\n Pulando.");
-                    return None;
-                }
-            };
+                };
 
-            let json: Value = match serde_json::from_str(&request) {
-                Ok(ok) => ok,
-                Err(e) => {
-                    println!("{player_name}: {e}");
-                    return None;
-                }
-            };
-
-            if !json["success"].as_bool().unwrap() {
-                let player = Player::new_nicked(player_name, stats_type);
+                let player = if !json["success"].as_bool().unwrap_or(false) {
+                    Player::new_nicked(player_name, stats_type)
+                } else {
+                    let response = json["response"].clone();
+                    get_player_data(player_name.to_string(), response, stats_type)
+                };
+                
                 players.lock().await.push(player.clone());
                 handle.emit("player", player).unwrap();
+                
+                Some(())
+            });
+        }
 
-            } else{
-                let response = json["response"].clone();
-                let player = get_player_data(player_name.to_string(), response, stats_type);
-                players.lock().await.push(player.clone());
-                handle.emit("player", player).unwrap();
-
-            }
-            Some(())
-        });
+        // Executa as solicitações em paralelo, mas processando em lotes
+        futures::future::join_all(futures).await;
+        
+        // Se atingiu o rate limit, interrompe o processamento de lotes
+        if *rate_limited_arc.lock().await {
+            break;
+        }
+        
+        // Pausa curta entre lotes para evitar sobrecarga na API
+        sleep(Duration::from_millis(100)).await;
     }
-
-    futures::future::join_all(futures).await;
 
     let players = players_arc.lock().await;
     let mut app = app_mutex.lock().await;
 
+    // Adiciona os jogadores ao cache
     app.add_players_to_cache(players.to_vec());
 
+    // Atualiza o timestamp de quando a taxa ficou full
     match *full_rates_instant.lock().await {
         Some(instant) => app.state.rates_full_time = instant,
         None => (),
     }
+    
+    // Emite estatísticas finais de cache para mostrar 100% completo
+    handle.emit("cache_stats", serde_json::json!({
+        "cached": total_players,
+        "total": total_players
+    })).unwrap();
+    
     handle.emit("loading", false).unwrap();
+    
+    // Se atingiu o rate limit, calcula e exibe o tempo de espera
     if *rate_limited_arc.lock().await && app.state.rates_full_time.elapsed().as_secs() < 60 {
         let wait_time = 60 - app.state.rates_full_time.elapsed().as_secs();
         handle.emit("wait", wait_time).unwrap();
     }
+    
     app.state.loading = false;
 }
 
