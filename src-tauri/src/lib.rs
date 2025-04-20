@@ -274,7 +274,7 @@ async fn read_logs(
     loop {
         match reader.read_line(&mut buffer).await {
             Ok(0) => {
-                sleep(Duration::from_millis(500)).await;
+                sleep(Duration::from_millis(100)).await;
             }
             Ok(_) => {
                 let line = buffer.trim_end().to_string();
