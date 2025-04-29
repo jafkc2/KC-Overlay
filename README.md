@@ -1,3 +1,7 @@
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/jafkc2/kc-overlay/total)
+![GitHub Release](https://img.shields.io/github/v/release/jafkc2/kc-overlay?label=última%20versão)
+![Gitea Stars](https://img.shields.io/github/stars/jafkc2/kc-overlay?style=flat&label=estrelas)
+
 ![icon](https://github.com/user-attachments/assets/78f663a3-8f36-4f53-a63c-b362259c6489)
 
 # KC Overlay
