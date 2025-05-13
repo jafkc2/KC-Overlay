@@ -25,17 +25,6 @@ jobs:
       run: npm install
     - name: Build
       run: npm run tauri build
-    - name: Sign the executable
-      uses: skymatic/code-sign-action@v3.0.0
-      with:
-        certificate: ${{ secrets.CODE_SIGNING_PFX }}
-        password: ${{ secrets.CERTIFICATE_PASSWORD }}
-        certificatesha1: '${{ secrets.CERTHASH }}'
-        certificatename: '${{ secrets.CERTNAME }}'
-        description: 'KC Overlay Certificate'
-        timestampUrl: 'http://timestamp.digicert.com'
-        folder: 'src-tauri/target/release'
-        recursive: true
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
