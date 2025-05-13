@@ -8,7 +8,7 @@ import { useStore } from "./stores/store";
 
 const store = useStore();
 
-let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher"];
+let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "CheatBreaker"];
 
 let client = ref(format_client());
 
@@ -47,6 +47,9 @@ function update_client(new_client: string){
         case "CM Client":
             store.settings.client = {type: "CMClient"}
             break;
+        case "CheatBreaker":
+            store.settings.client = {type: "CheatBreaker"}
+            break;
         case "Personalizado":
             store.settings.client = { type: "Custom", path: store.settings.custom_client_path };
             break;
@@ -69,6 +72,8 @@ function format_client(): string{
             return "Legacy Launcher"
         case "CMClient":
             return "CM Client"
+        case "CheatBreaker":
+            return "CheatBreaker"
         case "Custom":
             return "Personalizado"
     }

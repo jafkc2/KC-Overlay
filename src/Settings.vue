@@ -11,7 +11,7 @@ import Hotkey from './components/Hotkey.vue';
 
 
 
-let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "Personalizado"];
+let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "CheatBreaker", "Personalizado"];
 let stats = get_stat_types()
 
 
@@ -47,6 +47,9 @@ function update_client(new_client: string){
             break;
         case "CM Client":
             settings.value.client = {type: "CMClient"}
+            break;
+        case "CheatBreaker":
+            settings.value.client = {type: "CheatBreaker"}
             break;
         case "Personalizado":
             settings.value.client = { type: "Custom", path: settings.value.custom_client_path };
@@ -106,18 +109,28 @@ function format_client(): string{
     switch (settings.value.client.type){
         case "Default":
             return "Geral"
+            break;
         case "Badlion":
             return "Badlion"
+            break;
         case "Lunar":
             return "Lunar"
+            break;
         case "Silent":
             return "Silent Client"
+            break;
         case "LegacyLauncher":
             return "Legacy Launcher"
+            break;
         case "CMClient":
             return "CM Client"
+            break;
+        case "CheatBreaker":
+            return "CheatBreaker"
+            break;
         case "Custom":
             return "Personalizado"
+            break;
     }
 }
 

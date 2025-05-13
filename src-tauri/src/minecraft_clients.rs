@@ -15,6 +15,7 @@ pub enum MineClient {
     Custom(String),
     Silent,
     CMClient,
+    CheatBreaker
 }
 
 // Clients em string.
@@ -28,6 +29,7 @@ impl Display for MineClient {
             MineClient::Custom(_) => write!(f, "Personalizado"),
             MineClient::Silent => write!(f, "Silent Client"),
             MineClient::CMClient => write!(f, "CM Client"),
+            MineClient::CheatBreaker => write!(f, "CheatBreaker"),
         }
     }
 }
@@ -35,6 +37,7 @@ impl Display for MineClient {
 impl MineClient {
     pub fn get_logs_path(&self) -> String {
         let minecraft_dir = crate::util::get_minecraft_dir();
+        let os = std::env::consts::OS;
 
         match self {
             MineClient::Default => format!("{}/logs/latest.log", minecraft_dir),
@@ -42,19 +45,19 @@ impl MineClient {
                 format!("{}/logs/blclient/minecraft/latest.log", minecraft_dir)
             }
             MineClient::Lunar => {
-                let lunar_directory = match std::env::consts::OS {
+                let lunar_directory = match os {
                     "linux" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
                     "windows" => format!(
                         "{}/.lunarclient",
                         std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                     ),
                     "macos" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
-                    _ => panic!("System not supported."),
+                    _ => panic!("Sistema não suportado."),
                 };
 
                 format!("{}/offline/multiver/logs/latest.log", lunar_directory)
             }
-            MineClient::LegacyLauncher => match std::env::consts::OS {
+            MineClient::LegacyLauncher => match os {
                 "linux" => format!(
                     "{}/.tlauncher/legacy/Minecraft/game/logs/latest.log",
                     std::env::var("HOME").unwrap()
@@ -67,14 +70,14 @@ impl MineClient {
                     "{}/.tlauncher/legacy/Minecraft/game/logs/latest.log",
                     get_home_dir()
                 ),
-                _ => panic!("System not supported."),
+                _ => panic!("Sistema não suportado."),
             },
             MineClient::Custom(path) => path.to_string(),
             MineClient::Silent => {
                 format!("{}/silentclient/logs/main.log", crate::util::get_home_dir())
             }
             MineClient::CMClient => {
-                let cm_directory = match std::env::consts::OS {
+                let cm_directory = match os {
                     "linux" => {
                         format!("{}/.local/share/.minecraft", std::env::var("HOME").unwrap())
                     }
@@ -83,10 +86,16 @@ impl MineClient {
                         std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                     ),
                     "macos" => minecraft_dir,
-                    _ => panic!("System not supported."),
+                    _ => panic!("Sistema não suportado."),
                 };
 
                 format!("{}/logs/latest.log", cm_directory)
+            },
+            MineClient::CheatBreaker => match os{
+                "linux" => format!("{}/.cheatbreaker/downloads/logs/1.8.9/latest.log", std::env::var("HOME").unwrap()),
+                "windows" => format!("{}/Appdata/Roaming/CheatBreaker/logs/renderer.log", std::env::var("USERPROFILE").unwrap().replace('\\', "/")),
+                "macos" => format!("{}/.cheatbreaker/downloads/logs/1.8.9/latest.log", std::env::var("HOME").unwrap()),
+                _ => panic!("Sistema não suportado")
             }
         }
     }
