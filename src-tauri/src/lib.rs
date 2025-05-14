@@ -144,14 +144,27 @@ pub fn run() {
                 .to_string();
 
             println!("Hotkey: {}", hotkey.clone());
-            app.handle().plugin(tauri_plugin_global_shortcut::Builder::new().with_shortcut(hotkey.as_str()).unwrap().with_handler(|app, _shortcut, event|{
-                if event.state == ShortcutState::Pressed{
-                    println!("Atalho de minimizar/desminimizar usado.");
-                    app.emit("hotkey", true).unwrap();
-                }
+            
+            let hotkey_builder = if let Ok(hotkey_builder) =
+                tauri_plugin_global_shortcut::Builder::new().with_shortcut(hotkey.as_str())
+            {
+                hotkey_builder
+            } else {
+                tauri_plugin_global_shortcut::Builder::new()
+            };
 
-            }).build()).unwrap();
-
+            app.handle()
+                .plugin(
+                    hotkey_builder
+                        .with_handler(|app, _shortcut, event| {
+                            if event.state == ShortcutState::Pressed {
+                                println!("Atalho de minimizar/desminimizar usado.");
+                                app.emit("hotkey", true).unwrap();
+                            }
+                        })
+                        .build(),
+                )
+                .unwrap_or(());
 
             app.manage(Mutex::new(KCOverlay {
                 state: State {
@@ -199,16 +212,22 @@ pub fn run() {
 }
 
 #[tauri::command]
-async fn change_shortcut(handle: tauri::AppHandle, shortcut: String) {
+async fn change_shortcut(handle: tauri::AppHandle, shortcut: String) -> bool {
     println!("Mudando atalho de minimizar/desminimizar.");
-    tauri_plugin_global_shortcut::GlobalShortcutExt::global_shortcut(handle.app_handle()).unregister_all().unwrap();
-    tauri_plugin_global_shortcut::GlobalShortcutExt::global_shortcut(handle.app_handle()).on_shortcut(shortcut.as_str(),|app, _, event|{
-        if event.state == ShortcutState::Pressed{
-            println!("Atalho de minimizar/desminimizar usado.");
-            app.emit("hotkey", true).unwrap();
-        }
+    tauri_plugin_global_shortcut::GlobalShortcutExt::global_shortcut(handle.app_handle())
+        .unregister_all()
+        .unwrap();
 
-    }).unwrap_or(());
+    match tauri_plugin_global_shortcut::GlobalShortcutExt::global_shortcut(handle.app_handle())
+        .on_shortcut(shortcut.as_str(), |app, _, event| {
+            if event.state == ShortcutState::Pressed {
+                println!("Atalho de minimizar/desminimizar usado.");
+                app.emit("hotkey", true).unwrap();
+            }
+        }) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }
 
 #[tauri::command]
@@ -218,7 +237,7 @@ async fn is_first_use(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<bool, (
 
 #[tauri::command]
 async fn get_settings(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<Settings, ()> {
-    println!("{:?}", app.lock().await.settings.clone() );
+    println!("{:?}", app.lock().await.settings.clone());
     Ok(app.lock().await.settings.clone())
 }
 

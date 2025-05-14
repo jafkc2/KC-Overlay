@@ -146,29 +146,10 @@ async function select_log_file(){
     }
 }
 
+const is_valid_hotkey = ref(true);
+
 async function update_hotkey(hotkey: string){
-    // console.log("Mudando hotkey")
-    // await unregisterAll()
-    // await register(hotkey, async (event) => {
-    //     console.log("Hotkey acionada");
-
-    //     const window = getCurrentWindow();
-
-    //     if (event.state == "Pressed") {
-    //         console.log("Hotkey acionada");
-    //         if (await window.isMinimized()) {
-    //             await window.unminimize();
-    //             await window.setAlwaysOnTop(true);
-    //             await new Promise((resolve) => setTimeout(resolve, 500));
-    //             await window.setAlwaysOnTop(false);
-    //         } else {
-    //             await window.minimize();
-    //         }
-    //     }
-    // }).catch((err) => {
-    //     console.error("Falha ao registrar hotkey:", err);
-    // });
-    await invoke("change_shortcut", {shortcut: hotkey});
+    is_valid_hotkey.value = await invoke("change_shortcut", {shortcut: hotkey});
 
     settings.value.hotkey = hotkey;
     save_settings()
@@ -241,6 +222,7 @@ async function update_hotkey(hotkey: string){
         <div class="setting">
             <span>Hotkey para minimizar/desminimizar:</span>
             <Hotkey :hotkey="settings.hotkey" @hotkeyChange="update_hotkey"></Hotkey>
+            <span v-if="!is_valid_hotkey" style="color: red;">Hotkey inválida</span>
         </div>
 
         <p>Stats</p>
