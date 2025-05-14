@@ -27,6 +27,7 @@ Até o momento, os seguintes clients e launchers são suportados:
 * Badlion
 * Lunar
 * Silent Client
+* CheatBreaker
 * Legacy Launcher
 
 Caso queira que seja adicionado suporte para outro launcher ou client, solicite no Discord.
