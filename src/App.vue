@@ -159,35 +159,19 @@ onMounted(async () => {
     listen("hotkey", async () => {
         const window = getCurrentWindow();
 
-        if (await window.isMinimized()) {
-            await window.unminimize();
-            await window.setAlwaysOnTop(true);
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            await window.setAlwaysOnTop(false);
+        if (await window.isVisible()) {
+            await window.hide();
+            await window.setIgnoreCursorEvents(true).catch((err) => {
+                console.error("Falha ao ignorar cliques:", err);
+            });
         } else {
-            await window.minimize();
+            await window.show();
+            await window.setAlwaysOnTop(true);
+            await window.setIgnoreCursorEvents(false).catch((err) => {
+                console.error("Falha ao registrar cliques:", err);
+            });
         }
-    })
-    // console.log("Hotkey: " + store.settings.hotkey);
-    // await register("Shift+Alt+Z", async (event) => {
-    //     console.log("Hotkey acionada");
-
-    //     const window = getCurrentWindow();
-
-    //     if (event.state == "Pressed") {
-    //         console.log("Hotkey acionada");
-    //         if (await window.isMinimized()) {
-    //             await window.unminimize();
-    //             await window.setAlwaysOnTop(true);
-    //             await new Promise((resolve) => setTimeout(resolve, 500));
-    //             await window.setAlwaysOnTop(false);
-    //         } else {
-    //             await window.minimize();
-    //         }
-    //     }
-    // }).catch((err) => {
-    //     console.error("Falha ao registrar hotkey:", err);
-    // });
+    });
 
     document.documentElement.style.setProperty(
         "--bg-alpha",
