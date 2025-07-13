@@ -76,6 +76,8 @@ function format_client(): string{
             return "CheatBreaker"
         case "Custom":
             return "Personalizado"
+        default:
+            return "???"
     }
 }
 </script>
