@@ -110,7 +110,7 @@ impl MineClient {
             },
             MineClient::Salwyrr => match os {
                 "linux" => format!(
-                    "{}/.Salwyrr/logs/1.8.9/latest.log",
+                    "{}/.Salwyrr/logs/latest.log",
                     std::env::var("HOME").unwrap()
                 ),
                 "windows" => format!(
@@ -118,7 +118,7 @@ impl MineClient {
                     std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                 ),
                 "macos" => format!(
-                    "{}/.Salwyrr/logs/1.8.9/latest.log",
+                    "{}/.Salwyrr/logs/latest.log",
                     std::env::var("HOME").unwrap()
                 ),
                 _ => panic!("Sistema não suportado"),

@@ -11,7 +11,7 @@ import Hotkey from './components/Hotkey.vue';
 
 
 
-let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "CheatBreaker", "Salwyrr", "Personalizado"];
+let clients = ["Geral", "Lunar", "Badlion", "CM Client", "Silent Client", "Legacy Launcher", "CheatBreaker", "Salwyrr", "Personalizado"];
 let stats = get_stat_types()
 
 
@@ -21,38 +21,38 @@ const settings = toRef(store, 'settings');
 let client = ref(format_client());
 let stats_type = ref(format_stats(settings.value));
 
-async function save_settings(){
-    if (settings.value.client.type == "Custom"){
+async function save_settings() {
+    if (settings.value.client.type == "Custom") {
         settings.value.client = { type: "Custom", path: settings.value.custom_client_path }
     }
-    await invoke("save_settings", {settings: settings.value})
+    await invoke("save_settings", { settings: settings.value })
 }
-function update_client(new_client: string){
+function update_client(new_client: string) {
     client.value = new_client;
-    switch (new_client){
+    switch (new_client) {
         case "Geral":
-            settings.value.client = {type: "Default"}
+            settings.value.client = { type: "Default" }
             break;
         case "Lunar":
-            settings.value.client = {type: "Lunar"}
+            settings.value.client = { type: "Lunar" }
             break;
         case "Badlion":
-            settings.value.client = {type: "Badlion"}
+            settings.value.client = { type: "Badlion" }
             break;
         case "Silent Client":
-            settings.value.client = {type: "Silent"}
+            settings.value.client = { type: "Silent" }
             break;
         case "Legacy Launcher":
-            settings.value.client = {type: "LegacyLauncher"}
+            settings.value.client = { type: "LegacyLauncher" }
             break;
         case "CM Client":
-            settings.value.client = {type: "CMClient"}
+            settings.value.client = { type: "CMClient" }
             break;
         case "CheatBreaker":
-            settings.value.client = {type: "CheatBreaker"}
+            settings.value.client = { type: "CheatBreaker" }
             break;
         case "Salwyrr":
-            settings.value.client = {type: "Salwyrr"}
+            settings.value.client = { type: "Salwyrr" }
             break;
         case "Personalizado":
             settings.value.client = { type: "Custom", path: settings.value.custom_client_path };
@@ -62,10 +62,10 @@ function update_client(new_client: string){
     save_settings()
 }
 
-function update_stats(new_stats: string){
+function update_stats(new_stats: string) {
     store.players = [];
     stats_type.value = new_stats;
-    switch (new_stats){
+    switch (new_stats) {
         case "Bedwars Geral":
             settings.value.stats_type.type = "BedwarsAll"
             break;
@@ -108,8 +108,8 @@ function update_stats(new_stats: string){
 
 }
 
-function format_client(): string{
-    switch (settings.value.client.type){
+function format_client(): string {
+    switch (settings.value.client.type) {
         case "Default":
             return "Geral"
             break;
@@ -140,13 +140,13 @@ function format_client(): string{
     }
 }
 
-async function select_log_file(){
+async function select_log_file() {
     const file = await open({
         multiple: false,
         directory: false
     });
 
-    if (file){
+    if (file) {
         settings.value.custom_client_path = file;
         save_settings()
     }
@@ -154,8 +154,8 @@ async function select_log_file(){
 
 const is_valid_hotkey = ref(true);
 
-async function update_hotkey(hotkey: string){
-    is_valid_hotkey.value = await invoke("change_shortcut", {shortcut: hotkey});
+async function update_hotkey(hotkey: string) {
+    is_valid_hotkey.value = await invoke("change_shortcut", { shortcut: hotkey });
 
     settings.value.hotkey = hotkey;
     save_settings()
@@ -175,7 +175,8 @@ async function update_hotkey(hotkey: string){
         <div v-if="client === 'Personalizado'" class="setting">
             <span>Log do client:</span>
 
-            <input type="text" placeholder="Exemplo: .minecraft/logs/latest.log" v-model="settings.custom_client_path" @input="save_settings">
+            <input type="text" placeholder="Exemplo: .minecraft/logs/latest.log" v-model="settings.custom_client_path"
+                @input="save_settings">
             <button v-on:click="select_log_file()">Selecionar arquivo</button>
         </div>
 
@@ -185,14 +186,16 @@ async function update_hotkey(hotkey: string){
         </div>
         <div class="setting">
             <span>Carregar/remover jogadores automaticamente quando possível:</span>
-            <button @click="settings.automatic = !settings.automatic; save_settings()" :class="{ active: settings.automatic }">
+            <button @click="settings.automatic = !settings.automatic; save_settings()"
+                :class="{ active: settings.automatic }">
                 <span v-if="settings.automatic">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
         <div class="setting">
             <span>Esvaziar lista de jogadores ao entrar numa partida:</span>
-            <button @click="settings.remove_players = !settings.remove_players; save_settings()" :class="{ active: settings.remove_players }">
+            <button @click="settings.remove_players = !settings.remove_players; save_settings()"
+                :class="{ active: settings.remove_players }">
                 <span v-if="settings.remove_players">Sim</span>
                 <span v-else>Não</span>
             </button>
@@ -202,26 +205,37 @@ async function update_hotkey(hotkey: string){
 
         <div class="setting">
             <span>Nunca minimizar automaticamente</span>
-            <button @click="settings.never_minimize = !settings.never_minimize; save_settings()" :class="{ active: settings.show_wlr }">
+            <button @click="settings.never_minimize = !settings.never_minimize; save_settings()"
+                :class="{ active: settings.show_wlr }">
                 <span v-if="settings.never_minimize">Ligado</span>
                 <span v-else>Desligado</span>
             </button>
         </div>
         <div class="setting">
-            <span>Tempo para minimizar após ativação:</span>
-            <input type="range" @input="save_settings()" v-model.number="settings.seconds_to_minimize" min="2" max="30"/>
+            <span>Ignorar mouse (use a hotkey de minimizar )</span>
+            <button @click="settings.never_minimize = !settings.never_minimize; save_settings()"
+                :class="{ active: settings.show_wlr }">
+                <span v-if="settings.never_minimize">Ligado</span>
+                <span v-else>Desligado</span>
+            </button>
+        </div>
+        <div class="setting">
+            <span>Tempo para minimizar após aparecer na tela:</span>
+            <input type="range" @input="save_settings()" v-model.number="settings.seconds_to_minimize" min="2"
+                max="30" />
             <span>({{ settings.seconds_to_minimize }}s)</span>
 
         </div>
         <div class="setting">
             <span>Tamanho:</span>
-            <input type="range" @input="save_settings()" v-model.number="settings.window_scale" min="0.70" max="1.25" step="0.01"/>
+            <input type="range" @input="save_settings()" v-model.number="settings.window_scale" min="0.70" max="1.25"
+                step="0.01" />
             <span>({{ (settings.window_scale * 100).toFixed(0) }}%)</span>
         </div>
         <div class="setting">
             <span>Nível de transparência:</span>
-            <input type="range" @input="save_settings()" v-model.number="settings.transparency" min="0" max="100"/>
-            <span>({{settings.transparency}}%)</span>
+            <input type="range" @input="save_settings()" v-model.number="settings.transparency" min="0" max="100" />
+            <span>({{ settings.transparency }}%)</span>
 
         </div>
 
@@ -235,49 +249,56 @@ async function update_hotkey(hotkey: string){
 
         <div class="setting">
             <span>Mostrar winstreak:</span>
-            <button @click="settings.show_ws = !settings.show_ws; save_settings()" :class="{ active: settings.show_ws }">
+            <button @click="settings.show_ws = !settings.show_ws; save_settings()"
+                :class="{ active: settings.show_ws }">
                 <span v-if="settings.show_ws">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
         <div class="setting">
             <span>Mostrar WLR:</span>
-            <button @click="settings.show_wlr = !settings.show_wlr; save_settings()" :class="{ active: settings.show_wlr }">
+            <button @click="settings.show_wlr = !settings.show_wlr; save_settings()"
+                :class="{ active: settings.show_wlr }">
                 <span v-if="settings.show_wlr">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
         <div class="setting">
             <span>Mostrar FKDR:</span>
-            <button @click="settings.show_fkdr = !settings.show_fkdr; save_settings()" :class="{ active: settings.show_fkdr }">
+            <button @click="settings.show_fkdr = !settings.show_fkdr; save_settings()"
+                :class="{ active: settings.show_fkdr }">
                 <span v-if="settings.show_fkdr">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
         <div class="setting">
             <span>Mostrar KDR:</span>
-            <button @click="settings.show_kdr = !settings.show_kdr; save_settings()" :class="{ active: settings.show_kdr }">
+            <button @click="settings.show_kdr = !settings.show_kdr; save_settings()"
+                :class="{ active: settings.show_kdr }">
                 <span v-if="settings.show_kdr">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
         <div class="setting">
             <span>Mostrar vitórias:</span>
-            <button @click="settings.show_wins = !settings.show_wins; save_settings()" :class="{ active: settings.show_wins }">
+            <button @click="settings.show_wins = !settings.show_wins; save_settings()"
+                :class="{ active: settings.show_wins }">
                 <span v-if="settings.show_wins">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
         <div class="setting">
             <span>Mostrar derrotas:</span>
-            <button @click="settings.show_losses = !settings.show_losses; save_settings()" :class="{ active: settings.show_losses }">
+            <button @click="settings.show_losses = !settings.show_losses; save_settings()"
+                :class="{ active: settings.show_losses }">
                 <span v-if="settings.show_losses">Sim</span>
                 <span v-else>Não</span>
             </button>
         </div>
         <div class="setting">
             <span>Mostrar bans:</span>
-            <button @click="settings.show_bans = !settings.show_bans; save_settings()" :class="{ active: settings.show_bans }">
+            <button @click="settings.show_bans = !settings.show_bans; save_settings()"
+                :class="{ active: settings.show_bans }">
                 <span v-if="settings.show_bans">Sim</span>
                 <span v-else>Não</span>
             </button>
@@ -290,12 +311,14 @@ async function update_hotkey(hotkey: string){
 .select {
     padding: 13px;
 }
+
 .container {
     padding-top: 10px;
     max-height: 380px;
     overflow-y: auto;
 }
-.setting{
+
+.setting {
     display: flex;
     align-items: center;
     margin-left: 20px;
@@ -303,11 +326,11 @@ async function update_hotkey(hotkey: string){
     line-height: 20px;
 }
 
-button{
-    margin-left: 10px;
-}
-input[type="text"] {
+button {
     margin-left: 10px;
 }
 
+input[type="text"] {
+    margin-left: 10px;
+}
 </style>
