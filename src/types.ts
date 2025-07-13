@@ -104,6 +104,7 @@ export type MineClient =
     | {type : "LegacyLauncher"}
     | {type : "CMClient"}
     | {type: "CheatBreaker"}
+    | {type: "Salwyrr"}
     | {type : "Custom"; path: string};
 
 export type StatsType =

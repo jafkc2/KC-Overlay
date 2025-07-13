@@ -15,7 +15,8 @@ pub enum MineClient {
     Custom(String),
     Silent,
     CMClient,
-    CheatBreaker
+    CheatBreaker,
+    Salwyrr,
 }
 
 // Clients em string.
@@ -30,6 +31,7 @@ impl Display for MineClient {
             MineClient::Silent => write!(f, "Silent Client"),
             MineClient::CMClient => write!(f, "CM Client"),
             MineClient::CheatBreaker => write!(f, "CheatBreaker"),
+            MineClient::Salwyrr => write!(f, "Salwyrr"),
         }
     }
 }
@@ -90,13 +92,37 @@ impl MineClient {
                 };
 
                 format!("{}/logs/latest.log", cm_directory)
-            },
-            MineClient::CheatBreaker => match os{
-                "linux" => format!("{}/.cheatbreaker/downloads/logs/1.8.9/latest.log", std::env::var("HOME").unwrap()),
-                "windows" => format!("{}/Appdata/Roaming/CheatBreaker/logs/renderer.log", std::env::var("USERPROFILE").unwrap().replace('\\', "/")),
-                "macos" => format!("{}/.cheatbreaker/downloads/logs/1.8.9/latest.log", std::env::var("HOME").unwrap()),
-                _ => panic!("Sistema não suportado")
             }
+            MineClient::CheatBreaker => match os {
+                "linux" => format!(
+                    "{}/.cheatbreaker/downloads/logs/1.8.9/latest.log",
+                    std::env::var("HOME").unwrap()
+                ),
+                "windows" => format!(
+                    "{}/Appdata/Roaming/CheatBreaker/logs/renderer.log",
+                    std::env::var("USERPROFILE").unwrap().replace('\\', "/")
+                ),
+                "macos" => format!(
+                    "{}/.cheatbreaker/downloads/logs/1.8.9/latest.log",
+                    std::env::var("HOME").unwrap()
+                ),
+                _ => panic!("Sistema não suportado"),
+            },
+            MineClient::Salwyrr => match os {
+                "linux" => format!(
+                    "{}/.Salwyrr/logs/1.8.9/latest.log",
+                    std::env::var("HOME").unwrap()
+                ),
+                "windows" => format!(
+                    "{}/Appdata/Roaming/.Salwyrr/logs/latest.log",
+                    std::env::var("USERPROFILE").unwrap().replace('\\', "/")
+                ),
+                "macos" => format!(
+                    "{}/.Salwyrr/logs/1.8.9/latest.log",
+                    std::env::var("HOME").unwrap()
+                ),
+                _ => panic!("Sistema não suportado"),
+            },
         }
     }
 }
