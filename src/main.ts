@@ -1,12 +1,15 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import { invoke } from '@tauri-apps/api/core';
-import SettingsView from './Settings.vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import MainView from './MainView.vue';
 import { createPinia } from 'pinia';
-import About from './About.vue';
-import ViewPlayer from './ViewPlayer.vue';
+
+
+
+const MainView = () => import('./MainView.vue');
+const SettingsView = () => import('./Settings.vue');
+const About = () => import('./About.vue');
+const ViewPlayer = () => import('./ViewPlayer.vue');
 
 export async function update(url: string){
   invoke("install_update", {url: url});
