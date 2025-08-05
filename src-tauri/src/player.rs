@@ -149,8 +149,6 @@ pub async fn get_players(
 ) {
     let http_client = Client::new();
 
-    let http_client2 = Client::new();
-
     const MUSH_API: &str = "https://mush.com.br/api/player/";
 
     let rate_limited_arc = Arc::new(Mutex::new(false));
@@ -159,18 +157,8 @@ pub async fn get_players(
 
     let players_arc = Arc::new(Mutex::new(vec![]));
     let full_rates_instant = Arc::new(Mutex::new(None));
-
-    let mut i = 1;
     for player_name in str_player_list {
-        let http_client = if i % 2 == 0 {
-            i += 1;
-
-            http_client.clone()
-        } else {
-            i += 1;
-
-            http_client2.clone()
-        };
+        let http_client = http_client.clone();
         let stats_type = stats_type.clone();
         let url = format!("{}{}", MUSH_API, player_name);
 

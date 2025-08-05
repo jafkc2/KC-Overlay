@@ -8,17 +8,7 @@ import { useStore } from "./stores/store";
 
 const store = useStore();
 
-let clients = ["Geral", "Lunar", "Badlion", "CM Client","Silent Client", "Legacy Launcher", "CheatBreaker"];
 
-let client = ref(format_client());
-
-
-async function save_settings(){
-    if (store.settings.client.type == "Custom"){
-        store.settings.client = { type: "Custom", path: store.settings.custom_client_path }
-    }
-    await invoke("save_settings", {settings: store.settings})
-}
 
 const router = useRouter();
 
@@ -26,60 +16,6 @@ function go_to_main_route(){
     router.push('/');
 }
 
-function update_client(new_client: string){
-    client.value = new_client;
-    switch (new_client){
-        case "Geral":
-            store.settings.client = {type: "Default"}
-            break;
-        case "Lunar":
-            store.settings.client = {type: "Lunar"}
-            break;
-        case "Badlion":
-            store.settings.client = {type: "Badlion"}
-            break;
-        case "Silent Client":
-            store.settings.client = {type: "Silent"}
-            break;
-        case "Legacy Launcher":
-            store.settings.client = {type: "LegacyLauncher"}
-            break;
-        case "CM Client":
-            store.settings.client = {type: "CMClient"}
-            break;
-        case "CheatBreaker":
-            store.settings.client = {type: "CheatBreaker"}
-            break;
-        case "Personalizado":
-            store.settings.client = { type: "Custom", path: store.settings.custom_client_path };
-            break;
-    }
-
-    save_settings()
-}
-
-function format_client(): string{
-    switch (store.settings.client.type){
-        case "Default":
-            return "Geral"
-        case "Badlion":
-            return "Badlion"
-        case "Lunar":
-            return "Lunar"
-        case "Silent":
-            return "Silent Client"
-        case "LegacyLauncher":
-            return "Legacy Launcher"
-        case "CMClient":
-            return "CM Client"
-        case "CheatBreaker":
-            return "CheatBreaker"
-        case "Custom":
-            return "Personalizado"
-        default:
-            return "???"
-    }
-}
 </script>
 <template>
     <div class="welcome">
@@ -89,11 +25,6 @@ function format_client(): string{
             </h3>
         </header>
         <main>
-            <div class="client">
-                <span>Client:</span>
-                <Select :value="client" :options="clients" @input="update_client" class="select"></Select>
-                <span style="margin-left: 10px;" v-if="client == 'Geral'">Vanilla, Forge, etc.</span>
-            </div>
             <p style="color: #aaaaaa;">Caso use um client além dos disponíveis, poderá adicioná-lo manualmente nas configurações.</p>
 
             <button v-on:click="go_to_main_route">Continuar</button>

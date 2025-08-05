@@ -75,7 +75,7 @@ type Duels = {
 }
 
 export type Settings = {
-    client: MineClient,
+    use_custom_client: boolean,
     custom_client_path: string,
     never_minimize: boolean,
     seconds_to_minimize: number,
@@ -96,7 +96,7 @@ export type Settings = {
     hotkey: string
 }
 
-export type MineClient = 
+/* export type MineClient = 
     | {type : "Default"}
     | {type : "Badlion"}
     | {type : "Lunar"}
@@ -105,7 +105,7 @@ export type MineClient =
     | {type : "CMClient"}
     | {type: "CheatBreaker"}
     | {type: "Salwyrr"}
-    | {type : "Custom"; path: string};
+    | {type : "Custom"; path: string}; */
 
 export type StatsType =
     | {type: "BedwarsAll"}

@@ -8,6 +8,7 @@ use crate::util::get_home_dir;
 #[serde(tag = "type", content = "path")]
 pub enum MineClient {
     #[default]
+    Automatic,
     Default,
     Badlion,
     Lunar,
@@ -23,6 +24,7 @@ pub enum MineClient {
 impl Display for MineClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            MineClient::Automatic => write!(f, "Automático"),
             MineClient::Default => write!(f, "Geral"),
             MineClient::Badlion => write!(f, "Badlion"),
             MineClient::Lunar => write!(f, "Lunar"),
@@ -42,6 +44,7 @@ impl MineClient {
         let os = std::env::consts::OS;
 
         match self {
+            MineClient::Automatic => String::new(),
             MineClient::Default => format!("{}/logs/latest.log", minecraft_dir),
             MineClient::Badlion => {
                 format!("{}/logs/blclient/minecraft/latest.log", minecraft_dir)
@@ -124,5 +127,23 @@ impl MineClient {
                 _ => panic!("Sistema não suportado"),
             },
         }
+    }
+
+    pub fn get_all_log_paths() -> Vec<String> {
+        let mut paths = vec![];
+        for client in [
+            MineClient::Automatic,
+            MineClient::Default,
+            MineClient::Badlion,
+            MineClient::Lunar,
+            MineClient::LegacyLauncher,
+            MineClient::Silent,
+            MineClient::CMClient,
+            MineClient::CheatBreaker,
+            MineClient::Salwyrr,
+        ] {
+            paths.push(client.get_logs_path());
+        }
+        paths
     }
 }

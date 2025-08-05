@@ -34,7 +34,7 @@ struct KCOverlay {
 
 impl KCOverlay {
     fn add_players_to_cache(&mut self, players: Vec<Player>) {
-        // Sistema de cachê de jogadores para evitar o uso da api
+        // Sistema de cachê de jogadores para evitar rate limit da api
         for player in players {
             let mut already_in_cache = false;
             for cached_player in self.state.cached_players.clone() {
@@ -62,7 +62,7 @@ struct State {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Settings {
-    client: MineClient,
+    use_custom_client: bool,
     custom_client_path: String,
     never_minimize: bool,
     seconds_to_minimize: u64,
@@ -81,7 +81,7 @@ struct Settings {
     hotkey: String,
 }
 pub fn run() {
-    // Isso é o processo final do update. Remove o executável antigo, caso exista.
+    // Isso é o processo final da atualização do KC Overlay. Remove o executável antigo, caso exista.
     let old_exec = env::current_exe().unwrap().with_extension("old");
     if Path::new(&old_exec).exists() {
         match fs::remove_file(old_exec) {
@@ -105,18 +105,8 @@ pub fn run() {
                 .as_str()
                 .unwrap_or("")
                 .to_string();
-            let mut client = from_value::<MineClient>(serde_json::Value::Object(
-                config["client"]
-                    .as_object()
-                    .unwrap_or(&serde_json::Map::new())
-                    .clone(),
-            ))
-            .unwrap_or(MineClient::Default);
+            let use_custom_client = config["use_custom_client"].as_bool().unwrap_or(false);
 
-            match client {
-                MineClient::Custom(_) => client = MineClient::Custom(custom_client_path.clone()),
-                _ => (),
-            }
 
             let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
             let seconds_to_minimize = config["seconds_to_minimize"].as_u64().unwrap_or(10);
@@ -144,7 +134,7 @@ pub fn run() {
                 .to_string();
 
             println!("Hotkey: {}", hotkey.clone());
-            
+
             let hotkey_builder = if let Ok(hotkey_builder) =
                 tauri_plugin_global_shortcut::Builder::new().with_shortcut(hotkey.as_str())
             {
@@ -174,7 +164,7 @@ pub fn run() {
                     is_first_use,
                 },
                 settings: Settings {
-                    client,
+                    use_custom_client,
                     custom_client_path,
                     never_minimize,
                     seconds_to_minimize,
@@ -258,75 +248,65 @@ async fn read_logs(
 ) -> Result<(), ()> {
     println!("Iniciando leitura de logs");
 
-    let mut client = app.lock().await.settings.client.clone();
-    let logs_path = client.get_logs_path();
-    let mut file = File::open(&logs_path).await;
+    let mut log_paths = MineClient::get_all_log_paths();
 
-    /*
-     * Se o arquivo de logs existir, tudo certo. Caso contrário, espera um client com logs ser selecionado.
-     * O usuário pode selecionar um client que ele não tenha instalado ou colocar um custom client que não exista,
-     * fazendo o programa procurar por um log inexistente.
-     */
-    match file {
-        Ok(ok) => {
-            file = Ok(ok);
-        }
-        Err(_) => {
-            while !Path::new(&app.lock().await.settings.client.get_logs_path()).exists() {
-                println!(
-                    "{} não existe",
-                    &app.lock().await.settings.client.get_logs_path()
-                );
-                sleep(Duration::from_secs(1)).await;
-            }
-            client = app.lock().await.settings.client.clone();
-            file = Ok(File::open(client.get_logs_path()).await.unwrap())
-        }
+    let custom_clienth_path = app.lock().await.settings.custom_client_path.clone();
+    if custom_clienth_path.is_empty() {
+        log_paths.push(custom_clienth_path);
     }
 
-    let mut reader = BufReader::new(file.unwrap());
-    let mut buffer = String::new();
-    reader.seek(SeekFrom::End(0)).await.unwrap();
+    let mut readers = get_log_readers(log_paths).await;
 
     let mut time_since_client_refresh = Instant::now();
 
     loop {
-        match reader.read_line(&mut buffer).await {
-            Ok(0) => {
-                sleep(Duration::from_millis(100)).await;
-            }
-            Ok(_) => {
-                let line = buffer.trim_end().to_string();
-                handle_log_line(line, handle.clone(), &app).await;
-                buffer.clear();
-            }
-            Err(e) => println!("Erro ao ler logs: {e}"),
-        }
-
-        // Atualiza o arquivo de logs do client, se necessário
-        if app.lock().await.settings.client != client
-            || time_since_client_refresh.elapsed() > Duration::from_secs(15)
-        {
-            client = app.lock().await.settings.client.clone();
-
-            let logs_path = client.get_logs_path();
-            println!("Arquivo de logs atualizado: {}", logs_path.clone());
-
-            let file = match File::open(&logs_path).await {
-                Ok(ok) => ok,
-                Err(e) => {
-                    println!("{e}: {}", &logs_path);
-                    continue;
+        let mut any_read = false;
+        for (_, reader, buffer) in readers.iter_mut() {
+            match reader.read_line(buffer).await {
+                Ok(0) => continue,
+                Ok(_) => {
+                    let line = buffer.trim_end().to_string();
+                    if !line.is_empty() {
+                        handle_log_line(line, handle.clone(), &app).await;
+                    }
+                    buffer.clear();
+                    any_read = true;
                 }
-            };
+                Err(e) => println!("Erro ao ler logs: {e}"),
+            }
+        }
+        if !any_read {
+            sleep(Duration::from_millis(50)).await;
+        }
+        // Atualiza o arquivo de logs do client, se necessário
+        if time_since_client_refresh.elapsed() > Duration::from_secs(15) {
+            let mut log_paths = MineClient::get_all_log_paths();
 
-            reader = BufReader::new(file);
-            buffer = String::new();
-            reader.seek(SeekFrom::End(0)).await.unwrap();
+            let custom_clienth_path = app.lock().await.settings.custom_client_path.clone();
+            if custom_clienth_path.is_empty() {
+                log_paths.push(custom_clienth_path);
+            }
+
+            readers = get_log_readers(log_paths).await;
 
             time_since_client_refresh = Instant::now();
         }
     }
+}
+
+async fn get_log_readers(log_paths: Vec<String>) -> Vec<(String, BufReader<File>, String)> {
+    let mut readers = vec![];
+    for path in log_paths {
+        if Path::new(&path).exists() {
+            if let Ok(file) = File::open(&path).await {
+                let mut reader = BufReader::new(file);
+                reader.seek(SeekFrom::End(0)).await.unwrap();
+                readers.push((path, reader, String::new()));
+            }
+        }
+    }
+
+    readers
 }
 
 async fn handle_log_line(

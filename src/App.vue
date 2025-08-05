@@ -42,9 +42,9 @@ onMounted(async () => {
         console.error("Leitura de logs falhou:", err);
     });
 
-    if (await invoke<boolean>("is_first_use")) {
+/*     if (await invoke<boolean>("is_first_use")) {
         router.push('/welcome');
-    }
+    } */
     document.addEventListener("contextmenu", (event) => {
         event.preventDefault();
     });

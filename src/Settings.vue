@@ -9,57 +9,16 @@ import { useStore } from './stores/store';
 import Hotkey from './components/Hotkey.vue';
 
 
-
-
-let clients = ["Geral", "Lunar", "Badlion", "CM Client", "Silent Client", "Legacy Launcher", "CheatBreaker", "Salwyrr", "Personalizado"];
 let stats = get_stat_types()
 
 
 let store = useStore();
 const settings = toRef(store, 'settings');
 
-let client = ref(format_client());
 let stats_type = ref(format_stats(settings.value));
 
 async function save_settings() {
-    if (settings.value.client.type == "Custom") {
-        settings.value.client = { type: "Custom", path: settings.value.custom_client_path }
-    }
     await invoke("save_settings", { settings: settings.value })
-}
-function update_client(new_client: string) {
-    client.value = new_client;
-    switch (new_client) {
-        case "Geral":
-            settings.value.client = { type: "Default" }
-            break;
-        case "Lunar":
-            settings.value.client = { type: "Lunar" }
-            break;
-        case "Badlion":
-            settings.value.client = { type: "Badlion" }
-            break;
-        case "Silent Client":
-            settings.value.client = { type: "Silent" }
-            break;
-        case "Legacy Launcher":
-            settings.value.client = { type: "LegacyLauncher" }
-            break;
-        case "CM Client":
-            settings.value.client = { type: "CMClient" }
-            break;
-        case "CheatBreaker":
-            settings.value.client = { type: "CheatBreaker" }
-            break;
-        case "Salwyrr":
-            settings.value.client = { type: "Salwyrr" }
-            break;
-        case "Personalizado":
-            settings.value.client = { type: "Custom", path: settings.value.custom_client_path };
-            break;
-    }
-
-    save_settings()
 }
 
 function update_stats(new_stats: string) {
@@ -108,38 +67,6 @@ function update_stats(new_stats: string) {
 
 }
 
-function format_client(): string {
-    switch (settings.value.client.type) {
-        case "Default":
-            return "Geral"
-            break;
-        case "Badlion":
-            return "Badlion"
-            break;
-        case "Lunar":
-            return "Lunar"
-            break;
-        case "Silent":
-            return "Silent Client"
-            break;
-        case "LegacyLauncher":
-            return "Legacy Launcher"
-            break;
-        case "CMClient":
-            return "CM Client"
-            break;
-        case "CheatBreaker":
-            return "CheatBreaker"
-            break;
-        case "Salwyrr":
-            return "Salwyrr"
-            break;
-        case "Custom":
-            return "Personalizado"
-            break;
-    }
-}
-
 async function select_log_file() {
     const file = await open({
         multiple: false,
@@ -168,11 +95,14 @@ async function update_hotkey(hotkey: string) {
         <p>Geral</p>
 
         <div class="setting">
-            <span>Client:</span>
-            <Select :value="client" :options="clients" @input="update_client" class="select"></Select>
+            <span>Usar client não suportado pelo KC Overlay</span>
+            <button @click="settings.use_custom_client = !settings.use_custom_client; save_settings()"
+                :class="{ active: settings.show_wlr }">
+                <span v-if="settings.use_custom_client">Ligado</span>
+                <span v-else>Desligado</span>
+            </button>
         </div>
-
-        <div v-if="client === 'Personalizado'" class="setting">
+        <div v-if="settings.use_custom_client" class="setting">
             <span>Log do client:</span>
 
             <input type="text" placeholder="Exemplo: .minecraft/logs/latest.log" v-model="settings.custom_client_path"
@@ -211,14 +141,14 @@ async function update_hotkey(hotkey: string) {
                 <span v-else>Desligado</span>
             </button>
         </div>
-        <div class="setting">
+<!--         <div class="setting">
             <span>Ignorar mouse (use a hotkey de minimizar )</span>
             <button @click="settings.never_minimize = !settings.never_minimize; save_settings()"
                 :class="{ active: settings.show_wlr }">
                 <span v-if="settings.never_minimize">Ligado</span>
                 <span v-else>Desligado</span>
             </button>
-        </div>
+        </div> -->
         <div class="setting">
             <span>Tempo para minimizar após aparecer na tela:</span>
             <input type="range" @input="save_settings()" v-model.number="settings.seconds_to_minimize" min="2"
