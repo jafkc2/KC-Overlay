@@ -1,12 +1,6 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { invoke } from '@tauri-apps/api/core';
-import Select from './components/Select.vue';
+
 import { useRouter } from "vue-router";
-import { useStore } from "./stores/store";
-
-
-const store = useStore();
 
 
 
