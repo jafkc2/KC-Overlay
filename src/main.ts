@@ -6,7 +6,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import MainView from './MainView.vue';
 import { createPinia } from 'pinia';
 import About from './About.vue';
-import Welcome from './Welcome.vue';
 import ViewPlayer from './ViewPlayer.vue';
 
 export async function update(url: string){
@@ -25,10 +24,6 @@ const routes = [
   {
     path: '/about',
     component: About
-  },
-  {
-    path: '/welcome',
-    component: Welcome
   },
   {
     path: '/view_player',
