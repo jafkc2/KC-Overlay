@@ -31,6 +31,29 @@ jobs:
         name: KC-Overlay-Windows
         path: src-tauri/target/release/KC-Overlay.exe
 
+  build_windows32:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Enable static CRT linkage
+      run: |
+        mkdir .cargo
+        echo '[target.i686-pc-windows-msvc]' >> .cargo/config.toml
+        echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config.toml
+    - name: Install dependencies
+      run: npm install
+    - name: Install 32 bits toolchain
+      run: rustup target add i686-pc-windows-msvc
+    - name: Build
+      run: npm run tauri build -- --target i686-pc-windows-msvc
+    - name: Archive binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: KC-Overlay-Windows-32
+        path: src-tauri/target/i686-pc-windows-msvc/release/KC-Overlay.exe
+
   build_linux:
 
     runs-on: ubuntu-latest
