@@ -93,7 +93,8 @@ export type Settings = {
     transparency: number,
     automatic: boolean,
     remove_players: boolean,
-    hotkey: string
+    hotkey: string,
+    marked_players: string[]
 }
 
 /* export type MineClient = 

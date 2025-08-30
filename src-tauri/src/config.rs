@@ -132,6 +132,9 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
         if !map.contains_key("hotkey") {
             map.insert("hotkey".to_owned(), serde_json::to_value("Shift+Alt+Z").unwrap());
         }
+        if !map.contains_key("marked_players") {
+            map.insert("marked_players".to_owned(), serde_json::to_value(Vec::<String>::new()).unwrap());
+        }
     }
 
     let serializedjson = serde_json::to_string_pretty(&conf_json).unwrap();

@@ -268,6 +268,7 @@ onMounted(async () => {
 }
 
 input,
+textarea,
 button {
     border-radius: 8px;
     border: 1px solid transparent;

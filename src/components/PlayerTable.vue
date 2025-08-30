@@ -24,20 +24,34 @@
             <div class="username">
               <img :src="'https://mc-heads.net/avatar/' + player.skin_hash" />
               <span v-if="player.is_nicked" :style="{ color: nicked_color }">[nicked]</span>
+              <div v-else-if="is_marked(player, settings.marked_players)" :style="{ color: 'rgb(255, 0, 0)'}">
+                <span class="level">[{{ player.stats.content.level }}</span>
+                <div class="symbol_div">
+                  <span class="symbol">{{
+                    player.stats.content.level_symbol
+                  }}</span>
+                </div>
+                <span>]</span>
+              </div>
               <div v-else :style="{ color: rgb_style(player.stats.content.level_color) }">
                 <span class="level">[{{ player.stats.content.level }}</span>
                 <div class="symbol_div">
                   <span class="symbol">{{
                     player.stats.content.level_symbol
-                    }}</span>
+                  }}</span>
                 </div>
                 <span>]</span>
               </div>
 
-              <span :style="{ color: rgb_style(player.username_color) }">{{
+              <span v-if="is_marked(player, settings.marked_players)" :style="{ color: 'rgb(255, 0, 0)' }">{{
                 player.username
-                }}</span>
-              <span v-if="player.clan" :style="{ color: rgb_style(player.clan_color) }">[{{ player.clan }}]</span>
+              }}</span>
+              <span v-else :style="{ color: rgb_style(player.username_color) }">{{
+                player.username
+              }}</span>
+
+              <span v-if="player.clan && is_marked(player, settings.marked_players)" :style="{ color: 'rgb(255, 0, 0)' }">[{{ player.clan }}]</span>
+              <span v-else-if="player.clan" :style="{ color: rgb_style(player.clan_color) }">[{{ player.clan }}]</span>
 
               <img v-if="player.is_possible_cheater" src="/radioactive.svg" class="player-indicator" />
 
@@ -56,21 +70,24 @@
 
           </td>
 
-          <td v-if="settings.show_ws" :style="{ color: get_ws_color(player) }" class="stat"
+          <td v-if="settings.show_ws" :style="{ color: get_ws_color(player, settings.marked_players) }" class="stat"
             :class="{ 'super': player.stats.content.winstreak >= 100 }">{{ player.stats.content.winstreak == 0 ? '-' :
               player.stats.content.winstreak }}</td>
-          <td v-if="settings.show_wlr" :style="{ color: get_wlr_color(player) }" class="stat"
+          <td v-if="settings.show_wlr" :style="{ color: get_wlr_color(player, settings.marked_players) }" class="stat"
             :class="{ 'super': player.stats.content.winrate >= 8 }">{{ player.stats.content.winrate.toFixed(2) }}</td>
           <td v-if="player.stats.type == 'TheBridge'" class="stat">{{ player.stats.content.points }}</td>
-          <td v-if="player.stats.type == 'Bedwars' && settings.show_fkdr" :style="{ color: get_fkdr_color(player) }"
-            class="stat" :class="{ 'super': player.stats.content.final_kill_death_ratio >= 50 }">{{
+          <td v-if="player.stats.type == 'Bedwars' && settings.show_fkdr"
+            :style="{ color: get_fkdr_color(player, settings.marked_players) }" class="stat"
+            :class="{ 'super': player.stats.content.final_kill_death_ratio >= 50 }">{{
               player.stats.content.final_kill_death_ratio.toFixed(2) }}</td>
-          <td v-if="settings.show_kdr" :style="{ color: get_kdr_color(player) }" class="stat"
+          <td v-if="settings.show_kdr" :style="{ color: get_kdr_color(player, settings.marked_players) }" class="stat"
             :class="{ 'super': player.stats.content.kill_death_ratio >= 4 }">{{
               player.stats.content.kill_death_ratio.toFixed(2)
             }}</td>
-          <td v-if="settings.show_wins" :style="{ color: get_wins_color(player) }">{{ player.stats.content.wins }}</td>
-          <td v-if="settings.show_losses" :style="{ color: get_losses_color() }">{{ player.stats.content.losses }}</td>
+          <td v-if="settings.show_wins" :style="{ color: get_wins_color(player, settings.marked_players) }">{{
+            player.stats.content.wins }}</td>
+          <td v-if="settings.show_losses" :style="{ color: get_losses_color(player, settings.marked_players) }">{{
+            player.stats.content.losses }}</td>
         </tr>
       </tbody>
     </table>
@@ -80,12 +97,13 @@
 <script setup lang="ts">
 import { listen } from "@tauri-apps/api/event";
 import type { Player, Rgb, Settings } from "../types.ts";
-import { get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color, format_stats, get_wins_color, get_losses_color } from "../util.ts";
+import { get_ws_color, get_wlr_color, get_fkdr_color, get_kdr_color, format_stats, get_wins_color, get_losses_color, is_marked } from "../util.ts";
 import { ref } from "vue";
 
 function rgb_style(rgb: Rgb): string {
   return `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`;
 }
+
 
 const nicked_color = "rgb(255, 255, 0)";
 let wait_time = ref(0);

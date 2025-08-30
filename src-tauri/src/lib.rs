@@ -79,6 +79,8 @@ struct Settings {
     automatic: bool,
     remove_players: bool,
     hotkey: String,
+
+    marked_players: Vec<String>,
 }
 pub fn run() {
     // Isso é o processo final da atualização do KC Overlay. Remove o executável antigo, caso exista.
@@ -135,6 +137,13 @@ pub fn run() {
 
             println!("Hotkey: {}", hotkey.clone());
 
+            let marked_players = config["marked_players"]
+                .as_array()
+                .unwrap_or(&vec![])
+                .iter()
+                .map(|x| x.as_str().unwrap_or("").to_string())
+                .collect();
+
             let hotkey_builder = if let Ok(hotkey_builder) =
                 tauri_plugin_global_shortcut::Builder::new().with_shortcut(hotkey.as_str())
             {
@@ -181,6 +190,7 @@ pub fn run() {
                     automatic,
                     remove_players,
                     hotkey,
+                    marked_players,
                 },
             }));
             Ok(())

@@ -1,6 +1,10 @@
 import { Player, Settings } from "./types";
 
-export function get_ws_color(player: Player) : string{
+export function get_ws_color(player: Player, marked_players: string[]) : string{
+    if (is_marked(player, marked_players)){
+        return "rgb(255, 0, 0)";
+    }
+
     const ws = player.stats.content.winstreak;
 
     if (ws < 5){
@@ -16,7 +20,11 @@ export function get_ws_color(player: Player) : string{
     }
 }
 
-export function get_wlr_color(player: Player) : string{
+export function get_wlr_color(player: Player, marked_players: string[]) : string{
+    if (is_marked(player, marked_players)){
+        return "rgb(255, 0, 0)";
+    }
+
     const wlr = player.stats.content.winrate;
 
     if (wlr < 1){
@@ -32,7 +40,11 @@ export function get_wlr_color(player: Player) : string{
     }
 }
 
-export function get_fkdr_color(player: Player) : string{
+export function get_fkdr_color(player: Player, marked_players: string[]) : string{
+    if (is_marked(player, marked_players)){
+        return "rgb(255, 0, 0)";
+    }
+
     if (player.stats.type != "Bedwars"){
         return "#aaaaaa"
     }
@@ -51,7 +63,10 @@ export function get_fkdr_color(player: Player) : string{
     }
 }
 
-export function get_kdr_color(player: Player) : string{
+export function get_kdr_color(player: Player, marked_players: string[]) : string{
+    if (is_marked(player, marked_players)){
+        return "rgb(255, 0, 0)";
+    }
     const kdr = player.stats.content.kill_death_ratio;
 
     if (kdr < 1){
@@ -67,7 +82,10 @@ export function get_kdr_color(player: Player) : string{
     }
 }
 
-export function get_wins_color(player: Player) : string{
+export function get_wins_color(player: Player, marked_players: string[]) : string{
+    if (is_marked(player, marked_players)){
+        return "rgb(255, 0, 0)";
+    }
     const wins = player.stats.content.wins;
 
     if (wins < 1000){
@@ -83,7 +101,10 @@ export function get_wins_color(player: Player) : string{
     }
 }
 
-export function get_losses_color() : string{
+export function get_losses_color(player: Player, marked_players: string[]) : string{
+    if (is_marked(player, marked_players)){
+        return "rgb(255, 0, 0)";
+    }
     return "#aaaaaa"
 }
 
@@ -119,4 +140,8 @@ export function format_stats(settings: Settings): string{
 
 export function get_stat_types(): string[]{
     return ["Bedwars Geral", 'Bedwars Solo', 'Bedwars Duplas', 'Bedwars Trios', 'Bedwars Quartetos', 'Bedwars 1v1', 'Bedwars 2v2', "The Bridge", "Fireball Fight", "Bed Fight", "UHC", "Skywars"];
+}
+
+export function is_marked(player: Player, marked_players: string[]): boolean {
+  return marked_players.includes(player.username.toString());
 }
