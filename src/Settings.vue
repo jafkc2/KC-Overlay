@@ -130,7 +130,7 @@ async function update_hotkey(hotkey: string) {
                 <span v-else>Não</span>
             </button>
         </div>
-        <div class="setting" @click="$router.push('/mark_players')">
+        <div v-if="1 != 1" class="setting" @click="$router.push('/mark_players')">
             <button>Marcar jogadores</button>
         </div>
 
