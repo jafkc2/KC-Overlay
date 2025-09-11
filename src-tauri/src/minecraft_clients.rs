@@ -60,7 +60,7 @@ impl MineClient {
                     _ => panic!("Sistema não suportado."),
                 };
 
-                format!("{}/offline/multiver/logs/latest.log", lunar_directory)
+                format!("{}/profiles/lunar/1.8/logs/latest.log", lunar_directory)
             }
             MineClient::LegacyLauncher => match os {
                 "linux" => format!(
