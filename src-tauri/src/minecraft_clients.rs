@@ -18,6 +18,7 @@ pub enum MineClient {
     CMClient,
     CheatBreaker,
     Salwyrr,
+    LunarCelestial,
 }
 
 // Clients em string.
@@ -34,6 +35,7 @@ impl Display for MineClient {
             MineClient::CMClient => write!(f, "CM Client"),
             MineClient::CheatBreaker => write!(f, "CheatBreaker"),
             MineClient::Salwyrr => write!(f, "Salwyrr"),
+            MineClient::LunarCelestial => write!(f, "Lunar Celestial"),
         }
     }
 }
@@ -126,6 +128,21 @@ impl MineClient {
                 ),
                 _ => panic!("Sistema não suportado"),
             },
+            MineClient::LunarCelestial => match os {
+                "linux" => format!(
+                    "{}/.cubewhy/lunarcn/game/logs/latest.log",
+                    std::env::var("HOME").unwrap()
+                ),
+                "windows" => format!(
+                    "{}/.cubewhy/lunarcn/game/logs/latest.log",
+                    std::env::var("USERPROFILE").unwrap().replace('\\', "/")
+                ),
+                "macos" => format!(
+                    "{}/.cubewhy/lunarcn/game/logs/latest.log",
+                    std::env::var("HOME").unwrap()
+                ),
+                _ => panic!("Sistema não suportado"),
+            },
         }
     }
 
@@ -141,6 +158,7 @@ impl MineClient {
             MineClient::CMClient,
             MineClient::CheatBreaker,
             MineClient::Salwyrr,
+            MineClient::LunarCelestial
         ] {
             paths.push(client.get_logs_path());
         }
