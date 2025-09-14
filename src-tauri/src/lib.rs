@@ -109,7 +109,6 @@ pub fn run() {
                 .to_string();
             let use_custom_client = config["use_custom_client"].as_bool().unwrap_or(false);
 
-
             let never_minimize = config["never_minimize"].as_bool().unwrap_or(false);
             let seconds_to_minimize = config["seconds_to_minimize"].as_u64().unwrap_or(10);
             let stats_type = from_value::<StatsType>(serde_json::Value::Object(
@@ -261,7 +260,7 @@ async fn read_logs(
     let mut log_paths = MineClient::get_all_log_paths();
 
     let custom_clienth_path = app.lock().await.settings.custom_client_path.clone();
-    if custom_clienth_path.is_empty() {
+    if !custom_clienth_path.is_empty() {
         log_paths.push(custom_clienth_path);
     }
 
@@ -293,10 +292,9 @@ async fn read_logs(
             let mut log_paths = MineClient::get_all_log_paths();
 
             let custom_clienth_path = app.lock().await.settings.custom_client_path.clone();
-            if custom_clienth_path.is_empty() {
+            if !custom_clienth_path.is_empty() {
                 log_paths.push(custom_clienth_path);
             }
-
             readers = get_log_readers(log_paths).await;
 
             time_since_client_refresh = Instant::now();
