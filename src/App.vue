@@ -42,9 +42,13 @@ onMounted(async () => {
         console.error("Leitura de logs falhou:", err);
     });
 
-/*     if (await invoke<boolean>("is_first_use")) {
-        router.push('/welcome');
-    } */
+    invoke("run_proxy").catch((err) => {
+        console.error("proxy falhou:", err);
+    });
+
+    /*     if (await invoke<boolean>("is_first_use")) {
+            router.push('/welcome');
+        } */
     document.addEventListener("contextmenu", (event) => {
         event.preventDefault();
     });
@@ -167,6 +171,9 @@ onMounted(async () => {
         } else {
             await window.minimize();
         }
+    })
+    listen("load_hotkey", async () => {
+        await invoke("load_stats_tauri");
     })
     // console.log("Hotkey: " + store.settings.hotkey);
     // await register("Shift+Alt+Z", async (event) => {

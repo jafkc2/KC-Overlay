@@ -4,7 +4,7 @@ use core::f32;
 use reqwest::Client;
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::VecDeque, sync::Arc, time::Instant};
+use std::{collections::{HashMap, VecDeque}, sync::Arc, time::Instant};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
@@ -171,7 +171,7 @@ pub async fn get_players(
 
         futures.push(async move {
             for player in cloned_cached_players{
-                if player.username == player_name{
+                if player.username == *player_name{
                     players.lock().await.push(player.clone());
                     handle.emit("player", player).unwrap();
                     return None;
@@ -213,7 +213,7 @@ pub async fn get_players(
             };
 
             if !json["success"].as_bool().unwrap() {
-                let player = Player::new_nicked(player_name, stats_type);
+                let player = Player::new_nicked(player_name.to_string(), stats_type);
                 players.lock().await.push(player.clone());
                 handle.emit("player", player).unwrap();
 

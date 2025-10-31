@@ -21,7 +21,6 @@ let settings = toRef(store, 'settings');
     <TitleBar :update_url="update_url"></TitleBar>
     <PlayerTable v-if="players.length > 0" :party_players="party_players" :players="players" :settings="settings" :loading="loading"></PlayerTable>
     <p v-else>
-        Olá! Digite o comando /jogando no chat do Mush para ver os stats de
-        todos os jogadores da sala.
+        Olá! Entre no ip localhost:25565 e digite /ver no chat para usar o KC Overlay.
     </p>
 </template>

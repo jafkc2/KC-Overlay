@@ -1,8 +1,9 @@
 use std::{
-    collections::VecDeque,
+    collections::{HashMap, VecDeque},
     env, fs,
     io::SeekFrom,
     path::Path,
+    str::FromStr,
     time::{Duration, Instant},
 };
 
@@ -12,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::from_value;
 use stats::StatsType;
 use tauri::{Emitter, Manager};
-use tauri_plugin_global_shortcut::ShortcutState;
+use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
 use tokio::{
     fs::File,
     io::{AsyncBufReadExt, AsyncSeekExt, BufReader},
@@ -23,6 +24,8 @@ use tokio::{
 mod config;
 mod minecraft_clients;
 mod player;
+mod proxy;
+mod room;
 mod stats;
 mod update;
 mod util;
@@ -33,8 +36,8 @@ struct KCOverlay {
 }
 
 impl KCOverlay {
+    // Sistema de cachê de jogadores para evitar rate limit da api
     fn add_players_to_cache(&mut self, players: Vec<Player>) {
-        // Sistema de cachê de jogadores para evitar rate limit da api
         for player in players {
             let mut already_in_cache = false;
             for cached_player in self.state.cached_players.clone() {
@@ -51,9 +54,20 @@ impl KCOverlay {
             }
         }
     }
+
+    fn update_player_list(&mut self, added: HashMap<&[u8], String>, removed: Vec<&[u8]>) {
+        for (uuid, username) in added {
+            self.state.player_list.insert(uuid.to_vec(), username);
+        }
+
+        for uuid in removed {
+            self.state.player_list.remove(&uuid.to_vec());
+        }
+    }
 }
 
 struct State {
+    player_list: HashMap<Vec<u8>, String>,
     cached_players: VecDeque<Player>,
     loading: bool,
     rates_full_time: Instant,
@@ -143,8 +157,13 @@ pub fn run() {
                 .map(|x| x.as_str().unwrap_or("").to_string())
                 .collect();
 
+            let short = match Shortcut::from_str(hotkey.as_str()) {
+                Ok(s) => s,
+                Err(_) => Shortcut::new(Some(Modifiers::ALT), Code::KeyZ),
+            };
+            let load_short = Shortcut::new(Some(Modifiers::ALT), Code::KeyX);
             let hotkey_builder = if let Ok(hotkey_builder) =
-                tauri_plugin_global_shortcut::Builder::new().with_shortcut(hotkey.as_str())
+                tauri_plugin_global_shortcut::Builder::new().with_shortcuts([short, load_short])
             {
                 hotkey_builder
             } else {
@@ -154,10 +173,19 @@ pub fn run() {
             app.handle()
                 .plugin(
                     hotkey_builder
-                        .with_handler(|app, _shortcut, event| {
+                        .with_handler(move |app, _shortcut, event| {
+                            println!("{}", _shortcut.id);
                             if event.state == ShortcutState::Pressed {
-                                println!("Atalho de minimizar/desminimizar usado.");
-                                app.emit("hotkey", true).unwrap();
+                                match _shortcut {
+                                    s if *s == short => {
+                                        println!("Atalho de minimizar/desminimizar usado.");
+                                        app.emit("hotkey", true).unwrap();
+                                    }
+                                    s if *s == load_short => {
+                                        app.emit("load_hotkey", true).unwrap();
+                                    }
+                                    _ => (),
+                                }
                             }
                         })
                         .build(),
@@ -170,6 +198,7 @@ pub fn run() {
                     loading: false,
                     rates_full_time: Instant::now(),
                     is_first_use,
+                    player_list: HashMap::new(),
                 },
                 settings: Settings {
                     use_custom_client,
@@ -204,7 +233,9 @@ pub fn run() {
             update::check_updates,
             update::install_update,
             is_first_use,
-            change_shortcut
+            change_shortcut,
+            proxy::run_proxy,
+            load_stats_tauri,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -354,6 +385,7 @@ async fn handle_log_line(
         let splitted_line: Vec<&str> = line.split(" ").collect();
         for (index, part) in splitted_line.clone().into_iter().enumerate() {
             if part == "entrou" {
+                println!("{:?}", app_mutex.lock().await.state.player_list);
                 let player_name: &str = splitted_line[index - 1];
                 let stats_type = app_mutex.lock().await.settings.stats_type.clone();
                 let cached_players = app_mutex.lock().await.state.cached_players.clone();
@@ -416,8 +448,32 @@ async fn handle_log_line(
         let cached_players = app_mutex.lock().await.state.cached_players.clone();
         let stats_type = app_mutex.lock().await.settings.stats_type.clone();
 
+        
         player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
-    } else if line.contains("[CHAT] Enviando para") {
+    } else if line.contains("[CHAT] Enviando para") && !app_mutex.lock().await.state.loading {
         handle.emit("remove_players", true).unwrap();
+    } else if line.contains("This server is running") && !app_mutex.lock().await.state.loading {
+        println!("Carregando jogadores da sala...");
+
+        load_stats(handle, app_mutex).await;
     }
+}
+
+#[tauri::command]
+async fn load_stats_tauri(
+    handle: tauri::AppHandle,
+    app_mutex: tauri::State<'_, Mutex<KCOverlay>>,
+) -> Result<(), ()> {
+    load_stats(handle, &app_mutex).await;
+    Ok(())
+}
+async fn load_stats(handle: tauri::AppHandle, app_mutex: &tauri::State<'_, Mutex<KCOverlay>>) {
+    let cached_players = app_mutex.lock().await.state.cached_players.clone();
+    let player_list = app_mutex.lock().await.state.player_list.clone();
+    let stats_type = app_mutex.lock().await.settings.stats_type.clone();
+    
+    handle.emit("loading", true).unwrap();
+    app_mutex.lock().await.state.loading = true;
+    let str_player_list : Vec<String> = player_list.values().cloned().collect();
+    player::get_players(str_player_list, stats_type, cached_players, handle, app_mutex).await;
 }
