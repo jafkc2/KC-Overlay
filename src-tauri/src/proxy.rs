@@ -125,7 +125,11 @@ pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>) -> 
                     };
             }
         }
-        let (client, addr) = listener.accept().await.unwrap();
+        let (client, addr) =
+            match tokio::time::timeout(Duration::from_secs(1), listener.accept()).await {
+                Ok(result) => result.unwrap(),
+                Err(_) => continue,
+            };
         println!("{}", addr);
         let upstream = "l.mush.com.br:25565".to_string();
         let tx = tx.clone();
@@ -138,25 +142,38 @@ pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>) -> 
 }
 
 async fn handle_proxy_connection(
-    mut client: TcpStream,
+    client: TcpStream,
     upstream: &str,
     events: mpsc::UnboundedSender<PacketEvent>,
     app: &tauri::State<'_, Mutex<crate::KCOverlay>>,
     acc: Option<login::MinecraftAccount>,
 ) -> Result<()> {
-    let mut server = TcpStream::connect(upstream).await?;
+    let mut client = client;
+    client.set_nodelay(true)?;
+
+    let mut server = tokio::time::timeout(Duration::from_secs(5), TcpStream::connect(upstream))
+        .await
+        .map_err(|_| anyhow::anyhow!("Timeout ao conectar ao servidor upstream"))??;
+
+    server.set_nodelay(true)?;
 
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-    let handshake_packet = read_full_mc_frame(&mut client).await?;
+    let handshake_packet =
+        tokio::time::timeout(Duration::from_secs(10), read_full_mc_frame(&mut client))
+            .await
+            .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de handshake"))??;
 
     server.write_all(&handshake_packet).await?;
 
-    let login_start_packet = read_full_mc_frame(&mut client).await?;
+    let login_start_packet =
+        tokio::time::timeout(Duration::from_secs(10), read_full_mc_frame(&mut client))
+            .await
+            .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de login start"))??;
+
     server.write_all(&login_start_packet).await?;
 
-    println!("handshake concluido");
-
+    println!("Handshake concluído com sucesso");
 
     let mut secret: Option<Vec<u8>> = None;
     let mut compression_threshold: Option<i32> = None;
@@ -171,7 +188,12 @@ async fn handle_proxy_connection(
         if seen_login_success {
             break;
         }
-        let enc_req_packet = read_full_mc_frame(&mut server).await?;
+
+        let enc_req_packet =
+            tokio::time::timeout(Duration::from_secs(10), read_full_mc_frame(&mut server))
+                .await
+                .map_err(|_| anyhow::anyhow!("Timeout reading server packet"))??;
+
         let mut cursor = Cursor::new(&enc_req_packet);
 
         let _outer_len = cursor.read_varint()?;
@@ -181,10 +203,7 @@ async fn handle_proxy_connection(
         let (packet_id, body) = match parse_packet_id_and_body(payload, compression_threshold) {
             Ok(v) => v,
             Err(e) => {
-                eprintln!(
-                    "falha ao realizar parse de pacote de login: {}",
-                    e
-                );
+                eprintln!("falha ao realizar parse de pacote de login: {}", e);
                 client.write_all(&enc_req_packet).await?;
                 continue;
             }
@@ -242,10 +261,7 @@ async fn handle_proxy_connection(
                     continue;
                 }
                 if resp_packet_id != 0x01 {
-                    anyhow::bail!(
-                        "id=0x{:X} em vez de 0x01",
-                        resp_packet_id
-                    );
+                    anyhow::bail!("id=0x{:X} em vez de 0x01", resp_packet_id);
                 }
 
                 let secret_len = rc.read_varint()? as usize;
@@ -262,7 +278,6 @@ async fn handle_proxy_connection(
                     .decrypt(Pkcs1v15Encrypt, &verify_enc)
                     .map_err(|e| anyhow::anyhow!("Falha ao descriptografar verify token: {e}"))?;
                 println!("shared secret descriptografado");
-
 
                 let http_client = reqwest::Client::builder()
                     .timeout(Duration::from_secs(10))
@@ -293,7 +308,9 @@ async fn handle_proxy_connection(
                 let verify_enc_server = server_pubkey
                     .encrypt(&mut rng, rsa::pkcs1v15::Pkcs1v15Encrypt, &verify_token)
                     .map_err(|e| {
-                        anyhow::anyhow!("Erro ao criptografar token de verificação para o servidor: {e}")
+                        anyhow::anyhow!(
+                            "Erro ao criptografar token de verificação para o servidor: {e}"
+                        )
                     })?;
 
                 let mut payload3 = Vec::new();
@@ -370,15 +387,15 @@ async fn handle_proxy_connection(
 
                                     let threshold = rc.read_varint().unwrap_or(-1);
 
-                                    println!(
-                                        "Nível de compressão = {}",
-                                        threshold
-                                    );
+                                    println!("Nível de compressão = {}", threshold);
                                     compression_threshold = Some(threshold);
                                 } else if pid == 0x02 {
                                     println!("O Login foi um sucesso!");
                                     secret = Some(shared_secret.clone());
                                     seen_login_success = true;
+                                    iv_c2s_forward = iv_c2s_forwardb;
+                                    iv_s2c_forward = iv_s2c_forwardb;
+                                    iv_s2c_parse = iv_s2c_parseb;
                                     break;
                                 }
                             }
@@ -401,23 +418,18 @@ async fn handle_proxy_connection(
                     client.write_all(raw).await?;
 
                     if seen_login_success {
-                        iv_c2s_forward = iv_c2s_forwardb;
-                        iv_s2c_forward = iv_s2c_forwardb;
-                        pending_s2c = pending_s2cb;
-                        iv_s2c_parse = iv_s2c_parseb;
                         break;
                     }
                 }
+
+                pending_s2c = pending_s2cb;
                 break 'login;
             }
 
             0x03 => {
                 let mut bc = Cursor::new(&body);
                 let threshold = bc.read_varint()?;
-                println!(
-                    "O server solicitou compressão: {} de threshold",
-                    threshold
-                );
+                println!("O server solicitou compressão: {} de threshold", threshold);
                 client.write_all(&enc_req_packet).await?;
                 compression_threshold = Some(threshold);
                 continue;
@@ -438,153 +450,301 @@ async fn handle_proxy_connection(
     }
 
     if secret.is_none() {
-    let (mut cr, mut cw) = client.split();
-    let (mut sr, mut sw) = server.split();
-    
-    let compression_threshold = compression_threshold;
-    let mut pending_s2c: Vec<u8> = Vec::new();
-    let mut pending_c2s: Vec<u8> = Vec::new();
+        let (mut cr, mut cw) = client.split();
+        let (mut sr, mut sw) = server.split();
 
-    let c2s_plain = async move {
-        loop {
-            let mut buf = [0u8; 8192];
-            match cr.read(&mut buf).await {
-                Ok(0) => {
-                    eprintln!("C->S conexão fechada pelo cliente");
+        let compression_threshold = compression_threshold;
+        let mut pending_s2c: Vec<u8> = Vec::new();
+        let mut pending_c2s: Vec<u8> = Vec::new();
+
+        let stop_flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let stop_flag_c2s = stop_flag.clone();
+        let stop_flag_s2c = stop_flag.clone();
+
+        let c2s_plain = async move {
+            loop {
+                if stop_flag_c2s.load(std::sync::atomic::Ordering::Relaxed) {
+                    eprintln!("C->S: Recebido sinal de parada");
                     break;
                 }
-                Ok(n) => {
-                    let raw = &buf[..n];
-                    pending_c2s.extend_from_slice(raw);
-                    
-                    let mut offset = 0usize;
-                    while offset < pending_c2s.len() {
-                        let rem = &pending_c2s[offset..];
-                        match read_varint_from_slice(rem) {
-                            Some((packet_len, len_bytes)) => {
-                                let packet_len_usize = packet_len as usize;
-                                let total_needed = len_bytes + packet_len_usize;
-                                if rem.len() < total_needed {
+
+                let mut buf = [0u8; 8192];
+                match cr.read(&mut buf).await {
+                    Ok(0) => {
+                        eprintln!("C->S conexão fechada pelo cliente");
+                        stop_flag_c2s.store(true, std::sync::atomic::Ordering::Relaxed);
+                        break;
+                    }
+                    Ok(n) => {
+                        let raw = &buf[..n];
+                        pending_c2s.extend_from_slice(raw);
+
+                        let mut offset = 0usize;
+                        while offset < pending_c2s.len() {
+                            let rem = &pending_c2s[offset..];
+                            match read_varint_from_slice(rem) {
+                                Some((packet_len, len_bytes)) => {
+                                    let packet_len_usize = packet_len as usize;
+                                    let total_needed = len_bytes + packet_len_usize;
+                                    if rem.len() < total_needed {
+                                        break;
+                                    }
+
+                                    let packet = &rem[..total_needed];
+                                    if let Err(e) = sw.write_all(packet).await {
+                                        eprintln!("C->S erro de escrita: {:?}", e);
+                                        stop_flag_c2s
+                                            .store(true, std::sync::atomic::Ordering::Relaxed);
+                                        break;
+                                    }
+                                    offset += total_needed;
+                                }
+                                None => {
                                     break;
                                 }
-                                
-                                let packet = &rem[..total_needed];
-                                if let Err(e) = sw.write_all(packet).await {
-                                    eprintln!("C->S erro de escrita: {:?}", e);
-                                    break;
-                                }
-                                offset += total_needed;
-                            }
-                            None => {
-                                break;
                             }
                         }
+
+                        if offset > 0 {
+                            pending_c2s.drain(..offset);
+                        }
                     }
-                    
-                    if offset > 0 {
-                        pending_c2s.drain(..offset);
+                    Err(e) => {
+                        eprintln!("C->S erro de leitura: {:?}", e);
+                        stop_flag_c2s.store(true, std::sync::atomic::Ordering::Relaxed);
+                        break;
                     }
-                }
-                Err(e) => {
-                    eprintln!("C->S erro de leitura: {:?}", e);
-                    break;
                 }
             }
-        }
-        Ok::<(), anyhow::Error>(())
-    };
+            Ok::<(), anyhow::Error>(())
+        };
 
-    let s2c_plain = async move {
-        loop {
-            let mut buf = [0u8; 8192];
-            match sr.read(&mut buf).await {
-                Ok(0) => {
-                    eprintln!("S->C conexão fechada pelo servidor");
+        let s2c_plain = async move {
+            loop {
+                if stop_flag_s2c.load(std::sync::atomic::Ordering::Relaxed) {
+                    eprintln!("S->C: Recebido sinal de parada");
                     break;
                 }
-                Ok(n) => {
-                    let raw = &buf[..n];
-                    pending_s2c.extend_from_slice(raw);
-                    
+
+                let mut buf = [0u8; 8192];
+                match sr.read(&mut buf).await {
+                    Ok(0) => {
+                        eprintln!("S->C conexão fechada pelo servidor");
+                        stop_flag_s2c.store(true, std::sync::atomic::Ordering::Relaxed);
+                        break;
+                    }
+                    Ok(n) => {
+                        let raw = &buf[..n];
+                        pending_s2c.extend_from_slice(raw);
+
+                        let mut offset = 0usize;
+                        while offset < pending_s2c.len() {
+                            let rem = &pending_s2c[offset..];
+                            match read_varint_from_slice(rem) {
+                                Some((packet_len, len_bytes)) => {
+                                    let packet_len_usize = packet_len as usize;
+                                    let total_needed = len_bytes + packet_len_usize;
+                                    if rem.len() < total_needed {
+                                        break;
+                                    }
+
+                                    let packet = &rem[..total_needed];
+
+                                    let mut cur = Cursor::new(packet);
+                                    if let Ok(_) = cur.read_varint() {
+                                        let payload_offset = cur.position() as usize;
+                                        let payload = &packet[payload_offset..];
+                                        match parse_packet_id_and_body(
+                                            payload,
+                                            compression_threshold,
+                                        ) {
+                                            Ok((pid, body)) => {
+                                                if pid == 0x38 {
+                                                    let (players_added, players_removed) =
+                                                        match extract_player_names_from_player_info(
+                                                            &body,
+                                                        ) {
+                                                            Ok((added, removed)) => {
+                                                                (added, removed)
+                                                            }
+                                                            Err(_) => (HashMap::new(), Vec::new()),
+                                                        };
+                                                    app.lock().await.update_player_list(
+                                                        players_added,
+                                                        players_removed,
+                                                    );
+                                                }
+                                            }
+                                            Err(e) => {
+                                                eprintln!(
+                                                    "(sem criptografia) S->C erro de parse: {}",
+                                                    e
+                                                );
+                                            }
+                                        }
+                                    }
+
+                                    if let Err(e) = cw.write_all(packet).await {
+                                        eprintln!("S->C erro de escrita: {:?}", e);
+                                        stop_flag_s2c
+                                            .store(true, std::sync::atomic::Ordering::Relaxed);
+                                        break;
+                                    }
+                                    offset += total_needed;
+                                }
+                                None => {
+                                    break;
+                                }
+                            }
+                        }
+
+                        if offset > 0 {
+                            pending_s2c.drain(..offset);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("S->C erro de leitura: {:?}", e);
+                        stop_flag_s2c.store(true, std::sync::atomic::Ordering::Relaxed);
+                        break;
+                    }
+                }
+            }
+            Ok::<(), anyhow::Error>(())
+        };
+
+        let _ = tokio::try_join!(c2s_plain, s2c_plain);
+    } else {
+        let secret_vec = secret
+            .take()
+            .ok_or_else(|| anyhow::anyhow!("shared secret inexistente!"))?;
+        if secret_vec.len() < 16 {
+            anyhow::bail!("shared_secret curto");
+        }
+
+        let mut key_bytes = [0u8; 16];
+        key_bytes.copy_from_slice(&secret_vec[..16]);
+        let aes = Aes128::new(GenericArray::from_slice(&key_bytes));
+
+        let mut iv_c2s_forward = iv_c2s_forward;
+        let mut iv_s2c_forward = iv_s2c_forward;
+        let mut iv_c2s_parse = iv_c2s_forward;
+        let mut iv_s2c_parse = iv_s2c_forward;
+
+        let (mut cr, mut cw) = client.split();
+        let (mut sr, mut sw) = server.split();
+
+        let mut pending_s2c: Vec<u8> = pending_s2c;
+        let mut pending_c2s: Vec<u8> = Vec::new();
+
+        println!(
+            "Lendo pacotes. threshold de compressão = {:?}",
+            compression_threshold
+        );
+
+        let stop_flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+        loop {
+            if stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
+                eprintln!("Recebido sinal de parada");
+                break;
+            }
+
+            tokio::select! {
+                res = sr.read_buf(&mut pending_s2c) => {
+                    let n = res.map_err(|e| anyhow!("server read error: {}", e))?;
+                    if n == 0 {
+                        stop_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+                        anyhow::bail!("n==0");
+                    }
+
+                    let raw_start_index = pending_s2c.len() - n;
+
+                    let raw_clone_for_forwarding = pending_s2c[raw_start_index..].to_vec();
+                    let mut iv_discard = raw_clone_for_forwarding.clone();
+
+                    let dec_for_parse_slice = &mut pending_s2c[raw_start_index..];
+                    cfb8_decrypt_in_place(&aes, &mut iv_s2c_parse, dec_for_parse_slice);
+
+                    cfb8_decrypt_in_place(&aes, &mut iv_s2c_forward, &mut iv_discard);
+
                     let mut offset = 0usize;
                     while offset < pending_s2c.len() {
                         let rem = &pending_s2c[offset..];
-                        match read_varint_from_slice(rem) {
-                            Some((packet_len, len_bytes)) => {
-                                let packet_len_usize = packet_len as usize;
-                                let total_needed = len_bytes + packet_len_usize;
-                                if rem.len() < total_needed {
-                                    break;
+                        let (packet_len, len_bytes) = match read_varint_from_slice(rem) { Some(v) => v, None => break };
+                        let total_needed = len_bytes + (packet_len as usize);
+                        if rem.len() < total_needed { break; }
+
+                        let packet_payload = &rem[len_bytes..total_needed];
+
+                        match parse_packet_id_and_body(packet_payload, compression_threshold) {
+                            Ok((pid, body)) => {
+                                if pid == 0x38 {
+                                    let (players_added, players_removed) =
+                                    match extract_player_names_from_player_info(&body) {
+                                        Ok((added, removed)) => (added, removed),
+                                        Err(_) => (HashMap::new(), Vec::new()),
+                                    };
+                                    app.lock().await.update_player_list(players_added, players_removed);
                                 }
-                                
-                                let packet = &rem[..total_needed];
-                                
-                                let mut cur = Cursor::new(packet);
-                                if let Ok(_) = cur.read_varint() {
-                                    let payload_offset = cur.position() as usize;
-                                    let payload = &packet[payload_offset..];
-                                    match parse_packet_id_and_body(payload, compression_threshold) {
-                                        Ok((pid, body)) => {
-                                            if pid == 0x38 {
-                                                let (players_added, players_removed) =
-                                                match extract_player_names_from_player_info(&body) {
-                                                    Ok((added, removed)) => (added, removed),
-                                                    Err(_) => (HashMap::new(), Vec::new()),
-                                                };
-                                                app.lock()
-                                                    .await
-                                                    .update_player_list(players_added, players_removed);
-                                            }
-                                        }
-                                        Err(e) => {
-                                            eprintln!("(sem criptografia) S->C erro de parse: {}", e);
-                                        }
-                                    }
-                                }
-                                
-                                if let Err(e) = cw.write_all(packet).await {
-                                    eprintln!("S->C erro de escrita: {:?}", e);
-                                    break;
-                                }
-                                offset += total_needed;
-                            }
-                            None => {
-                                break;
-                            }
+                            },
+                            Err(e) => eprintln!("(com criptografia) S->C erro de parse: {}", e),
                         }
+                        offset += total_needed;
                     }
-                    
-                    if offset > 0 {
-                        pending_s2c.drain(..offset);
+                    if offset > 0 { pending_s2c.drain(..offset); }
+
+                    if let Err(e) = cw.write_all(&raw_clone_for_forwarding).await {
+                        eprintln!("S->C erro de escrita: {:?}", e);
+                        stop_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+                        break;
                     }
                 }
-                Err(e) => {
-                    eprintln!("S->C erro de leitura: {:?}", e);
-                    break;
+
+                res = cr.read_buf(&mut pending_c2s) => {
+                    let n = res.map_err(|e| anyhow!("client erro de leitura: {}", e))?;
+                    if n == 0 {
+                        stop_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+                        anyhow::bail!("n==0");
+                    }
+
+                    let raw_start_index = pending_c2s.len() - n;
+
+                    let raw_clone_for_forwarding = pending_c2s[raw_start_index..].to_vec();
+                    let mut iv_discard = raw_clone_for_forwarding.clone();
+
+                    let dec_for_parse_slice = &mut pending_c2s[raw_start_index..];
+                    cfb8_decrypt_in_place(&aes, &mut iv_c2s_parse, dec_for_parse_slice);
+
+                    cfb8_decrypt_in_place(&aes, &mut iv_c2s_forward, &mut iv_discard);
+
+                    let mut offset = 0usize;
+                    while offset < pending_c2s.len() {
+                        let rem = &pending_c2s[offset..];
+                        let (packet_len, len_bytes) = match read_varint_from_slice(rem) { Some(v) => v, None => break };
+                        let total_needed = len_bytes + (packet_len as usize);
+                        if rem.len() < total_needed { break; }
+
+                        let packet_payload = &rem[len_bytes..total_needed];
+
+                        offset += total_needed;
+                    }
+                    if offset > 0 { pending_c2s.drain(..offset); }
+
+                    if let Err(e) = sw.write_all(&raw_clone_for_forwarding).await {
+                        eprintln!("C->S erro de escrita: {:?}", e);
+                        stop_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+                        break;
+                    }
                 }
             }
-        }
-        Ok::<(), anyhow::Error>(())
-    };
 
-    let _ = tokio::try_join!(c2s_plain, s2c_plain);
-} else {
-        println!("Login foi um sucesso. Com criptografia");
-        run_play_relay(
-            client,
-            server,
-            secret,
-            compression_threshold,
-            pending_s2c,
-            iv_s2c_parse,
-            iv_s2c_forward,
-            Vec::new(),
-            iv_c2s_forward,
-            iv_c2s_forward,
-            app,
-        )
-        .await?;
+            if stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
+                eprintln!("Recebido sinal de parada");
+                break;
+            }
+        }
     }
+
     Ok(())
 }
 
@@ -629,83 +789,83 @@ async fn run_play_relay(
     );
     loop {
         tokio::select! {
-            res = sr.read_buf(&mut pending_s2c) => {
-                let n = res.map_err(|e| anyhow!("server read error: {}", e))?;
-                if n == 0 { anyhow::bail!("n==0"); }
+                    res = sr.read_buf(&mut pending_s2c) => {
+                        let n = res.map_err(|e| anyhow!("server read error: {}", e))?;
+                        if n == 0 { anyhow::bail!("n==0"); }
 
-                let raw_start_index = pending_s2c.len() - n;
+                        let raw_start_index = pending_s2c.len() - n;
 
-                let raw_clone_for_forwarding = pending_s2c[raw_start_index..].to_vec();
-                let mut iv_discard = raw_clone_for_forwarding.clone();
+                        let raw_clone_for_forwarding = pending_s2c[raw_start_index..].to_vec();
+                        let mut iv_discard = raw_clone_for_forwarding.clone();
 
-                let dec_for_parse_slice = &mut pending_s2c[raw_start_index..];
-                cfb8_decrypt_in_place(&aes, &mut iv_s2c_parse, dec_for_parse_slice);
+                        let dec_for_parse_slice = &mut pending_s2c[raw_start_index..];
+                        cfb8_decrypt_in_place(&aes, &mut iv_s2c_parse, dec_for_parse_slice);
 
-                cfb8_decrypt_in_place(&aes, &mut iv_s2c_forward, &mut iv_discard);
+                        cfb8_decrypt_in_place(&aes, &mut iv_s2c_forward, &mut iv_discard);
 
-                let mut offset = 0usize;
-                while offset < pending_s2c.len() {
-                    let rem = &pending_s2c[offset..];
-                    let (packet_len, len_bytes) = match read_varint_from_slice(rem) { Some(v) => v, None => break };
-                    let total_needed = len_bytes + (packet_len as usize);
-                    if rem.len() < total_needed { break; }
+                        let mut offset = 0usize;
+                        while offset < pending_s2c.len() {
+                            let rem = &pending_s2c[offset..];
+                            let (packet_len, len_bytes) = match read_varint_from_slice(rem) { Some(v) => v, None => break };
+                            let total_needed = len_bytes + (packet_len as usize);
+                            if rem.len() < total_needed { break; }
 
-                    let packet_payload = &rem[len_bytes..total_needed];
+                            let packet_payload = &rem[len_bytes..total_needed];
 
-                    match parse_packet_id_and_body(packet_payload, compression_threshold) {
-                        Ok((pid, body)) => {
-                            if pid == 0x38 {
-                                let (players_added, players_removed) =
-                                match extract_player_names_from_player_info(&body) {
-                                    Ok((added, removed)) => (added, removed),
-                                    Err(_) => (HashMap::new(), Vec::new()),
-                                };
-                                app.lock().await.update_player_list(players_added, players_removed);
+                            match parse_packet_id_and_body(packet_payload, compression_threshold) {
+                                Ok((pid, body)) => {
+                                    if pid == 0x38 {
+                                        let (players_added, players_removed) =
+                                        match extract_player_names_from_player_info(&body) {
+                                            Ok((added, removed)) => (added, removed),
+                                            Err(_) => (HashMap::new(), Vec::new()),
+                                        };
+                                        app.lock().await.update_player_list(players_added, players_removed);
+                                    }
+                                },
+                                Err(e) => eprintln!("(sem criptografia) S->C erro de parse: {}", e),
                             }
-                        },
-                        Err(e) => eprintln!("(sem criptografia) S->C erro de parse: {}", e),
+                            offset += total_needed;
+                        }
+                        if offset > 0 { pending_s2c.drain(..offset); }
+
+                        cw.write_all(&raw_clone_for_forwarding).await?;
                     }
-                    offset += total_needed;
+
+                    res = cr.read_buf(&mut pending_c2s) => {
+                        let n = res.map_err(|e| anyhow!("client erro de leitura: {}", e))?;
+                        if n == 0 { anyhow::bail!("n==0"); }
+
+                        let raw_start_index = pending_c2s.len() - n;
+
+                        let raw_clone_for_forwarding = pending_c2s[raw_start_index..].to_vec();
+                        let mut iv_discard = raw_clone_for_forwarding.clone();
+
+                        let dec_for_parse_slice = &mut pending_c2s[raw_start_index..];
+                        cfb8_decrypt_in_place(&aes, &mut iv_c2s_parse, dec_for_parse_slice);
+
+                        cfb8_decrypt_in_place(&aes, &mut iv_c2s_forward, &mut iv_discard);
+
+                        let mut offset = 0usize;
+                        while offset < pending_c2s.len() {
+                            let rem = &pending_c2s[offset..];
+                            let (packet_len, len_bytes) = match read_varint_from_slice(rem) { Some(v) => v, None => break };
+                            let total_needed = len_bytes + (packet_len as usize);
+                            if rem.len() < total_needed { break; }
+
+                            let packet_payload = &rem[len_bytes..total_needed];
+
+        /*                     match parse_packet_id_and_body(packet_payload, compression_threshold) {
+                                Ok((pid, _body)) => (),
+                                Err(e) => eprintln!("(PLAIN) C->S parse error (logging only): {}", e),
+                            } */
+                            offset += total_needed;
+                        }
+                        if offset > 0 { pending_c2s.drain(..offset); }
+
+                        sw.write_all(&raw_clone_for_forwarding).await?;
+                    }
                 }
-                if offset > 0 { pending_s2c.drain(..offset); }
-
-                cw.write_all(&raw_clone_for_forwarding).await?;
-            }
-
-            res = cr.read_buf(&mut pending_c2s) => {
-                let n = res.map_err(|e| anyhow!("client erro de leitura: {}", e))?;
-                if n == 0 { anyhow::bail!("n==0"); }
-
-                let raw_start_index = pending_c2s.len() - n;
-
-                let raw_clone_for_forwarding = pending_c2s[raw_start_index..].to_vec();
-                let mut iv_discard = raw_clone_for_forwarding.clone();
-
-                let dec_for_parse_slice = &mut pending_c2s[raw_start_index..];
-                cfb8_decrypt_in_place(&aes, &mut iv_c2s_parse, dec_for_parse_slice);
-
-                cfb8_decrypt_in_place(&aes, &mut iv_c2s_forward, &mut iv_discard);
-
-                let mut offset = 0usize;
-                while offset < pending_c2s.len() {
-                    let rem = &pending_c2s[offset..];
-                    let (packet_len, len_bytes) = match read_varint_from_slice(rem) { Some(v) => v, None => break };
-                    let total_needed = len_bytes + (packet_len as usize);
-                    if rem.len() < total_needed { break; }
-
-                    let packet_payload = &rem[len_bytes..total_needed];
-
-/*                     match parse_packet_id_and_body(packet_payload, compression_threshold) {
-                        Ok((pid, _body)) => (),
-                        Err(e) => eprintln!("(PLAIN) C->S parse error (logging only): {}", e),
-                    } */
-                    offset += total_needed;
-                }
-                if offset > 0 { pending_c2s.drain(..offset); }
-
-                sw.write_all(&raw_clone_for_forwarding).await?;
-            }
-        }
     }
 
     #[allow(unreachable_code)]
