@@ -21,7 +21,10 @@ use tokio::{
     time::sleep,
 };
 
+use crate::login::MinecraftAccount;
+
 mod config;
+mod login;
 mod minecraft_clients;
 mod player;
 mod proxy;
@@ -72,6 +75,7 @@ struct State {
     loading: bool,
     rates_full_time: Instant,
     is_first_use: bool,
+    account: Option<MinecraftAccount>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -95,7 +99,17 @@ struct Settings {
     hotkey: String,
 
     marked_players: Vec<String>,
+
+    has_account: bool,
+    account: MinecraftRefreshToken,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct MinecraftRefreshToken {
+    username: String,
+    token: String,
+}
+
 pub fn run() {
     // Isso é o processo final da atualização do KC Overlay. Remove o executável antigo, caso exista.
     let old_exec = env::current_exe().unwrap().with_extension("old");
@@ -107,6 +121,7 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(move |app| {
             let monitors = app.available_monitors().unwrap();
@@ -157,6 +172,18 @@ pub fn run() {
                 .map(|x| x.as_str().unwrap_or("").to_string())
                 .collect();
 
+            let has_account = config["has_account"].as_bool().unwrap_or(false);
+            let account = from_value::<MinecraftRefreshToken>(serde_json::Value::Object(
+                config["account"]
+                    .as_object()
+                    .unwrap_or(&serde_json::Map::new())
+                    .clone(),
+            ))
+            .unwrap_or(MinecraftRefreshToken {
+                username: "".to_string(),
+                token: "".to_string(),
+            });
+
             let short = match Shortcut::from_str(hotkey.as_str()) {
                 Ok(s) => s,
                 Err(_) => Shortcut::new(Some(Modifiers::ALT), Code::KeyZ),
@@ -199,6 +226,7 @@ pub fn run() {
                     rates_full_time: Instant::now(),
                     is_first_use,
                     player_list: HashMap::new(),
+                    account: None,
                 },
                 settings: Settings {
                     use_custom_client,
@@ -219,6 +247,8 @@ pub fn run() {
                     remove_players,
                     hotkey,
                     marked_players,
+                    has_account,
+                    account,
                 },
             }));
             Ok(())
@@ -236,6 +266,9 @@ pub fn run() {
             change_shortcut,
             proxy::run_proxy,
             load_stats_tauri,
+            login::request_code,
+            login::login_with_refresh_token,
+            login::wait_for_login
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -448,7 +481,6 @@ async fn handle_log_line(
         let cached_players = app_mutex.lock().await.state.cached_players.clone();
         let stats_type = app_mutex.lock().await.settings.stats_type.clone();
 
-        
         player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
     } else if line.contains("[CHAT] Enviando para") && !app_mutex.lock().await.state.loading {
         handle.emit("remove_players", true).unwrap();
@@ -471,9 +503,16 @@ async fn load_stats(handle: tauri::AppHandle, app_mutex: &tauri::State<'_, Mutex
     let cached_players = app_mutex.lock().await.state.cached_players.clone();
     let player_list = app_mutex.lock().await.state.player_list.clone();
     let stats_type = app_mutex.lock().await.settings.stats_type.clone();
-    
+
     handle.emit("loading", true).unwrap();
     app_mutex.lock().await.state.loading = true;
-    let str_player_list : Vec<String> = player_list.values().cloned().collect();
-    player::get_players(str_player_list, stats_type, cached_players, handle, app_mutex).await;
+    let str_player_list: Vec<String> = player_list.values().cloned().collect();
+    player::get_players(
+        str_player_list,
+        stats_type,
+        cached_players,
+        handle,
+        app_mutex,
+    )
+    .await;
 }

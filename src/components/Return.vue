@@ -4,8 +4,17 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 function returnToMainView() {
-    router.push('/');
+    router.push(props.route);
 }
+
+interface Props {
+  route?: string;
+
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  route: '/',
+});
 </script>
 
 <template>

@@ -158,7 +158,7 @@ impl MineClient {
             MineClient::CMClient,
             MineClient::CheatBreaker,
             MineClient::Salwyrr,
-            MineClient::LunarCelestial
+            MineClient::LunarCelestial,
         ] {
             paths.push(client.get_logs_path());
         }

@@ -4,7 +4,11 @@ use core::f32;
 use reqwest::Client;
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::{HashMap, VecDeque}, sync::Arc, time::Instant};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+    time::Instant,
+};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
@@ -107,7 +111,10 @@ impl Player {
                 hours_played: 0,
                 points: 0,
             }),
-            StatsType::FireballFight | StatsType::BedFight | StatsType::Skywars | StatsType::Uhc => Stats::Duels(crate::stats::Duels {
+            StatsType::FireballFight
+            | StatsType::BedFight
+            | StatsType::Skywars
+            | StatsType::Uhc => Stats::Duels(crate::stats::Duels {
                 level: 999,
                 level_symbol: "?".to_string(),
                 winstreak: 0,
@@ -710,7 +717,7 @@ fn get_player_data(username: String, response: Value, stats_type: StatsType) -> 
                 deaths,
                 hours_played,
             })
-        },
+        }
     };
 
     // Para descobrir nickeds com stats

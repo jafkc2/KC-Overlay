@@ -93,6 +93,13 @@ async function update_hotkey(hotkey: string) {
     <Return></Return>
     <div class="container">
         <p>Geral</p>
+        <div class="setting" v-if="settings.account.username">
+            <span>Conta: {{ settings.account.username }}</span>
+            <button @click="settings.account = {username: '', token: ''}; save_settings()">Deslogar</button>
+        </div>
+        <div class="setting" v-else>
+            <button @click="$router.push('/login')">Fazer login</button>
+        </div>
 
         <div class="setting">
             <span>Usar client não suportado pelo KC Overlay</span>

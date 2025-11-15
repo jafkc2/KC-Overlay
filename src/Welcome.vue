@@ -1,29 +1,34 @@
 <script setup lang="ts">
-
 import { useRouter } from "vue-router";
-
-
 
 const router = useRouter();
 
-function go_to_main_route(){
-    router.push('/');
+function go_to_main_route() {
+    router.push("/");
 }
+
+async function go_login() {
+    router.push("/login")
+}
+
 
 </script>
 <template>
     <div class="welcome">
         <header>
             <h3>
-                Seja bem-vindo ao KC Overlay! Escolha o seu client para começar.
+                Olá, seja bem-vindo ao KC Overlay! Escolha o tipo de conta que
+                você usa para começar:
             </h3>
         </header>
         <main>
-            <p style="color: #aaaaaa;">Caso use um client além dos disponíveis, poderá adicioná-lo manualmente nas configurações.</p>
-
-            <button v-on:click="go_to_main_route">Continuar</button>
+            <div class="button-row">
+                <button v-on:click="go_login">Original</button>
+                <button v-on:click="go_to_main_route">Pirata</button>
+            </div>
         </main>
     </div>
+
 </template>
 
 <style scoped>
@@ -37,11 +42,25 @@ img {
     width: 18px;
 }
 
-.client{
+.gray {
+    color: #cdd6f4;
+    line-height: 20px;
+}
+
+.client {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
     line-height: 20px;
+}
+
+.button-row {
+    gap: 20px;
+    display: flex;
+}
+
+.button-row button {
+    font-size: 16px;
 }
 
 button {

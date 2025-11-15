@@ -94,19 +94,10 @@ export type Settings = {
     automatic: boolean,
     remove_players: boolean,
     hotkey: string,
-    marked_players: string[]
+    marked_players: string[],
+    has_account: boolean,
+    account: MinecraftRefreshToken
 }
-
-/* export type MineClient = 
-    | {type : "Default"}
-    | {type : "Badlion"}
-    | {type : "Lunar"}
-    | {type : "Silent"}
-    | {type : "LegacyLauncher"}
-    | {type : "CMClient"}
-    | {type: "CheatBreaker"}
-    | {type: "Salwyrr"}
-    | {type : "Custom"; path: string}; */
 
 export type StatsType =
     | {type: "BedwarsAll"}
@@ -123,6 +114,13 @@ export type StatsType =
     | {type: "Skywars"}
 
 
-
-
+export type MinecraftAccount = {
+  username: string,
+  access_token: string
+  uuid: string,
+}
+export type MinecraftRefreshToken = {
+  username: string,
+  token: string
+}
 

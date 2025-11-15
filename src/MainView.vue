@@ -14,13 +14,12 @@ let loading = toRef(store, 'loading');
 
 let settings = toRef(store, 'settings');
 
-
 </script>
 
 <template>
     <TitleBar :update_url="update_url"></TitleBar>
     <PlayerTable v-if="players.length > 0" :party_players="party_players" :players="players" :settings="settings" :loading="loading"></PlayerTable>
     <p v-else>
-        Olá! Entre no ip localhost:25565 e digite /ver no chat para usar o KC Overlay.
+        Olá! Entre no ip localhost:25567 e digite /ver no chat ou use o atalho Alt+X para usar o KC Overlay.
     </p>
 </template>

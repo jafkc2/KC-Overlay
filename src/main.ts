@@ -4,11 +4,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { createRouter, createWebHistory } from 'vue-router';
 import { createPinia } from 'pinia';
 
+const Welcome = () => import('./Welcome.vue');
 const MainView = () => import('./MainView.vue');
 const SettingsView = () => import('./Settings.vue');
 const About = () => import('./About.vue');
 const ViewPlayer = () => import('./ViewPlayer.vue');
 const MarkPlayersView = () => import('./MarkPlayersView.vue');
+const Login = () => import('./Login.vue');
 
 export async function update(url: string){
   invoke("install_update", {url: url});
@@ -34,6 +36,14 @@ const routes = [
   {
     path: '/mark_players',
     component: MarkPlayersView
+  },
+  {
+    path: '/welcome',
+    component: Welcome
+  },
+  {
+    path: '/login',
+    component: Login
   }
 
 ];

@@ -46,9 +46,9 @@ onMounted(async () => {
         console.error("proxy falhou:", err);
     });
 
-    /*     if (await invoke<boolean>("is_first_use")) {
-            router.push('/welcome');
-        } */
+    if (await invoke<boolean>("is_first_use")) {
+        router.push('/welcome');
+    }
     document.addEventListener("contextmenu", (event) => {
         event.preventDefault();
     });
@@ -349,5 +349,9 @@ input[type="text"] {
 ::-webkit-scrollbar-thumb {
     background-color: rgb(49, 50, 68);
     border-radius: 10px;
+}
+
+a{
+    color:#74c7ec
 }
 </style>

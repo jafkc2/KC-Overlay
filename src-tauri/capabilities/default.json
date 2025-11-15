@@ -24,6 +24,7 @@
     "dialog:default",
     "core:webview:allow-set-webview-zoom",
     "core:webview:allow-set-webview-size",
+    "clipboard-manager:allow-write-text",
     {
       "identifier": "opener:allow-open-path",
       "allow": [
@@ -32,6 +33,12 @@
         },
         {
           "path": "https://discord.gg/SKwZSpPCN5"
+        },
+        {
+          "path": "https://www.microsoft.com/link"
+        },
+        {
+          "path": "https://github.com/jafkc2/KC-Overlay/blob/master/src-tauri/src/login.rs"
         }
       ]
     }
