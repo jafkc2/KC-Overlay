@@ -438,74 +438,137 @@ async fn handle_proxy_connection(
     }
 
     if secret.is_none() {
-        let (mut cr, mut cw) = client.split();
-        let (mut sr, mut sw) = server.split();
+    let (mut cr, mut cw) = client.split();
+    let (mut sr, mut sw) = server.split();
+    
+    let compression_threshold = compression_threshold;
+    let mut pending_s2c: Vec<u8> = Vec::new();
+    let mut pending_c2s: Vec<u8> = Vec::new();
 
-        let compression_threshold = compression_threshold;
-
-        let c2s_plain = async move {
-            loop {
-                let frame = match read_full_mc_frame(&mut cr).await {
-                    Ok(f) => f,
-                    Err(e) => {
-                        eprintln!("C->S erro de leitura: {:?}", e);
-                        break;
-                    }
-                };
-
-                if let Err(e) = sw.write_all(&frame).await {
-                    eprintln!("C->S erro de escrita: {:?}", e);
+    let c2s_plain = async move {
+        loop {
+            let mut buf = [0u8; 8192];
+            match cr.read(&mut buf).await {
+                Ok(0) => {
+                    eprintln!("C->S conexão fechada pelo cliente");
                     break;
                 }
-            }
-            Ok::<(), anyhow::Error>(())
-        };
-
-        let s2c_plain = async move {
-            loop {
-                let frame = match read_full_mc_frame(&mut sr).await {
-                    Ok(f) => f,
-                    Err(e) => {
-                        eprintln!("S->C erro de leitura: {:?}", e);
-                        break;
-                    }
-                };
-
-                let mut cur = Cursor::new(&frame);
-                if let Err(e) = cur.read_varint() {
-                    eprintln!("S->C: não foi possível ler varint: {:?}", e);
-                } else {
-                    let payload_offset = cur.position() as usize;
-                    let payload = &frame[payload_offset..];
-                    match parse_packet_id_and_body(payload, compression_threshold) {
-                        Ok((pid, body)) => {
-                            if pid == 0x38 {
-                                let (players_added, players_removed) =
-                                    match extract_player_names_from_player_info(&body) {
-                                        Ok((added, removed)) => (added, removed),
-                                        Err(_) => (HashMap::new(), Vec::new()),
-                                    };
-                                app.lock()
-                                    .await
-                                    .update_player_list(players_added, players_removed);
+                Ok(n) => {
+                    let raw = &buf[..n];
+                    pending_c2s.extend_from_slice(raw);
+                    
+                    let mut offset = 0usize;
+                    while offset < pending_c2s.len() {
+                        let rem = &pending_c2s[offset..];
+                        match read_varint_from_slice(rem) {
+                            Some((packet_len, len_bytes)) => {
+                                let packet_len_usize = packet_len as usize;
+                                let total_needed = len_bytes + packet_len_usize;
+                                if rem.len() < total_needed {
+                                    break;
+                                }
+                                
+                                let packet = &rem[..total_needed];
+                                if let Err(e) = sw.write_all(packet).await {
+                                    eprintln!("C->S erro de escrita: {:?}", e);
+                                    break;
+                                }
+                                offset += total_needed;
+                            }
+                            None => {
+                                break;
                             }
                         }
-                        Err(e) => {
-                            eprintln!("(sem criptografia) S->C erro de parse: {}", e);
-                        }
+                    }
+                    
+                    if offset > 0 {
+                        pending_c2s.drain(..offset);
                     }
                 }
-
-                if let Err(e) = cw.write_all(&frame).await {
-                    eprintln!("S->C erro de escrita: {:?}", e);
+                Err(e) => {
+                    eprintln!("C->S erro de leitura: {:?}", e);
                     break;
                 }
             }
-            Ok::<(), anyhow::Error>(())
-        };
+        }
+        Ok::<(), anyhow::Error>(())
+    };
 
-        let _ = tokio::try_join!(c2s_plain, s2c_plain);
-    } else {
+    let s2c_plain = async move {
+        loop {
+            let mut buf = [0u8; 8192];
+            match sr.read(&mut buf).await {
+                Ok(0) => {
+                    eprintln!("S->C conexão fechada pelo servidor");
+                    break;
+                }
+                Ok(n) => {
+                    let raw = &buf[..n];
+                    pending_s2c.extend_from_slice(raw);
+                    
+                    let mut offset = 0usize;
+                    while offset < pending_s2c.len() {
+                        let rem = &pending_s2c[offset..];
+                        match read_varint_from_slice(rem) {
+                            Some((packet_len, len_bytes)) => {
+                                let packet_len_usize = packet_len as usize;
+                                let total_needed = len_bytes + packet_len_usize;
+                                if rem.len() < total_needed {
+                                    break;
+                                }
+                                
+                                let packet = &rem[..total_needed];
+                                
+                                let mut cur = Cursor::new(packet);
+                                if let Ok(_) = cur.read_varint() {
+                                    let payload_offset = cur.position() as usize;
+                                    let payload = &packet[payload_offset..];
+                                    match parse_packet_id_and_body(payload, compression_threshold) {
+                                        Ok((pid, body)) => {
+                                            if pid == 0x38 {
+                                                let (players_added, players_removed) =
+                                                match extract_player_names_from_player_info(&body) {
+                                                    Ok((added, removed)) => (added, removed),
+                                                    Err(_) => (HashMap::new(), Vec::new()),
+                                                };
+                                                app.lock()
+                                                    .await
+                                                    .update_player_list(players_added, players_removed);
+                                            }
+                                        }
+                                        Err(e) => {
+                                            eprintln!("(sem criptografia) S->C erro de parse: {}", e);
+                                        }
+                                    }
+                                }
+                                
+                                if let Err(e) = cw.write_all(packet).await {
+                                    eprintln!("S->C erro de escrita: {:?}", e);
+                                    break;
+                                }
+                                offset += total_needed;
+                            }
+                            None => {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if offset > 0 {
+                        pending_s2c.drain(..offset);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("S->C erro de leitura: {:?}", e);
+                    break;
+                }
+            }
+        }
+        Ok::<(), anyhow::Error>(())
+    };
+
+    let _ = tokio::try_join!(c2s_plain, s2c_plain);
+} else {
         println!("Login foi um sucesso. Com criptografia");
         run_play_relay(
             client,
