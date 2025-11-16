@@ -142,35 +142,83 @@ pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>) -> 
 }
 
 async fn handle_proxy_connection(
-    client: TcpStream,
+    mut client: TcpStream,
     upstream: &str,
     events: mpsc::UnboundedSender<PacketEvent>,
     app: &tauri::State<'_, Mutex<crate::KCOverlay>>,
     acc: Option<login::MinecraftAccount>,
 ) -> Result<()> {
-    let mut client = client;
     client.set_nodelay(true)?;
 
-    let mut server = tokio::time::timeout(Duration::from_secs(5), TcpStream::connect(upstream))
-        .await
-        .map_err(|_| anyhow::anyhow!("Timeout ao conectar ao servidor upstream"))??;
-
+    let mut server = tokio::time::timeout(
+        Duration::from_secs(5),
+        TcpStream::connect(upstream)
+    ).await
+    .map_err(|_| anyhow::anyhow!("Timeout ao conectar ao servidor upstream"))??;
+    
     server.set_nodelay(true)?;
 
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-    let handshake_packet =
-        tokio::time::timeout(Duration::from_secs(10), read_full_mc_frame(&mut client))
-            .await
-            .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de handshake"))??;
-
+    let handshake_packet = tokio::time::timeout(
+        Duration::from_secs(10),
+        read_full_mc_frame(&mut client)
+    ).await
+    .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de handshake"))??;
+    
+    let mut cursor = Cursor::new(&handshake_packet);
+    let _packet_len = cursor.read_varint()?;
+    let _packet_id = cursor.read_varint()?;
+    let _protocol_version = cursor.read_varint()?;
+    let _server_address = cursor.read_string()?;
+    let _server_port = cursor.read_u16().await?;
+    let next_state = cursor.read_varint()?;
+    
     server.write_all(&handshake_packet).await?;
 
-    let login_start_packet =
-        tokio::time::timeout(Duration::from_secs(10), read_full_mc_frame(&mut client))
-            .await
-            .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de login start"))??;
-
+    // verificar se é um pedido de ping
+    if next_state == 1 {
+        let status_request_packet = tokio::time::timeout(
+            Duration::from_secs(10),
+            read_full_mc_frame(&mut client)
+        ).await
+        .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de status"))??;
+        
+        server.write_all(&status_request_packet).await?;
+        
+        let status_response_packet = tokio::time::timeout(
+            Duration::from_secs(10),
+            read_full_mc_frame(&mut server)
+        ).await
+        .map_err(|_| anyhow::anyhow!("Timeout ao ler resposta de status"))??;
+        
+        client.write_all(&status_response_packet).await?;
+        
+        let ping_packet = tokio::time::timeout(
+            Duration::from_secs(10),
+            read_full_mc_frame(&mut client)
+        ).await
+        .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de ping"))??;
+        
+        server.write_all(&ping_packet).await?;
+        
+        let pong_packet = tokio::time::timeout(
+            Duration::from_secs(10),
+            read_full_mc_frame(&mut server)
+        ).await
+        .map_err(|_| anyhow::anyhow!("Timeout ao ler resposta de pong"))??;
+        
+        client.write_all(&pong_packet).await?;
+        
+        return Ok(());
+    }
+    
+    let login_start_packet = tokio::time::timeout(
+        Duration::from_secs(10),
+        read_full_mc_frame(&mut client)
+    ).await
+    .map_err(|_| anyhow::anyhow!("Timeout ao ler pacote de login start"))??;
+    
     server.write_all(&login_start_packet).await?;
 
     println!("Handshake concluído com sucesso");
