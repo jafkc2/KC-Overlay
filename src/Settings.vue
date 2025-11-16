@@ -98,6 +98,7 @@ async function update_hotkey(hotkey: string) {
             <button @click="settings.account = {username: '', token: ''}; save_settings()">Deslogar</button>
         </div>
         <div class="setting" v-else>
+            <span>Conta:</span>
             <button @click="$router.push('/login')">Fazer login</button>
         </div>
 

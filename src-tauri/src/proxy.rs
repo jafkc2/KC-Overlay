@@ -14,6 +14,7 @@ use rsa::{pkcs8::EncodePublicKey, RsaPrivateKey, RsaPublicKey};
 use rust_mc_proto::DataReader;
 use serde::Serialize;
 use sha1::Digest;
+use tauri::Emitter;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::time::Duration;
@@ -92,7 +93,7 @@ async fn perform_session_join_async(
     }
 }
 #[tauri::command]
-pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>) -> Result<(), ()> {
+pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>, handle: tauri::AppHandle) -> Result<(), ()> {
     let listener = TcpListener::bind("127.0.0.1:25567").await.unwrap();
 
     let (tx, mut rx) = mpsc::unbounded_channel::<PacketEvent>();
@@ -118,6 +119,7 @@ pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>) -> 
         if refresh_token != app_mutex.lock().await.settings.account.token {
             let refresh_token = app_mutex.lock().await.settings.account.token.clone();
             if !refresh_token.is_empty() {
+                println!("Conta mudou, realizando login novamente...");
                 app_mutex.lock().await.state.account =
                     match login::login_with_refresh_token(refresh_token).await {
                         Some(acc) => Some(acc),
@@ -135,7 +137,7 @@ pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>) -> 
         let tx = tx.clone();
 
         let acc = app_mutex.lock().await.state.account.clone();
-        if let Err(e) = handle_proxy_connection(client, &upstream, tx, &app_mutex, acc).await {
+        if let Err(e) = handle_proxy_connection(client, &upstream, tx, &app_mutex, acc, &handle).await {
             eprintln!("Erro de conexão: {:?}", e);
         }
     }
@@ -147,6 +149,7 @@ async fn handle_proxy_connection(
     events: mpsc::UnboundedSender<PacketEvent>,
     app: &tauri::State<'_, Mutex<crate::KCOverlay>>,
     acc: Option<login::MinecraftAccount>,
+    handle: &tauri::AppHandle
 ) -> Result<()> {
     client.set_nodelay(true)?;
 
@@ -240,7 +243,7 @@ async fn handle_proxy_connection(
         let enc_req_packet =
             tokio::time::timeout(Duration::from_secs(10), read_full_mc_frame(&mut server))
                 .await
-                .map_err(|_| anyhow::anyhow!("Timeout reading server packet"))??;
+                .map_err(|_| anyhow::anyhow!("Timeout ao ler pacotes do servidor"))??;
 
         let mut cursor = Cursor::new(&enc_req_packet);
 
@@ -340,6 +343,7 @@ async fn handle_proxy_connection(
                         .map_err(|e| anyhow::anyhow!("falha ao logar: {e}"))?;
                     println!("logado como {}", &acc.username);
                 } else {
+                    handle.emit("not_logged", ()).unwrap();
                     println!("Usuário entrou usando uma conta original, porém não há nenhuma conta logada no KC Overlay!")
                 }
 
