@@ -188,7 +188,7 @@ pub fn run() {
                 Ok(s) => s,
                 Err(_) => Shortcut::new(Some(Modifiers::ALT), Code::KeyZ),
             };
-            let load_short = Shortcut::new(Some(Modifiers::ALT), Code::KeyX);
+            let load_short = Shortcut::from_str("shift+alt+e").unwrap_or(Shortcut::new(Some(Modifiers::ALT), Code::KeyE));
             let hotkey_builder = if let Ok(hotkey_builder) =
                 tauri_plugin_global_shortcut::Builder::new().with_shortcuts([short, load_short])
             {
