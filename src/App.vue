@@ -45,8 +45,7 @@ onMounted(async () => {
     invoke("run_proxy").catch((err) => {
         console.error("proxy falhou:", err);
     });
-    router.push('/welcome');
-
+    
     if (await invoke<boolean>("is_first_use")) {
         router.push('/welcome');
     }

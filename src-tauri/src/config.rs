@@ -28,7 +28,7 @@ pub fn get_config() -> Value {
 /// Caso exista, adiciona configurações ausentes e retorna **True**.
 #[tauri::command]
 pub fn check_config_file(screen_size: (u32, u32)) -> bool {
-    let file_exists = Path::new(&get_config_file_path()).exists();
+    let mut file_exists = Path::new(&get_config_file_path()).exists();
     let mut conf_json = match file_exists {
         true => super::util::get_json(get_config_file_path()),
         false => {
@@ -151,6 +151,7 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
             );
         }
         if !map.contains_key("account") {
+            file_exists = false;
             map.insert(
                 "account".to_string(),
                 serde_json::to_value(MinecraftAccount {
@@ -162,6 +163,7 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
             );
         }
     }
+
 
     let serializedjson = serde_json::to_string_pretty(&conf_json).unwrap();
 
