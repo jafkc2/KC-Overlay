@@ -3,6 +3,7 @@ use std::time::Duration;
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use tokio::sync::Mutex;
 
 
 const AZURE_CLIENT_ID: &str = "6bd94887-246e-4d0c-9c4b-3d7dc8b1cd9b";
@@ -225,7 +226,6 @@ pub async fn login_to_minecraft(xbox_data: XboxLiveData) -> MinecraftAccount {
     };
 
     let minecraft_data_json: Value = serde_json::from_str(&minecraft_data_response).unwrap();
-    println!("{}", &minecraft_data_response);
     let token = minecraft_data_json["access_token"]
         .as_str()
         .unwrap()
@@ -253,7 +253,7 @@ pub async fn login_to_minecraft(xbox_data: XboxLiveData) -> MinecraftAccount {
 }
 
 #[tauri::command]
-pub async fn login_with_refresh_token(refresh_token: String) -> Option<MinecraftAccount> {
+pub async fn login_with_refresh_token(refresh_token: String, app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>) -> Result<Option<MinecraftAccount>, ()> {
     let client = Client::new();
 
     let response = match client
@@ -268,7 +268,7 @@ pub async fn login_with_refresh_token(refresh_token: String) -> Option<Minecraft
         .await
     {
         Ok(ok) => ok.text().await.unwrap(),
-        Err(_) => return None,
+        Err(_) => return Ok(None),
     };
 
     let response_json: Value = serde_json::from_str(&response).unwrap();
@@ -277,5 +277,9 @@ pub async fn login_with_refresh_token(refresh_token: String) -> Option<Minecraft
 
     let xbox_data = login_to_xbox(access_token).await;
 
-    Some(login_to_minecraft(xbox_data).await)
+    let acc = login_to_minecraft(xbox_data).await;
+    println!("Login realizado para {}", acc.username);
+
+    app_mutex.lock().await.state.account = Some(acc.clone());
+    Ok(Some(acc))
 }

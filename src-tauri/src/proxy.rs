@@ -101,9 +101,10 @@ pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>, han
     let refresh_token = app_mutex.lock().await.settings.account.token.clone();
     if !refresh_token.is_empty() {
         app_mutex.lock().await.state.account =
-            match login::login_with_refresh_token(refresh_token.clone()).await {
-                Some(acc) => Some(acc),
-                None => None,
+            match login::login_with_refresh_token(refresh_token.clone(), app_mutex.clone()).await {
+                Ok(Some(acc)) => Some(acc),
+                Ok(None) => None,
+                Err(_) => None
             };
     }
 
@@ -116,23 +117,12 @@ pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>, han
     });
 
     loop {
-        if refresh_token != app_mutex.lock().await.settings.account.token {
-            let refresh_token = app_mutex.lock().await.settings.account.token.clone();
-            if !refresh_token.is_empty() {
-                println!("Conta mudou, realizando login novamente...");
-                app_mutex.lock().await.state.account =
-                    match login::login_with_refresh_token(refresh_token).await {
-                        Some(acc) => Some(acc),
-                        None => None,
-                    };
-            }
-        }
         let (client, addr) =
             match tokio::time::timeout(Duration::from_secs(1), listener.accept()).await {
                 Ok(result) => result.unwrap(),
                 Err(_) => continue,
             };
-        println!("{}", addr);
+        println!("Nova conexão de {}", addr);
         let upstream = "l.mush.com.br:25565".to_string();
         let tx = tx.clone();
 
