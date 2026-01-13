@@ -9,18 +9,18 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "2.9.0",
+    "@tauri-apps/api": "2.9.1",
     "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
-    "@tauri-apps/plugin-dialog": "2.4.0",
+    "@tauri-apps/plugin-dialog": "2.5.0",
     "@tauri-apps/plugin-global-shortcut": "2.3.1",
-    "@tauri-apps/plugin-http": "2.5.4",
-    "@tauri-apps/plugin-opener": "2.5.2",
+    "@tauri-apps/plugin-http": "2.5.5",
+    "@tauri-apps/plugin-opener": "2.5.3",
     "pinia": "3.0.3",
-    "vue": "3.5.22",
-    "vue-router": "4.6.3"
+    "vue": "3.5.26",
+    "vue-router": "4.6.4"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "2.9.2",
+    "@tauri-apps/cli": "2.9.6",
     "@vitejs/plugin-vue": "6.0.1",
     "typescript": "5.9.3",
     "vite": "7.1.12",

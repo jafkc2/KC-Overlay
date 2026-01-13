@@ -14,14 +14,14 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.4.1", features = [] }
 
 [dependencies]
-tauri = { version = "2.9.0", features = ["devtools"] }
-tauri-plugin-opener = "2.5.2"
+tauri = { version = "2.9.5", features = ["devtools"] }
+tauri-plugin-opener = "2.5.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1.47.1", features = ["full"] }
 futures = "0.3.31"
 reqwest = { version = "0.12.15", features = ["stream", "json"] }
-tauri-plugin-dialog = "2.4.0"
+tauri-plugin-dialog = "2.5.0"
 rust_mc_proto = "0.1.19"
 flate2 = "1.1.5"
 tauri-plugin-clipboard-manager = "2"
