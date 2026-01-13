@@ -53,18 +53,18 @@
               <span v-if="player.clan && is_marked(player, settings.marked_players)" :style="{ color: 'rgb(255, 0, 0)' }">[{{ player.clan }}]</span>
               <span v-else-if="player.clan" :style="{ color: rgb_style(player.clan_color) }">[{{ player.clan }}]</span>
 
-              <img v-if="player.is_possible_cheater" src="/radioactive.svg" class="player-indicator" />
+              <img v-if="player.is_possible_cheater" src="/radioactive.svg" class="player-indicator" title="Conta nova (possível cheater)" />
 
               <img
                 v-if="player.stats.type == 'Bedwars' && player.stats.content.losses / player.stats.content.final_deaths > 1.5 && player.stats.content.losses / player.stats.content.final_deaths < 2"
-                src="/knife.svg" />
+                src="/knife.svg" title="Possível sniper" />
               <img
                 v-if="player.stats.type == 'Bedwars' && player.stats.content.losses / player.stats.content.final_deaths > 2"
-                src="/knife2.svg" />
-              <img v-if="player.is_muted" src="/mute.svg" />
+                src="/knife2.svg" title="Muito provavelmente é um sniper" />
+              <img v-if="player.is_muted" src="/mute.svg" title="Jogador mutado" />
 
               <span v-if="settings.show_bans && player.bans > 0">{{ player.bans }}</span>
-              <img v-if="settings.show_bans && player.bans > 0" src="/hammer.svg" />
+              <img v-if="settings.show_bans && player.bans > 0" src="/hammer.svg" title="Número de bans" />
             </div>
 
 
