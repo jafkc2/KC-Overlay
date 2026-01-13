@@ -12,7 +12,11 @@ Este programa é um simples overlay para visualizar os stats dos jogadores no Mu
 
 # Como usar
 
-Apenas abra o overlay e depois digite o comando "/jogando"  no chat do jogo.
+1 - Fazer login na sua conta do Minecraft, caso ser jogador original;
+
+2 - Entrar pelo Mush usando o ip do KC Overlay. (O ip está na tela inicial do KC Overlay. Esse é um ip que se conecta ao Mush e permite obter os stats dos jogadores);
+
+3 - Digitar /ver no chat ou usar a combinação de teclas Shift + Alt + E.
 
 # Comunidade
 
@@ -41,6 +45,3 @@ Simplesmente acesse https://github.com/jafkc2/KC-Overlay/releases/latest e selec
 # Agradecimentos especiais ❤️
 **Aos apoiadores incríveis do KC Overlay**
 - Blade88
-
------------------------------------------
-Este programa ainda está em estágio inicial de desenvolvimento, então será comum encontrar bugs. Por favor relate-os no servidor do Discord ou no Github Issues, caso encontrar algum.
