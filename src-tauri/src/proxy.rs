@@ -37,6 +37,7 @@ struct PacketEvent {
     payload_b64: String,
     players: Option<Vec<String>>,
 }
+
 #[derive(Serialize)]
 struct SessionJoinBody<'a> {
     accessToken: &'a str,
@@ -59,7 +60,7 @@ fn compute_server_hash(server_id: &str, shared_secret: &[u8], server_pubkey_der:
     hasher.update(server_id.as_bytes());
     hasher.update(shared_secret);
     hasher.update(server_pubkey_der);
-    let digest = hasher.finalize(); // 20 bytes
+    let digest = hasher.finalize();
 
     let bigint = BigInt::from_signed_bytes_be(&digest);
     bigint.to_str_radix(16)
@@ -94,7 +95,7 @@ async fn perform_session_join_async(
 }
 #[tauri::command]
 pub async fn run_proxy(app_mutex: tauri::State<'_, Mutex<crate::KCOverlay>>, handle: tauri::AppHandle) -> Result<(), ()> {
-    let listener = TcpListener::bind("127.0.0.1:25567").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:25567").await.unwrap();
 
     let (tx, mut rx) = mpsc::unbounded_channel::<PacketEvent>();
 
