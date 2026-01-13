@@ -40,7 +40,7 @@ async function open_link(url: string) {
 
 
         </main>
-        <footer>KC Overlay {{ version }} - Desenvolvido por JafKC com a ajuda de oRvdy</footer>
+        <footer>KC Overlay {{ version }} - Desenvolvido por JafKC</footer>
     </div>
 </template>
 
