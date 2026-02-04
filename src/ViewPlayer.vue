@@ -63,10 +63,6 @@
             <p v-if="player.stats.type == 'Bedwars'">Assistências: {{ player.stats.content.assists }}</p>
           </div>
         </div>
-
-
-
-
       </div>
     </div>
   </div>
@@ -134,8 +130,10 @@ const glowStyle = computed(() => ({
   display: flex;
 }
 .player {
+  padding-top: 10px;
   display: flex;
-  max-height: 380px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 

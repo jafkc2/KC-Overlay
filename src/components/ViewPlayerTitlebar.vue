@@ -91,6 +91,7 @@ async function search_player() {
     .titlebar{
         display: flex;
         margin-bottom: 20px;
+        padding: 10px;
     }
 
     button{

@@ -128,7 +128,10 @@ defineProps<Props>();
 <style scoped>
 .table-container {
   padding-top: 10px;
-  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 

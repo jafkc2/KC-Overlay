@@ -67,6 +67,7 @@ defineProps<Props>();
         display: flex;
         align-items: center;
         margin-bottom: 20px;
+        padding: 10px;
     }
     .window_buttons_div{
         display: flex;

@@ -33,6 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
         display: flex;
         align-items: center;
         margin-bottom: 20px;
+        padding: 10px;
     }
     button{
         padding: 6px;

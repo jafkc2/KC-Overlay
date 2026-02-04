@@ -5,7 +5,6 @@ import { Player, Settings } from "./types";
 import { onMounted } from "vue";
 import {
     getCurrentWindow,
-    LogicalSize,
     PhysicalPosition,
 } from "@tauri-apps/api/window";
 
@@ -147,18 +146,18 @@ onMounted(async () => {
             (store.settings.transparency / 100).toString(),
         );
         await getCurrentWebview().setZoom(store.settings.window_scale);
-        await getCurrentWebview().setSize(
-            new LogicalSize(
-                745 * store.settings.window_scale,
-                460 * store.settings.window_scale,
-            ),
-        );
-        await getCurrentWindow().setSize(
-            new LogicalSize(
-                745 * store.settings.window_scale,
-                460 * store.settings.window_scale,
-            ),
-        );
+        // await getCurrentWebview().setSize(
+        //     new LogicalSize(
+        //         745 * store.settings.window_scale,
+        //         460 * store.settings.window_scale,
+        //     ),
+        // );
+        // await getCurrentWindow().setSize(
+        //     new LogicalSize(
+        //         745 * store.settings.window_scale,
+        //         460 * store.settings.window_scale,
+        //     ),
+        // );
     });
     listen("hotkey", async () => {
         const window = getCurrentWindow();
@@ -201,18 +200,18 @@ onMounted(async () => {
         (store.settings.transparency / 100).toString(),
     );
     await getCurrentWebview().setZoom(store.settings.window_scale);
-    await getCurrentWebview().setSize(
-        new LogicalSize(
-            745 * store.settings.window_scale,
-            460 * store.settings.window_scale,
-        ),
-    );
-    await getCurrentWindow().setSize(
-        new LogicalSize(
-            745 * store.settings.window_scale,
-            460 * store.settings.window_scale,
-        ),
-    );
+    // await getCurrentWebview().setSize(
+    //     new LogicalSize(
+    //         745 * store.settings.window_scale,
+    //         460 * store.settings.window_scale,
+    //     ),
+    // );
+    // await getCurrentWindow().setSize(
+    //     new LogicalSize(
+    //         745 * store.settings.window_scale,
+    //         460 * store.settings.window_scale,
+    //     ),
+    // );
     await getCurrentWindow().setPosition(new PhysicalPosition(5, 5));
 
     await invoke("check_updates")
@@ -232,6 +231,19 @@ onMounted(async () => {
 </template>
 
 <style>
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 :root {
     font-family: "Minecraftia", "Symbols";
     color: #ffffff;
