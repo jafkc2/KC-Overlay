@@ -52,6 +52,15 @@ function get_stats() : StatsType{
         case "Fireball Fight":
             stats_type = {type: "FireballFight"}
             break;
+        case "Bed Fight":
+            stats_type = {type: "BedFight"}
+            break;
+        case "UHC":
+            stats_type = {type: "Uhc"}
+            break;
+        case "Skywars":
+            stats_type = {type: "Skywars"}
+            break;
     }
     return stats_type;
 
