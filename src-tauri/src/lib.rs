@@ -460,8 +460,34 @@ async fn handle_log_line(
         }
     }
 
+    // Checa se a mensagem é um comando de listagem de jogadores na sala (/block + tab) mostra somente os atuais da sala
+    // Formato: [CHAT] remove, remover, list, lista, nick1, nick2, nick3...
+    if line.contains("remove, remover, list, lista") && 
+       !app_mutex.lock().await.state.loading {
+        println!("Jogador usou /block + tab");
+        
+
+        if let Some(chat_content) = line.split("[CHAT]").nth(1) {
+            // Separa por vírgula e remove espaços
+            let str_players: Vec<String> = chat_content
+                .trim()
+                .split(',')
+                .map(|x| x.trim().to_string())
+                .filter(|x| !x.is_empty() && x != "remove" && x != "remover" && x != "list" && x != "lista")
+                .collect();
+
+            app_mutex.lock().await.state.loading = true;
+            handle.emit("loading", true).unwrap();
+
+            let cached_players = app_mutex.lock().await.state.cached_players.clone();
+            let stats_type = app_mutex.lock().await.settings.stats_type.clone();
+            player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
+
+        }
+    }
+
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
-    if line.contains("[CHAT] Jogadores") && !app_mutex.lock().await.state.loading {
+    else if line.contains("[CHAT] Jogadores") && !app_mutex.lock().await.state.loading {
         println!("Jogador digitou /jogando");
         let split = line.split("):").map(|x| x.to_string());
         let split_vector: Vec<String> = split.clone().collect();
