@@ -10,7 +10,6 @@ const SettingsView = () => import('./Settings.vue');
 const About = () => import('./About.vue');
 const ViewPlayer = () => import('./ViewPlayer.vue');
 const MarkPlayersView = () => import('./MarkPlayersView.vue');
-const Login = () => import('./Login.vue');
 
 export async function update(url: string){
   invoke("install_update", {url: url});
@@ -40,12 +39,7 @@ const routes = [
   {
     path: '/welcome',
     component: Welcome
-  },
-  {
-    path: '/login',
-    component: Login
   }
-
 ];
 
 const router = createRouter({

@@ -10,7 +10,7 @@ use serde_json::Value;
 use tauri::Emitter;
 use tokio::sync::Mutex;
 
-use crate::{login::MinecraftAccount, KCOverlay, Settings};
+use crate::{KCOverlay, Settings};
 
 pub fn get_config_file_path() -> String {
     format!(
@@ -142,24 +142,6 @@ pub fn check_config_file(screen_size: (u32, u32)) -> bool {
             map.insert(
                 "marked_players".to_owned(),
                 serde_json::to_value(Vec::<String>::new()).unwrap(),
-            );
-        }
-        if !map.contains_key("has_account") {
-            map.insert(
-                "has_account".to_owned(),
-                serde_json::to_value(false).unwrap(),
-            );
-        }
-        if !map.contains_key("account") {
-            file_exists = false;
-            map.insert(
-                "account".to_string(),
-                serde_json::to_value(MinecraftAccount {
-                    username: "".to_string(),
-                    token: "".to_string(),
-                    uuid: "".to_string(),
-                })
-                .unwrap(),
             );
         }
     }

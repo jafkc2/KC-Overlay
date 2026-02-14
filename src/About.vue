@@ -54,9 +54,11 @@ main {
 }
 
 .about {
-    display: grid;
-    line-height: 15px;
-    max-height: 380px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
 }
 

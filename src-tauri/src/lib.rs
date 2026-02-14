@@ -21,13 +21,9 @@ use tokio::{
     time::sleep,
 };
 
-use crate::login::MinecraftAccount;
-
 mod config;
-mod login;
 mod minecraft_clients;
 mod player;
-mod proxy;
 mod room;
 mod stats;
 mod update;
@@ -75,7 +71,6 @@ struct State {
     loading: bool,
     rates_full_time: Instant,
     is_first_use: bool,
-    account: Option<MinecraftAccount>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -98,16 +93,7 @@ struct Settings {
     remove_players: bool,
     hotkey: String,
 
-    marked_players: Vec<String>,
-
-    has_account: bool,
-    account: MinecraftRefreshToken,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct MinecraftRefreshToken {
-    username: String,
-    token: String,
+    marked_players: Vec<String>
 }
 
 pub fn run() {
@@ -172,18 +158,6 @@ pub fn run() {
                 .map(|x| x.as_str().unwrap_or("").to_string())
                 .collect();
 
-            let has_account = config["has_account"].as_bool().unwrap_or(false);
-            let account = from_value::<MinecraftRefreshToken>(serde_json::Value::Object(
-                config["account"]
-                    .as_object()
-                    .unwrap_or(&serde_json::Map::new())
-                    .clone(),
-            ))
-            .unwrap_or(MinecraftRefreshToken {
-                username: "".to_string(),
-                token: "".to_string(),
-            });
-
             let short = match Shortcut::from_str(hotkey.as_str()) {
                 Ok(s) => s,
                 Err(_) => Shortcut::new(Some(Modifiers::ALT), Code::KeyZ),
@@ -226,7 +200,6 @@ pub fn run() {
                     rates_full_time: Instant::now(),
                     is_first_use,
                     player_list: HashMap::new(),
-                    account: None,
                 },
                 settings: Settings {
                     use_custom_client,
@@ -247,8 +220,6 @@ pub fn run() {
                     remove_players,
                     hotkey,
                     marked_players,
-                    has_account,
-                    account,
                 },
             }));
             Ok(())
@@ -264,11 +235,7 @@ pub fn run() {
             update::install_update,
             is_first_use,
             change_shortcut,
-            proxy::run_proxy,
             load_stats_tauri,
-            login::request_code,
-            login::login_with_refresh_token,
-            login::wait_for_login
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -300,7 +267,6 @@ async fn is_first_use(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<bool, (
 
 #[tauri::command]
 async fn get_settings(app: tauri::State<'_, Mutex<KCOverlay>>) -> Result<Settings, ()> {
-    println!("{:?}", app.lock().await.settings.clone());
     Ok(app.lock().await.settings.clone())
 }
 

@@ -95,8 +95,6 @@ export type Settings = {
     remove_players: boolean,
     hotkey: string,
     marked_players: string[],
-    has_account: boolean,
-    account: MinecraftRefreshToken
 }
 
 export type StatsType =

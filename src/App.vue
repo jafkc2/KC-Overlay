@@ -40,14 +40,9 @@ onMounted(async () => {
     invoke("read_logs").catch((err) => {
         console.error("Leitura de logs falhou:", err);
     });
-
-    invoke("run_proxy").catch((err) => {
-        console.error("proxy falhou:", err);
-    });
-    
-    if (await invoke<boolean>("is_first_use")) {
-        router.push('/welcome');
-    }
+    // if (await invoke<boolean>("is_first_use")) {
+    //     router.push('/welcome');
+    // }
     document.addEventListener("contextmenu", (event) => {
         event.preventDefault();
     });
