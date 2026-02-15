@@ -3,6 +3,7 @@ name: Rust
 on:
   push:
     branches: [ "master" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "master" ]
 
@@ -25,6 +26,8 @@ jobs:
       run: npm install
     - name: Build
       run: npm run tauri build
+    - name: Rename binary
+      run: ren src-tauri\target\release\KC-Overlay.exe KC-Overlay-Windows.exe
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
@@ -70,6 +73,8 @@ jobs:
       run: npm run tauri build
     - name: Make binary executable
       run: chmod +x src-tauri/target/release/KC-Overlay
+    - name: Rename binary
+      run: mv src-tauri/target/release/KC-Overlay src-tauri/target/release/KC-Overlay-Linux
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
@@ -91,8 +96,49 @@ jobs:
       run: npm run tauri build
     - name: Make binary executable
       run: chmod +x src-tauri/target/release/KC-Overlay
+    - name: Rename binary
+      run: mv src-tauri/target/release/KC-Overlay src-tauri/target/release/KC-Overlay-MacOS-Intel
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
         name: KC-Overlay-MacOS-Intel
         path: src-tauri/target/release/KC-Overlay
+
+  create_release:
+      permissions:
+        contents: write
+      needs: [build_windows, build_linux, build_macos]
+      if: startsWith(github.ref, 'refs/tags/v')
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Download Windows 64-bit
+          uses: actions/download-artifact@v4
+          with:
+            name: KC-Overlay-Windows
+            path: ./release-assets
+
+        - name: Download Linux
+          uses: actions/download-artifact@v4
+          with:
+            name: KC-Overlay-Linux
+            path: ./release-assets
+
+        - name: Download MacOS
+          uses: actions/download-artifact@v4
+          with:
+            name: KC-Overlay-MacOS-Intel
+            path: ./release-assets
+
+        - name: Create GitHub Release
+          uses: softprops/action-gh-release@v2
+          with:
+            body: |
+              Acesse o servidor do Discord para ver detalhes sobre esta versão.
+              
+              as builds desta versão foram geradas através desta Github Action: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            generate_release_notes: true
+            files: ./release-assets/*
