@@ -428,7 +428,7 @@ async fn handle_log_line(
 
     // Checa se a mensagem é um comando de listagem de jogadores na sala (/block + tab) mostra somente os atuais da sala
     // Formato: [CHAT] remove, remover, list, lista, nick1, nick2, nick3...
-    if line.contains("remove, remover, list, lista") && 
+    if line.contains("remover") && line.contains("lista") && line.contains(",") && 
        !app_mutex.lock().await.state.loading {
         println!("Jogador usou /block + tab");
         
