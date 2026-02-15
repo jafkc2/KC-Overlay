@@ -31,6 +31,7 @@ let settings = toRef(store, 'settings');
 .info-container {
     padding: 20px;
     text-align: center;
+    text-shadow: 2px 2px #1d1d1d;
 }
 
 .info-text {

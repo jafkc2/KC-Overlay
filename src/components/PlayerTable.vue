@@ -200,6 +200,7 @@ span {
   margin-right: 2px;
   font-size: 14px;
   line-height: 1.5;
+  text-shadow: 2px 2px #1d1d1d;
 }
 
 .player_row {

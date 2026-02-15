@@ -251,6 +251,7 @@ async function update_hotkey(hotkey: string) {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    text-shadow: 2px 2px #1d1d1d;
 }
 
 .setting {

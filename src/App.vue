@@ -249,6 +249,7 @@ body {
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
     font-size: 15px;
+    text-shadow: 2px 2px #1d1d1d;
 
     -webkit-user-select: none;
     -moz-user-select: none;
