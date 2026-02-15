@@ -19,6 +19,7 @@ pub enum MineClient {
     CheatBreaker,
     Salwyrr,
     LunarCelestial,
+    LunarQt,
 }
 
 // Clients em string.
@@ -36,6 +37,7 @@ impl Display for MineClient {
             MineClient::CheatBreaker => write!(f, "CheatBreaker"),
             MineClient::Salwyrr => write!(f, "Salwyrr"),
             MineClient::LunarCelestial => write!(f, "Lunar Celestial"),
+            MineClient::LunarQt => write!(f, "Lunar Qt"),
         }
     }
 }
@@ -143,6 +145,19 @@ impl MineClient {
                 ),
                 _ => panic!("Sistema não suportado"),
             },
+            MineClient::LunarQt => {
+                let lunar_directory = match os {
+                    "linux" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
+                    "windows" => format!(
+                        "{}/.lunarclient",
+                        std::env::var("USERPROFILE").unwrap().replace('\\', "/")
+                    ),
+                    "macos" => format!("{}/.lunarclient", std::env::var("HOME").unwrap()),
+                    _ => panic!("Sistema não suportado."),
+                };
+
+                format!("{}/offline/multiver/logs/latest.log", lunar_directory)
+            }
         }
     }
 
@@ -159,6 +174,7 @@ impl MineClient {
             MineClient::CheatBreaker,
             MineClient::Salwyrr,
             MineClient::LunarCelestial,
+            MineClient::LunarQt,
         ] {
             paths.push(client.get_logs_path());
         }
