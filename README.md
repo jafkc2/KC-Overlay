@@ -12,11 +12,9 @@ Este programa é um simples overlay para visualizar os stats dos jogadores no Mu
 
 # Como usar
 
-1 - Fazer login na sua conta do Minecraft, caso ser jogador original;
+Abra o chat e digite o comando /block, aperte espaço e aperte a tecla Tab.
 
-2 - Entrar pelo Mush usando o ip do KC Overlay. (O ip está na tela inicial do KC Overlay. Esse é um ip que se conecta ao Mush e permite obter os stats dos jogadores);
-
-3 - Digitar /ver no chat ou usar a combinação de teclas Shift + Alt + E.
+Em seguida, aparecerá a lista de jogadores no chat e no KC Overlay.
 
 # Comunidade
 
@@ -24,12 +22,13 @@ Possui alguma dúvida, sugestão, ou simplesmente quer saber das novidades? Entr
 
 # Clients e launchers suportados
 
-Até o momento, os seguintes clients e launchers são suportados:
+Até o momento, os seguintes clients e launchers recebem suporte:
 * Launcher da Mojang
 * Tlauncher
 * CMClient
 * Badlion
 * Lunar
+* Lunar Qt
 * Silent Client
 * CheatBreaker
 * Legacy Launcher
