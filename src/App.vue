@@ -28,6 +28,7 @@ document.addEventListener("mousedown", (e) => {
 
 
 const router = useRouter();
+let loadingEventCounter = 0;
 
 onMounted(async () => {
     //await store.get_settings();
@@ -93,6 +94,7 @@ onMounted(async () => {
     });
 
     listen("loading", async (event) => {
+        const currentLoadingEvent = ++loadingEventCounter;
         const window = getCurrentWindow();
         console.log(event.payload);
         if (event.payload) {
@@ -118,13 +120,15 @@ onMounted(async () => {
                 setTimeout(resolve, store.settings.seconds_to_minimize * 1000),
             );
 
+            if (currentLoadingEvent !== loadingEventCounter) {
+                return;
+            }
+
             if (!store.settings.never_minimize) {
                 await window.setAlwaysOnTop(false);
 
                 if (!(await window.isMinimized())) {
                     await window.minimize();
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-                    await window.unminimize();
                 }
             }
             await window.setIgnoreCursorEvents(false).catch((err) => {
