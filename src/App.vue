@@ -93,10 +93,15 @@ onMounted(async () => {
         }
     });
 
+    let loadingEventCounter = 0;
     listen("loading", async (event) => {
-        const currentLoadingEvent = ++loadingEventCounter;
+        if (event.payload) {
+            loadingEventCounter++;
+        }
+        let currentLoadingEvent = loadingEventCounter;
         const window = getCurrentWindow();
         console.log(event.payload);
+        // quando começa a carregar
         if (event.payload) {
             router.push("/");
 
@@ -106,25 +111,27 @@ onMounted(async () => {
             await window.setAlwaysOnTop(true);
 
             if (!store.settings.never_minimize) {
+                console.log("Desminimizando janela");
                 await window.minimize();
                 await new Promise((resolve) => setTimeout(resolve, 100));
                 await window.unminimize();
                 await window.setIgnoreCursorEvents(true);
             }
             await window.unminimize();
-
-        } else {
+        
+        } 
+        // quando termina de carregar
+        else {
             store.loading = false;
 
             await new Promise((resolve) =>
                 setTimeout(resolve, store.settings.seconds_to_minimize * 1000),
             );
 
-            if (currentLoadingEvent !== loadingEventCounter) {
-                return;
-            }
+            if (currentLoadingEvent !== loadingEventCounter) return;
 
             if (!store.settings.never_minimize) {
+                console.log("Minimizando janela");
                 await window.setAlwaysOnTop(false);
 
                 if (!(await window.isMinimized())) {
@@ -363,7 +370,7 @@ input[type="text"] {
     border-radius: 10px;
 }
 
-a{
-    color:#74c7ec
+a {
+    color: #74c7ec
 }
 </style>
