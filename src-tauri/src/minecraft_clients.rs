@@ -108,7 +108,7 @@ impl MineClient {
                     std::env::var("HOME").unwrap()
                 ),
                 "windows" => format!(
-                    "{}/Appdata/Roaming/CheatBreaker/logs/renderer.log",
+                    "{}/AppData/Roaming/CheatBreaker/downloads/logs/1.8.9/latest.log",
                     std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                 ),
                 "macos" => format!(
@@ -123,7 +123,7 @@ impl MineClient {
                     std::env::var("HOME").unwrap()
                 ),
                 "windows" => format!(
-                    "{}/Appdata/Roaming/.Salwyrr/logs/latest.log",
+                    "{}/AppData/Roaming/.Salwyrr/logs/latest.log",
                     std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                 ),
                 "macos" => format!(
@@ -162,12 +162,12 @@ impl MineClient {
             }
             MineClient::OwlClient => {
                 let owl_dir = match std::env::consts::OS {
-                    "linux" => format!("{}/.owlclient", std::env::var("HOME").unwrap()),
+                    "linux" => format!("{}/owlclient", std::env::var("HOME").unwrap()),
                     "windows" => format!(
-                        "{}/.owlclient",
+                        "{}/owlclient",
                         std::env::var("USERPROFILE").unwrap().replace('\\', "/")
                     ),
-                    "macos" => format!("{}/.owlclient", std::env::var("HOME").unwrap()),
+                    "macos" => format!("{}/owlclient", std::env::var("HOME").unwrap()),
                     _ => panic!("System not supported."),
                 };
 
