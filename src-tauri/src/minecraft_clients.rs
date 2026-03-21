@@ -211,6 +211,7 @@ impl MineClient {
             MineClient::Salwyrr,
             MineClient::LunarCelestial,
             MineClient::LunarQt,
+            MineClient::OwlClient
         ] {
             paths.push(client.get_logs_path());
         }
