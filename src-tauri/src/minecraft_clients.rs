@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, fs};
 
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +20,7 @@ pub enum MineClient {
     Salwyrr,
     LunarCelestial,
     LunarQt,
+    OwlClient,
 }
 
 // Clients em string.
@@ -38,6 +39,7 @@ impl Display for MineClient {
             MineClient::Salwyrr => write!(f, "Salwyrr"),
             MineClient::LunarCelestial => write!(f, "Lunar Celestial"),
             MineClient::LunarQt => write!(f, "Lunar Qt"),
+            MineClient::OwlClient => write!(f, "Owl Client"),
         }
     }
 }
@@ -157,6 +159,40 @@ impl MineClient {
                 };
 
                 format!("{}/offline/multiver/logs/latest.log", lunar_directory)
+            }
+            MineClient::OwlClient => {
+                let owl_dir = match std::env::consts::OS {
+                    "linux" => format!("{}/.owlclient", std::env::var("HOME").unwrap()),
+                    "windows" => format!(
+                        "{}/.owlclient",
+                        std::env::var("USERPROFILE").unwrap().replace('\\', "/")
+                    ),
+                    "macos" => format!("{}/.owlclient", std::env::var("HOME").unwrap()),
+                    _ => panic!("System not supported."),
+                };
+
+                let logs_path = format!("{}/logs/launcher", owl_dir);
+
+                if !fs::exists(logs_path.clone()).unwrap() {
+                    return format!("{}/logs/latest.log", minecraft_dir);
+                }
+
+                fs::create_dir_all(logs_path.clone()).unwrap();
+
+                let mut newer_log_path = String::new();
+                let mut shortest_modification_time = std::time::SystemTime::UNIX_EPOCH;
+                for log in fs::read_dir(logs_path).unwrap() {
+                    let log = log.unwrap();
+                    let metadata = log.metadata().unwrap();
+
+                    let modified_time = metadata.modified().unwrap();
+                    if modified_time > shortest_modification_time {
+                        newer_log_path = log.path().to_string_lossy().to_string();
+                        shortest_modification_time = modified_time;
+                    }
+                }
+
+                newer_log_path
             }
         }
     }
