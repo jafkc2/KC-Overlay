@@ -28,7 +28,6 @@ document.addEventListener("mousedown", (e) => {
 
 
 const router = useRouter();
-let loadingEventCounter = 0;
 
 onMounted(async () => {
     //await store.get_settings();
