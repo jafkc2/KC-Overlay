@@ -21,8 +21,8 @@ let settings = toRef(store, 'settings');
         :loading="loading"></PlayerTable>
     <div v-else class="info-container">
 
-        <p>Utilize o comando <span style="color:#3eedad">/block + tab</span> </p>
-        <p>no servidor para abrir a overlay dentro do jogo.</p>
+        <p>Digite <span style="color:#3eedad">/block</span>, dê um <span style="color:#3eedad">espaço</span> e aperte <span style="color:#3eedad">Tab</span></p>
+        <p>no chat para usar a overlay no Mush.</p>
 
     </div>
 </template>
