@@ -93,7 +93,7 @@ struct Settings {
     remove_players: bool,
     hotkey: String,
 
-    marked_players: Vec<String>
+    marked_players: Vec<String>,
 }
 
 pub fn run() {
@@ -162,7 +162,8 @@ pub fn run() {
                 Ok(s) => s,
                 Err(_) => Shortcut::new(Some(Modifiers::ALT), Code::KeyZ),
             };
-            let load_short = Shortcut::from_str("shift+alt+e").unwrap_or(Shortcut::new(Some(Modifiers::ALT), Code::KeyE));
+            let load_short = Shortcut::from_str("shift+alt+e")
+                .unwrap_or(Shortcut::new(Some(Modifiers::ALT), Code::KeyE));
             let hotkey_builder = if let Ok(hotkey_builder) =
                 tauri_plugin_global_shortcut::Builder::new().with_shortcuts([short, load_short])
             {
@@ -426,20 +427,15 @@ async fn handle_log_line(
         }
     }
 
-    // Checa se a mensagem é um comando de listagem de jogadores na sala (/block + tab) mostra somente os atuais da sala
-    // Formato: [CHAT] remove, remover, list, lista, nick1, nick2, nick3...
-    if line.contains("remover") && line.contains("lista") && line.contains(",") && 
-       !app_mutex.lock().await.state.loading {
-        println!("Jogador usou /block + tab");
-        
-
-        if let Some(chat_content) = line.split("[CHAT]").nth(1) {
-            // Separa por vírgula e remove espaços
+    if let Some(chat_content) = line.split("[CHAT]").nth(1) {
+        if chat_content.contains(',') && !chat_content.contains([':', '.', '(', ')', '!', '+']) {
             let str_players: Vec<String> = chat_content
                 .trim()
                 .split(',')
                 .map(|x| x.trim().to_string())
-                .filter(|x| !x.is_empty() && x != "remove" && x != "remover" && x != "list" && x != "lista")
+                .filter(|x| {
+                    !x.is_empty() && x != "remove" && x != "remover" && x != "list" && x != "lista"
+                })
                 .collect();
 
             app_mutex.lock().await.state.loading = true;
@@ -448,10 +444,37 @@ async fn handle_log_line(
             let cached_players = app_mutex.lock().await.state.cached_players.clone();
             let stats_type = app_mutex.lock().await.settings.stats_type.clone();
             player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
-
         }
     }
 
+    // Checa se a mensagem é um comando de listagem de jogadores na sala (/block + tab) mostra somente os atuais da sala
+    // Formato: [CHAT] remove, remover, list, lista, nick1, nick2, nick3...
+    // if line.contains("remover")
+    //     && line.contains("lista")
+    //     && line.contains(",")
+    //     && !app_mutex.lock().await.state.loading
+    // {
+    //     println!("Jogador usou /block + tab");
+
+    //     if let Some(chat_content) = line.split("[CHAT]").nth(1) {
+    //         // Separa por vírgula e remove espaços
+    //         let str_players: Vec<String> = chat_content
+    //             .trim()
+    //             .split(',')
+    //             .map(|x| x.trim().to_string())
+    //             .filter(|x| {
+    //                 !x.is_empty() && x != "remove" && x != "remover" && x != "list" && x != "lista"
+    //             })
+    //             .collect();
+
+    //         app_mutex.lock().await.state.loading = true;
+    //         handle.emit("loading", true).unwrap();
+
+    //         let cached_players = app_mutex.lock().await.state.cached_players.clone();
+    //         let stats_type = app_mutex.lock().await.settings.stats_type.clone();
+    //         player::get_players(str_players, stats_type, cached_players, handle, app_mutex).await;
+    //     }
+    // }
     // Checa se a mensagem possui a lista de jogadores de quando o jogador digita "/jogando".
     else if line.contains("[CHAT] Jogadores") && !app_mutex.lock().await.state.loading {
         println!("Jogador digitou /jogando");
